@@ -60,7 +60,7 @@ describe('useAssignedLoadsQuery', () => {
     );
   });
 
-  it('exposes Supabase error messages', async () => {
+  it('maps Supabase errors to driver-friendly messages', async () => {
     mockFetchDriverLoadsPage.mockResolvedValue({
       loads: [],
       errorMessage: 'permission denied',
@@ -72,7 +72,9 @@ describe('useAssignedLoadsQuery', () => {
 
     const { result } = renderDriverHook(() => useAssignedLoadsQuery());
 
-    await waitFor(() => expect(result.current.error).toBe('permission denied'));
+    await waitFor(() =>
+      expect(result.current.error).toMatch(/do not have access/i),
+    );
 
     expect(result.current.loads).toEqual([]);
   });

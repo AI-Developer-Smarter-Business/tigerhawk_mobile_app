@@ -12,10 +12,16 @@ type LoadListItemProps = {
 };
 
 export function LoadListItem({ load, onPress }: LoadListItemProps) {
+  const isHot = load.is_hot;
+
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+      style={({ pressed }) => [
+        styles.card,
+        isHot && styles.cardHot,
+        pressed && styles.pressed,
+      ]}>
       <View style={styles.header}>
         <Text style={styles.ref}>{formatReference(load.reference_number)}</Text>
         <StatusBadge status={load.status} hot={load.is_hot} />
@@ -45,9 +51,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: PP2Theme.colors.border,
     padding: PP2Theme.spacing.md,
-    marginBottom: PP2Theme.spacing.sm,
   },
-  pressed: { opacity: 0.9 },
+  cardHot: {
+    backgroundColor: PP2Theme.colors.hotSurface,
+    borderColor: PP2Theme.colors.hotBorder,
+  },
+  pressed: { opacity: 0.92 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

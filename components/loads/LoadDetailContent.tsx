@@ -25,7 +25,7 @@ type LoadDetailContentProps = {
   load: LoadDetail;
   error: string | null;
   onRetry: () => void;
-  onStatusChange: (status: LoadStatus) => void;
+  onStatusChange: (status: LoadStatus) => Promise<void>;
 };
 
 export function LoadDetailContent({

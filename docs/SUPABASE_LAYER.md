@@ -83,7 +83,7 @@ Keeps components thin and testable without mounting React.
 | Concern | Where |
 |---------|--------|
 | Service role / admin Supabase | `scripts/*.mjs` only |
-| TMS `PATCH …/status` | Future `lib/tms/` (week 3) |
+| TMS `PATCH …/status` | `lib/tms/patch-load-status.ts` (week 3.1) |
 | UI strings | `constants/strings.ts` |
 | Mock demo login | `context/MockAuthContext.tsx` (opt-in, not wired in main app) |
 

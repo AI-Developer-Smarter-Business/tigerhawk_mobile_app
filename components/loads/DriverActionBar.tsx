@@ -5,13 +5,19 @@ import { Button } from '@/components/ui/Button';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
+import {
+  mapActiveHoldsPreview,
+  mapErrorToUserFacing,
+  type UserFacingError,
+} from '@/lib/errors';
+import { errorStrings } from '@/lib/errors/strings';
 import { canDriverTransition, formatLoadStatus, getDriverActionsForStatus } from '@/lib/loads';
 import type { LoadStatus } from '@/types';
 
 type DriverActionBarProps = {
   currentStatus: LoadStatus;
   activeHolds: string[];
-  onStatusChange: (status: LoadStatus) => void;
+  onStatusChange: (status: LoadStatus) => Promise<void>;
 };
 
 export function DriverActionBar({
@@ -20,7 +26,7 @@ export function DriverActionBar({
   onStatusChange,
 }: DriverActionBarProps) {
   const [pending, setPending] = useState<LoadStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<UserFacingError | null>(null);
   const [lastChange, setLastChange] = useState<string | null>(null);
 
   const actions = getDriverActionsForStatus(currentStatus);
@@ -28,21 +34,30 @@ export function DriverActionBar({
 
   const handleAction = async (next: LoadStatus) => {
     if (blocked) {
-      setError(strings.driverActions.holdsBlock);
+      setActionError(mapActiveHoldsPreview(activeHolds));
       return;
     }
     if (!canDriverTransition(currentStatus, next)) {
-      setError(strings.driverActions.transitionDenied);
+      setActionError({
+        kind: 'validation',
+        title: errorStrings.validationTitle,
+        message: strings.driverActions.transitionDenied,
+      });
       return;
     }
     setPending(next);
-    setError(null);
-    await new Promise((r) => setTimeout(r, 400));
-    onStatusChange(next);
-    setLastChange(
-      `${formatLoadStatus(currentStatus)} → ${formatLoadStatus(next)}`,
-    );
-    setPending(null);
+    setActionError(null);
+    setLastChange(null);
+    try {
+      await onStatusChange(next);
+      setLastChange(
+        `${formatLoadStatus(currentStatus)} → ${formatLoadStatus(next)}`,
+      );
+    } catch (err) {
+      setActionError(mapErrorToUserFacing(err));
+    } finally {
+      setPending(null);
+    }
   };
 
   if (actions.length === 0) {
@@ -56,7 +71,13 @@ export function DriverActionBar({
   return (
     <View style={styles.wrap}>
       <Text style={styles.title}>{strings.driverActions.title}</Text>
-      {error ? <ErrorBanner message={error} /> : null}
+      {actionError ? (
+        <ErrorBanner
+          title={actionError.title}
+          message={actionError.message}
+          details={actionError.details}
+        />
+      ) : null}
       {lastChange ? (
         <Text style={styles.success}>
           {strings.driverActions.updated}: {lastChange}

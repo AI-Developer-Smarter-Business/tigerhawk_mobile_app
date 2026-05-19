@@ -27,6 +27,7 @@
 | `docs/LOADS_DATA_MAP.md` | Supabase tables/columns for driver loads (task 2.1) |
 | `docs/GitHub_Setup_Guide.md` | GitHub & CI for this repo (task 1.8) |
 | `docs/SUPABASE_AUTH_REDIRECTS.md` | Magic-link redirect URLs |
+| `docs/MOBILE_BUILDS.md` | **Android APK / iOS** — EAS env, Realtime, test driver on device |
 
 ## Requirements
 
@@ -76,7 +77,7 @@ npm run check:secrets  # fail if privileged keys in client code
 
 ### Auth for testing
 
-1. **Test driver:** `driver_test@test.com` / `Driver01*` — create with `npm run db:seed-driver-test`, assign loads with `npm run db:assign-driver-test-loads`.
+1. **Test driver:** `driver_test@test.com` / `Driver01*` — create with `npm run db:seed-driver-test`, assign loads with `npm run db:assign-driver-test-loads` (3 loads) or `npm run db:assign-driver-test-loads:pagination` (21 loads for infinite-scroll QA). If too many were assigned earlier: `npm run db:trim-driver-test-loads` (keeps 21). **Live updates from TMS:** ensure `loads` is in Supabase Realtime (`supabase/sql-editor/enable_realtime_loads.sql`).
 2. **TMS drivers:** any user with `user_profiles.role = driver` and loads assigned in the TMS.
 3. **Magic link:** “Email me a sign-in link” (requires redirect URLs in Supabase).
 
@@ -102,13 +103,16 @@ Use `safeLog` from `lib/logging/safe-log.ts` in dev only. **Do not** `console.lo
 
 If QR fails: `npx expo start --tunnel`.
 
-### Installed APK
+### Installed builds (Android now · iOS later)
 
-```bash
-npm run build:android:preview
-```
+| Platform | Status | Command |
+|----------|--------|---------|
+| **Android APK** | Ready | `npm run build:android:preview` |
+| **iOS** | On hold (Mac + iPhone + Apple account) | `eas build --platform ios --profile preview` when ready |
 
-See [EAS Build](https://docs.expo.dev/build/introduction/).
+**Before building:** set EAS secrets for `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, and `EXPO_PUBLIC_TMS_API_URL` (use a **public** TMS URL, not `localhost`). Same Supabase → `driver_test@test.com` and Realtime work on device like local.
+
+Full checklist: **`docs/MOBILE_BUILDS.md`**.
 
 ## Project structure
 

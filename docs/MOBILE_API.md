@@ -181,11 +181,11 @@ All queries live in `lib/supabase/queries/`, called from hooks with React Query 
 
 **Base URL:** `env.tmsApiUrl` from `EXPO_PUBLIC_TMS_API_URL` or `NEXT_PUBLIC_APP_URL` (`.env.example`, `lib/config/env.ts`). Trailing slash stripped.
 
-**Not called from PP2 code yet** (no `fetch` to TMS in `app/` / `lib/` / `hooks/` as of 2.8). Week 3 wires status; week 4+ POD/messages per roadmap.
+**Status PATCH wired (task 3.1):** `lib/tms/patch-load-status.ts` → `PATCH {tmsApiUrl}/api/dispatcher/loads/[id]/status`. POD/messages still future.
 
 | Capability | Method | TMS route | PP2 when | Why TMS (not Supabase client) |
 |------------|--------|-----------|----------|-------------------------------|
-| Status change | `PATCH` | `/api/dispatcher/loads/[id]/status` | Task **3.1** | Server transitions, holds, timestamps, side effects (§3) |
+| Status change | `PATCH` | `/api/dispatcher/loads/[id]/status` | **Done (3.1)** | `lib/tms/patch-load-status.ts`; `app/load/[id].tsx` |
 | Messages list | `GET` | `/api/dispatcher/loads/[id]/messages` | Future | Optional if not using direct SELECT |
 | Send message | `POST` | `/api/dispatcher/loads/[id]/messages` | Future | Assignment checks on server |
 | Documents list | `GET` | `/api/dispatcher/loads/[id]/documents` | Future | Signed URLs via admin client (§5.1) |
@@ -217,7 +217,7 @@ If `env.tmsApiUrl` is empty, status calls must fail fast with a clear config err
 
 | Behaviour | Where | Notes |
 |-----------|-------|-------|
-| Driver status buttons | `DriverActionBar` + `setLoadStatusInCache` | Updates React Query cache + `LoadsContext` only until **3.1** |
+| Driver status buttons | `DriverActionBar` → `patchLoadStatus` + `setLoadStatusInCache` | TMS PATCH with optimistic cache; rollback on error; refetch on success |
 | Pull-to-refresh | `useAssignedLoadsQuery` / `useLoadDetailQuery` | Refetch from Supabase; overwrites local status demo |
 | Mock auth | `EXPO_PUBLIC_ENABLE_MOCK_AUTH=1` | Dev only; off by default |
 
@@ -228,7 +228,7 @@ If `env.tmsApiUrl` is empty, status calls must fail fast with a clear config err
 | Who am I? | Supabase `user_profiles` | Same |
 | My loads list | Supabase `loads` | Same |
 | Load detail | Supabase `loads` + embeds | Same |
-| Change status | Local cache (demo) | TMS `PATCH …/status` |
+| Change status | TMS `PATCH …/status` | Same (3.1) |
 | POD / photos | — | TMS POST (after backend allows driver) or Storage+BFF |
 | Chat | — | Supabase and/or TMS messages API |
 

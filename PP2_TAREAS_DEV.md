@@ -40,10 +40,10 @@
 
 | # | Tarea |
 |---|--------|
-| 3.1 | Conectar cambios de estado al contrato del web: **`PATCH /api/dispatcher/loads/[id]/status`** con cuerpo `{ status }` (referencia `DriverActionPanel.tsx`). |
-| 3.2 | En la **UI móvil**, ofrecer **solo** transiciones del subconjunto **Driver** del panel web; no mostrar acciones de despacho ni finales salvo decisión explícita de negocio. |
-| 3.3 | Si aplica: **endurecer** `status/route.ts` para que `role === "driver"` no pueda enviar transiciones reservadas a staff aunque aparezcan en el mapa por defecto. |
-| 3.4 | Mensajes de error alineados a HTTP/PostgREST; UX clara para **403** sin permiso y **`ACTIVE_HOLDS`** (ver `README_STEPS_NEXTS.md`). |
+| 3.1 | ✅ **Completada.** `lib/tms/` (`patchLoadStatus`, errores `ACTIVE_HOLDS`/403/400), JWT Supabase, optimistic UI + rollback, invalidación React Query; `EXPO_PUBLIC_TMS_API_URL`. |
+| 3.2 | ✅ **Completada.** Solo transiciones `DRIVER_FIELD_STATUSES` en `DriverActionBar` (`filterDriverFieldActions`; sin `Completed`/`Cancelled` ni despacho). |
+| 3.3 | ✅ **Completada.** Guard cliente `assertDriverFieldStatusTarget` + `patchLoadStatus`; Realtime `loads` → invalidación React Query (`useDriverLoadsRealtime`); patch TMS documentado en `docs/TMS_PATCH_3_3_DRIVER_STATUS.md`; SQL `enable_realtime_loads.sql`. |
+| 3.4 | ✅ **Completada.** `lib/errors/` (`mapSupabaseError`, `mapStatusChangeError`, `ErrorBanner` con título/detalles); hooks + `DriverActionBar` para 403 y `ACTIVE_HOLDS`. |
 | 3.5 | **Optimistic UI** solo donde sea seguro; rollback en fallo. Registro de **telemetría** mínima en dev (y Sentry u otro en staging si el proyecto lo usa). |
 | 3.6 | Tests unitarios de la capa de acciones (funciones puras y validación de payloads enviados al API). |
 | 3.7 | Pruebas manuales cruzadas con el **Driver Action Panel** web (mismo usuario y misma carga); revisión breve de **accesibilidad** (tamaño táctil, contraste). |
@@ -118,7 +118,7 @@
 | 8.1 | Versión **semver**, **changelog** y **tag** Git de la release. |
 | 8.2 | **README** final: instalación, variables, canal de reporte de bugs. |
 | 8.3 | Plan de **rollback** y relación de **migraciones** Supabase tocadas por la app o el TMS para PP2. |
-| 8.4 | Entrega de **keystores / credenciales EAS** al propietario del producto (cliente), con custodia clara. |
+| 8.4 | Entrega de **keystores / credenciales EAS** al propietario del producto (cliente), con custodia clara. Ver `docs/MOBILE_BUILDS.md` (Android APK; iOS en espera de Mac/iPhone). |
 | 8.5 | Documento corto de **soporte**: escalado para RLS, Storage, Port Houston (solo si la app lo usa). |
 | 8.6 | **Post-mortem** breve: horas reales vs plan, deuda técnica aceptada. |
 | 8.7 | **Backlog v1.1** priorizado (mensajería avanzada, offline-first, geofencing, etc., según `docs/driver_app_roadmap.md`). |

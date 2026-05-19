@@ -10,6 +10,7 @@ import {
 } from '@/lib/query/driver-query-gate';
 import { invalidateLoadDetail } from '@/lib/query/invalidate-loads';
 import { queryKeys } from '@/lib/query/query-keys';
+import { getUserFacingMessage } from '@/lib/errors';
 import { fetchLoadDetailForDriver } from '@/lib/supabase/queries';
 import { getSupabase } from '@/lib/supabase/client';
 import type { LoadDetail } from '@/types';
@@ -86,9 +87,7 @@ export function useLoadDetailQuery(loadId: string | undefined): UseLoadDetailQue
   const fetchedLoad = query.data ?? null;
   const displayLoad = fetchedLoad ?? cachedLoad ?? null;
 
-  const error =
-    gateError ??
-    (query.error instanceof Error ? query.error.message : null);
+  const error = gateError ?? (query.error ? getUserFacingMessage(query.error) : null);
 
   const notFound =
     Boolean(loadId) &&

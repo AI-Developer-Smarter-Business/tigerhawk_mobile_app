@@ -44,6 +44,7 @@ export const strings = {
     loadingMore: 'Loading more…',
     retry: 'Try again',
     scrollForMore: 'Scroll for more loads',
+    endOfList: 'All loads loaded',
     showingCount: (shown: number, total: number) =>
       `Showing ${shown} of ${total} loads`,
     showingMany: (shown: number) => `${shown} load(s) loaded`,
@@ -117,9 +118,10 @@ export const strings = {
   },
   driverActions: {
     title: 'Field actions',
-    holdsBlock: 'ACTIVE_HOLDS: you cannot change status while holds are active.',
     transitionDenied: 'Transition not allowed for driver.',
     noActions: 'Load is in a final state or has no field actions.',
     updated: 'Updated',
+    sessionRequired: 'Session expired. Sign in again.',
+    updateFailed: 'Failed to update status.',
   },
 } as const;

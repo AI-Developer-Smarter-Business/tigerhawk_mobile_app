@@ -327,4 +327,68 @@ No repetir la guía completa de QA; solo lo necesario para repetir la prueba ese
 
 ---
 
+## 20 de mayo de 2026
+
+### Tarea 4 — Realtime cargas + guard servidor 3.3 (dev 3.3)
+
+**Qué se implementó**
+
+- **Realtime:** `useDriverLoadsRealtime` en drawer; suscripción `loads` → invalidación React Query (asignaciones/estado desde TMS sin reiniciar app).
+- **Fallback:** refetch al volver la app a primer plano.
+- **Seguridad:** `assertDriverFieldStatusTarget` antes del PATCH; doc TMS `docs/TMS_PATCH_3_3_DRIVER_STATUS.md`.
+- **SQL:** `supabase/sql-editor/enable_realtime_loads.sql`.
+
+**Cómo probar**
+
+- Ejecutar SQL Realtime si hace falta; login conductor; en TMS asignar otra carga al mismo driver → debe aparecer en la lista en ~1 s sin cerrar la app.
+- `npm run ci` en verde.
+
+### Tarea 2 — Solo acciones Driver en UI (dev 3.2)
+
+**Qué se implementó**
+
+- **`FINAL_LOAD_STATUSES`**, **`filterDriverFieldActions`**: la barra de acciones ya no muestra `Completed`, `Cancelled` ni transiciones de despacho (`Dispatched` desde `Assigned`, etc.).
+- Tests ampliados en `lib/loads/__tests__/driver-actions.test.ts`.
+
+**Funcionalidad disponible**
+
+- Mismo subconjunto que el grupo **Driver** del `DriverActionPanel` web.
+
+**Cómo probar**
+
+- Detalle de carga `Delivered`: solo **Enroute To Return Empty**, sin botón **Completed**.
+- `npm test lib/loads/__tests__/driver-actions.test.ts`
+
+### Tarea 3 — Datos de paginación para `driver_test@test.com`
+
+**Qué se hizo**
+
+- Script `assign-loads-driver-test.mjs` con `--max=N` y `--all` (hasta 200 cargas sin conductor).
+- `npm run db:assign-driver-test-loads:pagination` y SQL `assign_loads_driver_test_pagination.sql`.
+- Ejecutado en Supabase: **203 cargas** asignadas al conductor de prueba.
+
+**Cómo probar**
+
+- Login → **My Loads** → scroll: cargar más de 20 filas (pie “Loading more…”).
+
+### Tarea 1 — PATCH estado vía TMS BFF (dev 3.1)
+
+**Qué se implementó**
+
+- **`lib/tms/`:** `patchLoadStatus`, `parseStatusPatchError`, `TmsStatusChangeError` (`ACTIVE_HOLDS`, 403, 400, 401, red).
+- **`app/load/[id].tsx`:** JWT `session.access_token`, UI optimista + rollback, invalidación listado/detalle tras éxito.
+- **`DriverActionBar`:** `onStatusChange` async; errores del servidor en banner.
+
+**Funcionalidad disponible**
+
+- El conductor persiste cambios de estado en el TMS (misma ruta que `DriverActionPanel` web), no solo en caché local.
+
+**Cómo probar**
+
+- `.env.local`: `EXPO_PUBLIC_TMS_API_URL` apuntando al TMS en marcha (p. ej. `http://localhost:3000` o URL de staging).
+- Login `driver_test@test.com` → abrir carga `Dispatched` → **In transit** → debe persistir tras pull-to-refresh.
+- `npm run ci` en verde.
+
+---
+
 *Al cerrar cada día, añadir sección `## [fecha]` con tareas numeradas en orden ascendente.*

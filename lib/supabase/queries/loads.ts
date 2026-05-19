@@ -144,14 +144,19 @@ export async function fetchDriverLoadsPage(
     };
   }
 
-  const rows = (data ?? []) as unknown as LoadListRow[];
-  const loads = mapLoadRowsToDetails(rows);
+  const rawRows = (data ?? []) as unknown as LoadListRow[];
+  const loads = mapLoadRowsToDetails(rawRows);
   const totalCount = count ?? null;
 
   return {
     loads,
     errorMessage: null,
-    hasMore: hasMoreDriverLoads({ page, pageSize, rowCount: rows.length, totalCount }),
+    hasMore: hasMoreDriverLoads({
+      page,
+      pageSize,
+      rowCount: loads.length,
+      totalCount,
+    }),
     totalCount,
     page,
     pageSize,

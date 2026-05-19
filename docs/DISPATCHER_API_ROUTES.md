@@ -13,7 +13,7 @@ The mobile app **does not call these routes today** for list/detail master data;
 |--------|-------|--------------|-------|
 | `GET` | `/api/dispatcher/loads` | — | Staff list; mobile uses Supabase `fetchDriverLoadsPage` |
 | `GET` | `/api/dispatcher/loads/[id]` | **2.3 (read via Supabase)** | Full load + embeds; mirrored in `LOAD_DETAIL_SELECT` |
-| `PATCH` | `/api/dispatcher/loads/[id]/status` | **Week 3** | Driver status transitions `{ status }` |
+| `PATCH` | `/api/dispatcher/loads/[id]/status` | **Done (3.1)** | `lib/tms/patch-load-status.ts` — `{ status }` + Bearer JWT |
 | `GET` | `/api/dispatcher/loads/[id]/messages` | Future | Chat thread |
 | `POST` | `/api/dispatcher/loads/[id]/messages` | Future | Send message |
 | `GET` | `/api/dispatcher/loads/[id]/documents` | Future | POD list |

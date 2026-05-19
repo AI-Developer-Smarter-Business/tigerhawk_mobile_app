@@ -44,8 +44,23 @@ On **sign out**, `QueryCacheAuthSync` calls `queryClient.clear()`.
 |-------|----------------|
 | Pull list | `loads.all(userId)` |
 | Pull detail | `loads.detail(userId, loadId)` |
-| Local driver status change (mock, until TMS API) | `setQueryData` on list + detail (no refetch) |
+| TMS status PATCH success | `invalidateDriverLoads` + detail |
+| TMS / dispatch updates `loads` in Supabase | Realtime → debounced `invalidateDriverLoads` (task 3.3) |
+| App foreground | `invalidateDriverLoads` (fallback) |
 | Sign out | `queryClient.clear()` |
+
+---
+
+## Realtime (task 3.3)
+
+| Piece | Path |
+|-------|------|
+| Subscription | `lib/supabase/realtime/driver-loads-subscription.ts` |
+| Hook | `hooks/useDriverLoadsRealtime.ts` (wired in `app/(drawer)/_layout.tsx`) |
+
+Listens to `postgres_changes` on `public.loads` where `driver_id` matches the signed-in driver (assign, status change, unassign). Debounces invalidation ~450ms.
+
+**Supabase:** table `loads` must be in publication `supabase_realtime`. Run `supabase/sql-editor/enable_realtime_loads.sql` if updates from TMS do not appear until app restart.
 
 ---
 

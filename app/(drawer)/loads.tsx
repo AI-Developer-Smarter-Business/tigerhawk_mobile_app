@@ -1,7 +1,6 @@
 import { router, type Href } from 'expo-router';
 import { useCallback, useEffect } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -10,6 +9,8 @@ import {
 } from 'react-native';
 
 import { LoadListItem } from '@/components/loads/LoadListItem';
+import { LoadsCountBadge } from '@/components/loads/LoadsCountBadge';
+import { LoadsListFooter } from '@/components/loads/LoadsListFooter';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { Screen } from '@/components/ui/Screen';
@@ -18,6 +19,8 @@ import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { useLoads } from '@/context/LoadsContext';
 import { useAssignedLoadsQuery } from '@/hooks/useAssignedLoadsQuery';
+
+const LIST_SEPARATOR = PP2Theme.spacing.sm;
 
 export default function LoadsScreen() {
   const { syncLoads } = useLoads();
@@ -59,7 +62,7 @@ export default function LoadsScreen() {
   return (
     <Screen>
       <Text style={styles.heading}>{strings.loads.title}</Text>
-      {countLabel ? <Text style={styles.subheading}>{countLabel}</Text> : null}
+      {countLabel ? <LoadsCountBadge label={countLabel} /> : null}
 
       {error ? (
         <ErrorBanner
@@ -84,10 +87,17 @@ export default function LoadsScreen() {
               refreshing={refreshing}
               onRefresh={onRefresh}
               tintColor={PP2Theme.colors.tms.navActive}
+              colors={[PP2Theme.colors.tms.navActive]}
             />
           }
           onEndReached={onEndReached}
-          onEndReachedThreshold={0.35}
+          onEndReachedThreshold={0.4}
+          ItemSeparatorComponent={ListSeparator}
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+          windowSize={7}
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
           ListEmptyComponent={
             !loading && !error ? (
               <EmptyState
@@ -98,13 +108,15 @@ export default function LoadsScreen() {
             ) : null
           }
           ListFooterComponent={
-            loadingMore ? (
-              <View style={styles.footer}>
-                <ActivityIndicator color={PP2Theme.colors.tms.navActive} />
-                <Text style={styles.footerText}>{strings.loads.loadingMore}</Text>
-              </View>
-            ) : hasMore && loads.length > 0 && !error ? (
-              <Text style={styles.footerHint}>{strings.loads.scrollForMore}</Text>
+            loads.length > 0 ? (
+              <LoadsListFooter
+                loadingMore={loadingMore}
+                hasMore={hasMore}
+                loadedCount={loads.length}
+                loadingMoreLabel={strings.loads.loadingMore}
+                scrollHintLabel={strings.loads.scrollForMore}
+                endLabel={strings.loads.endOfList}
+              />
             ) : null
           }
           renderItem={({ item }) => (
@@ -113,11 +125,17 @@ export default function LoadsScreen() {
               onPress={() => router.push(`/load/${item.id}` as Href)}
             />
           )}
-          contentContainerStyle={loads.length === 0 ? styles.emptyList : styles.list}
+          contentContainerStyle={
+            loads.length === 0 ? styles.emptyList : styles.list
+          }
         />
       )}
     </Screen>
   );
+}
+
+function ListSeparator() {
+  return <View style={styles.separator} />;
 }
 
 const styles = StyleSheet.create({
@@ -125,34 +143,17 @@ const styles = StyleSheet.create({
     fontSize: PP2Theme.typography.sizes.headline,
     fontWeight: '700',
     color: PP2Theme.colors.text,
-    marginBottom: PP2Theme.spacing.xs,
-  },
-  subheading: {
-    fontSize: PP2Theme.typography.sizes.caption,
-    color: PP2Theme.colors.textMuted,
-    marginBottom: PP2Theme.spacing.md,
+    marginBottom: PP2Theme.spacing.sm,
   },
   loadingWrap: {
     flex: 1,
     paddingVertical: PP2Theme.spacing.xl,
   },
   emptyList: { flexGrow: 1 },
-  list: { paddingBottom: PP2Theme.spacing.lg },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: PP2Theme.spacing.sm,
-    paddingVertical: PP2Theme.spacing.lg,
+  list: {
+    paddingBottom: PP2Theme.spacing.md,
   },
-  footerText: {
-    fontSize: PP2Theme.typography.sizes.caption,
-    color: PP2Theme.colors.textMuted,
-  },
-  footerHint: {
-    textAlign: 'center',
-    fontSize: PP2Theme.typography.sizes.caption,
-    color: PP2Theme.colors.textMuted,
-    paddingVertical: PP2Theme.spacing.md,
+  separator: {
+    height: LIST_SEPARATOR,
   },
 });

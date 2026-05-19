@@ -1,4 +1,6 @@
 import {
+  dedupeLoadListRows,
+  dedupeLoadsById,
   hasMoreDriverLoads,
   mapLoadDetailRowToDetail,
   mapLoadRowToDetail,
@@ -132,6 +134,28 @@ describe('mapLoadRowsToDetails', () => {
     expect(details).toHaveLength(2);
     expect(details[0].id).toBe('a');
     expect(details[1].reference_number).toBe('B');
+  });
+});
+
+describe('dedupeLoadListRows', () => {
+  it('keeps one row per load id when embed fans out', () => {
+    const rows = [
+      createLoadListRow({ id: 'load-1', reference_number: 'THWK_A' }),
+      createLoadListRow({ id: 'load-1', reference_number: 'THWK_A_DUP' }),
+      createLoadListRow({ id: 'load-2', reference_number: 'THWK_B' }),
+    ];
+    const unique = dedupeLoadListRows(rows);
+    expect(unique).toHaveLength(2);
+    expect(unique[0].reference_number).toBe('THWK_A');
+  });
+});
+
+describe('dedupeLoadsById', () => {
+  it('dedupes flattened infinite-query pages', () => {
+    const a = mapLoadRowToDetail(createLoadListRow({ id: 'x' }));
+    const dup = mapLoadRowToDetail(createLoadListRow({ id: 'x' }));
+    const b = mapLoadRowToDetail(createLoadListRow({ id: 'y' }));
+    expect(dedupeLoadsById([a, dup, b])).toHaveLength(2);
   });
 });
 

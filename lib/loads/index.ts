@@ -1,5 +1,15 @@
-export { DRIVER_FIELD_STATUSES, MOCK_LOAD_TRANSITIONS } from './constants';
-export { canDriverTransition, getDriverActionsForStatus } from './driver-actions';
+export {
+  DRIVER_FIELD_STATUSES,
+  FINAL_LOAD_STATUSES,
+  MOCK_LOAD_TRANSITIONS,
+} from './constants';
+export {
+  canDriverTransition,
+  filterDriverFieldActions,
+  getDriverActionsForStatus,
+  isDriverFieldStatus,
+  isFinalLoadStatus,
+} from './driver-actions';
 export {
   formatAppointment,
   formatAppointmentRange,

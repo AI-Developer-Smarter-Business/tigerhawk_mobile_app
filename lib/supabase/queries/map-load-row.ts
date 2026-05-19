@@ -166,7 +166,33 @@ export function mapLoadDetailRowToDetail(row: LoadDetailRow): LoadDetail {
 }
 
 export function mapLoadRowsToDetails(rows: LoadListRow[]): LoadDetail[] {
-  return rows.map(mapLoadRowToDetail);
+  return dedupeLoadListRows(rows).map(mapLoadRowToDetail);
+}
+
+/**
+ * PostgREST duplicates parent rows when a load has multiple embedded `containers`.
+ * Keep the first row per load id so list keys and pagination stay stable.
+ */
+export function dedupeLoadListRows(rows: LoadListRow[]): LoadListRow[] {
+  const seen = new Set<string>();
+  const unique: LoadListRow[] = [];
+  for (const row of rows) {
+    if (seen.has(row.id)) continue;
+    seen.add(row.id);
+    unique.push(row);
+  }
+  return unique;
+}
+
+/** Dedupe across infinite-query pages (defensive). */
+export function dedupeLoadsById(loads: LoadDetail[]): LoadDetail[] {
+  const map = new Map<string, LoadDetail>();
+  for (const load of loads) {
+    if (!map.has(load.id)) {
+      map.set(load.id, load);
+    }
+  }
+  return Array.from(map.values());
 }
 
 /** Whether another page may exist after the current fetch. */
@@ -179,7 +205,7 @@ export function hasMoreDriverLoads(params: {
   const { page, pageSize, rowCount, totalCount } = params;
   if (rowCount === 0) return false;
   if (totalCount != null) {
-    return page * pageSize + rowCount < totalCount;
+    return (page + 1) * pageSize < totalCount;
   }
   return rowCount === pageSize;
 }

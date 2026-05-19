@@ -1,8 +1,12 @@
 /**
- * Assigns sample loads to driver_test@test.com for PP2 real-data testing.
+ * Assigns loads to driver_test@test.com for PP2 real-data testing.
  * Uses SUPABASE_SERVICE_ROLE_KEY from .env.local.
  *
- * Usage: node scripts/assign-loads-driver-test.mjs
+ * Usage:
+ *   node scripts/assign-loads-driver-test.mjs           # default: 3 loads
+ *   node scripts/assign-loads-driver-test.mjs --max=50  # pagination QA (2+ pages at size 20)
+ *   node scripts/assign-loads-driver-test.mjs --max=21  # pagination QA (2 pages at size 20)
+ *   node scripts/assign-loads-driver-test.mjs --all     # up to 200 (use trim script after if needed)
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,7 +18,8 @@ const root = path.resolve(__dirname, '..');
 
 const DRIVER_EMAIL = 'driver_test@test.com';
 const TARGET_STATUS = 'Dispatched';
-const MAX_LOADS = 3;
+const DEFAULT_MAX_LOADS = 3;
+const ALL_LOADS_CAP = 200;
 
 function loadEnvLocal() {
   const envPath = path.join(root, '.env.local');
@@ -32,8 +37,19 @@ function loadEnvLocal() {
   }
 }
 
+function parseMaxLoads(argv) {
+  if (argv.includes('--all')) return ALL_LOADS_CAP;
+  const maxArg = argv.find((a) => a.startsWith('--max='));
+  if (maxArg) {
+    const n = Number.parseInt(maxArg.split('=')[1], 10);
+    if (Number.isFinite(n) && n > 0) return Math.min(n, ALL_LOADS_CAP);
+  }
+  return DEFAULT_MAX_LOADS;
+}
+
 async function main() {
   loadEnvLocal();
+  const maxLoads = parseMaxLoads(process.argv.slice(2));
 
   const url =
     process.env.EXPO_PUBLIC_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -77,13 +93,17 @@ async function main() {
     process.exit(1);
   }
 
+  const { count: existingCount } = await admin
+    .from('loads')
+    .select('id', { count: 'exact', head: true })
+    .eq('driver_id', profile.id);
+
   const { data: candidates, error: listErr } = await admin
     .from('loads')
     .select('id, reference_number, status, driver_id')
     .is('driver_id', null)
-    .in('status', ['Available', 'Pending', 'Assigned'])
     .order('created_at', { ascending: false })
-    .limit(MAX_LOADS);
+    .limit(maxLoads);
 
   if (listErr) {
     console.error('List loads failed:', listErr.message);
@@ -91,7 +111,9 @@ async function main() {
   }
 
   if (!candidates?.length) {
-    console.error('No unassigned loads found to attach.');
+    console.error(
+      'No unassigned loads found (driver_id IS NULL). Add loads in TMS or lower filters.',
+    );
     process.exit(1);
   }
 
@@ -106,9 +128,24 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`Assigned ${ids.length} load(s) to ${DRIVER_EMAIL} (${profile.id}):`);
+  const { count: totalAssigned } = await admin
+    .from('loads')
+    .select('id', { count: 'exact', head: true })
+    .eq('driver_id', profile.id);
+
+  console.log(
+    `Assigned ${ids.length} load(s) to ${DRIVER_EMAIL} (max requested: ${maxLoads}).`,
+  );
+  console.log(`Total loads now assigned to this driver: ${totalAssigned ?? '?'}`);
+  if ((totalAssigned ?? 0) > 20) {
+    console.log('Pagination: scroll the Loads list — page size is 20 (infinite scroll).');
+  } else if ((totalAssigned ?? 0) <= 20) {
+    console.log(
+      `Pagination: need >20 assigned loads for a second page (currently ${totalAssigned ?? 0}).`,
+    );
+  }
   for (const row of candidates) {
-    console.log(`  - ${row.reference_number} → ${TARGET_STATUS}`);
+    console.log(`  - ${row.reference_number} (${row.status}) → ${TARGET_STATUS}`);
   }
   console.log('\nSign in on PP2 with driver_test@test.com / Driver01*');
 }

@@ -5,8 +5,8 @@ import type { DriverLoadsPageResult } from '@/lib/supabase/queries/loads';
 import type { LoadDetail, LoadStatus } from '@/types';
 
 /**
- * Optimistic status update in React Query (mock driver actions until TMS API).
- * Does not persist to Supabase — pull-to-refresh will restore server status.
+ * Optimistic status update in React Query (used before TMS PATCH confirms).
+ * Roll back on API failure; refetch after success for server truth.
  */
 export function setLoadStatusInCache(
   queryClient: QueryClient,

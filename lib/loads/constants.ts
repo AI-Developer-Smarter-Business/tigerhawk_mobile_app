@@ -1,6 +1,9 @@
 import type { LoadStatus } from '@/types';
 
-/** Subconjunto Driver del TMS (`DriverActionPanel.tsx`). */
+/**
+ * Field statuses a driver may trigger (TMS `DriverActionPanel.tsx` → `DRIVER_STATUSES`).
+ * PP2 shows only these — not dispatcher-only or terminal actions.
+ */
 export const DRIVER_FIELD_STATUSES: ReadonlySet<LoadStatus> = new Set([
   'Arrived At Pickup',
   'In Transit',
@@ -15,9 +18,15 @@ export const DRIVER_FIELD_STATUSES: ReadonlySet<LoadStatus> = new Set([
   'Arrived At Return Empty',
 ]);
 
+/** Terminal statuses — hidden from driver action bar (TMS `FINAL_STATUSES`). */
+export const FINAL_LOAD_STATUSES: ReadonlySet<LoadStatus> = new Set([
+  'Completed',
+  'Cancelled',
+]);
+
 /**
  * Static transition map (subset of TMS `VALID_LOAD_TRANSITIONS`).
- * Replace with TMS `GET /api/admin/transitions` when wiring status API (task 3.1).
+ * Used to preview next steps until `GET /api/admin/transitions` is wired.
  * @see docs/MOBILE_API.md
  */
 export const MOCK_LOAD_TRANSITIONS: Record<LoadStatus, LoadStatus[]> = {

@@ -327,4 +327,60 @@ Do not paste a full QA guide; only what is needed to repeat that day’s check.
 
 ---
 
+## 20 May 2026
+
+### Task 4 — Loads realtime + task 3.3 guard (dev 3.3)
+
+**What was implemented**
+
+- **Realtime:** `useDriverLoadsRealtime` subscribes to `loads` and invalidates React Query when TMS assigns/updates loads.
+- **Fallback:** refetch when app returns to foreground.
+- **Security:** `assertDriverFieldStatusTarget` before PATCH; TMS patch doc `docs/TMS_PATCH_3_3_DRIVER_STATUS.md`.
+
+**How to test**
+
+- Assign a load to `driver_test@test.com` in TMS — list updates without restarting the app.
+
+### Task 2 — Driver-only actions in UI (dev 3.2)
+
+**What was implemented**
+
+- **`FINAL_LOAD_STATUSES`**, **`filterDriverFieldActions`:** action bar no longer shows `Completed`, `Cancelled`, or dispatcher-only transitions.
+- Expanded tests in `lib/loads/__tests__/driver-actions.test.ts`.
+
+**How to test**
+
+- Open a `Delivered` load: only **Enroute To Return Empty**, no **Completed** button.
+
+### Task 3 — Pagination test data for `driver_test@test.com`
+
+**What was done**
+
+- `assign-loads-driver-test.mjs` supports `--max=N` and `--all` (up to 200 unassigned loads).
+- `npm run db:assign-driver-test-loads:pagination` — **203 loads** assigned in Supabase.
+
+**How to test**
+
+- Login → **My Loads** → scroll past 20 rows (footer “Loading more…”).
+
+### Task 1 — Status PATCH via TMS BFF (dev 3.1)
+
+**What was implemented**
+
+- **`lib/tms/`:** `patchLoadStatus`, `parseStatusPatchError`, `TmsStatusChangeError` (`ACTIVE_HOLDS`, 403, 400, 401, network).
+- **`app/load/[id].tsx`:** JWT `session.access_token`, optimistic UI + rollback, invalidate list/detail on success.
+- **`DriverActionBar`:** async `onStatusChange`; server errors in banner.
+
+**What is available**
+
+- Driver status changes persist through the TMS (same route as web `DriverActionPanel`), not cache-only.
+
+**How to test**
+
+- `.env.local`: set `EXPO_PUBLIC_TMS_API_URL` to a running TMS (e.g. `http://localhost:3000` or staging).
+- Login `driver_test@test.com` → open `Dispatched` load → tap **In transit** → status should stick after pull-to-refresh.
+- `npm run ci` passes.
+
+---
+
 *When closing each day, add a `## [date]` section with tasks numbered in ascending order.*

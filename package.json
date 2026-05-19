@@ -16,6 +16,8 @@
     "db:apply-rls": "node scripts/apply-supabase-migration.mjs",
     "db:seed-driver-test": "node scripts/create-driver-test-user.mjs",
     "db:assign-driver-test-loads": "node scripts/assign-loads-driver-test.mjs",
+    "db:assign-driver-test-loads:pagination": "node scripts/assign-loads-driver-test.mjs --max=21",
+    "db:trim-driver-test-loads": "node scripts/trim-driver-test-loads.mjs",
     "build:android:preview": "eas build --platform android --profile preview",
     "build:android:production": "eas build --platform android --profile production"
   },

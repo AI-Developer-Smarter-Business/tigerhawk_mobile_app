@@ -9,6 +9,8 @@ import {
 } from '@/lib/query/driver-query-gate';
 import { invalidateDriverLoads } from '@/lib/query/invalidate-loads';
 import { queryKeys } from '@/lib/query/query-keys';
+import { dedupeLoadsById } from '@/lib/supabase/queries/map-load-row';
+import { getUserFacingMessage } from '@/lib/errors';
 import { fetchDriverLoadsPage } from '@/lib/supabase/queries';
 import { getSupabase } from '@/lib/supabase/client';
 import type { DriverLoadsPageResult } from '@/lib/supabase/queries/loads';
@@ -65,10 +67,10 @@ export function useAssignedLoadsQuery(): UseAssignedLoadsQueryResult {
       lastPage.hasMore ? lastPage.page + 1 : undefined,
   });
 
-  const loads = useMemo(
-    () => query.data?.pages.flatMap((page) => page.loads) ?? [],
-    [query.data],
-  );
+  const loads = useMemo(() => {
+    const flat = query.data?.pages.flatMap((page) => page.loads) ?? [];
+    return dedupeLoadsById(flat);
+  }, [query.data]);
 
   const lastPage = query.data?.pages[query.data.pages.length - 1];
   const hasMore = lastPage?.hasMore ?? false;
@@ -102,8 +104,7 @@ export function useAssignedLoadsQuery(): UseAssignedLoadsQueryResult {
   const refreshing = query.isRefetching && !query.isFetchingNextPage;
 
   const error =
-    gateError ??
-    (query.error instanceof Error ? query.error.message : null);
+    gateError ?? (query.error ? getUserFacingMessage(query.error) : null);
 
   return {
     loads,
