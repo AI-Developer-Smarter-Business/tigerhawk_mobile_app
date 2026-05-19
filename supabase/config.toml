@@ -1,0 +1,5 @@
+# Proyecto Supabase compartido con el TMS (solo migraciones PP2 en este repo).
+project_id = "sqkzamyopzxinwkshqgw"
+
+[db]
+major_version = 15
