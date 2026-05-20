@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">87.5% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>7/8</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">87.5% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>7/8</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -133,18 +133,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -168,13 +165,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -182,7 +182,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -197,15 +197,15 @@
  */
 &nbsp;
 /** Primary table for assignments (FK name legacy: shipments_driver_id_fkey). */
-export const LOADS_TABLE = <span class="cstat-no" title="statement not covered" >'loads' as const;</span>
+export const LOADS_TABLE = 'loads' as const;
 &nbsp;
 /** Driver registry — `loads.driver_id` references `drivers.id`. */
-export const DRIVERS_TABLE = <span class="cstat-no" title="statement not covered" >'drivers' as const;</span>
+export const DRIVERS_TABLE = 'drivers' as const;
 &nbsp;
-export const USER_PROFILES_TABLE = <span class="cstat-no" title="statement not covered" >'user_profiles' as const;</span>
+export const USER_PROFILES_TABLE = 'user_profiles' as const;
 &nbsp;
 /** Columns selected in `fetchLoadsForDriver` (list MVP). */
-export const LOAD_LIST_COLUMNS = <span class="cstat-no" title="statement not covered" >[</span>
+export const LOAD_LIST_COLUMNS = [
   'id',
   'reference_number',
   'status',
@@ -232,13 +232,13 @@ export const LOAD_LIST_COLUMNS = <span class="cstat-no" title="statement not cov
 ] as const;
 &nbsp;
 /** PostgREST embeds on list query. */
-export const LOAD_LIST_EMBEDS = <span class="cstat-no" title="statement not covered" >{</span>
+export const LOAD_LIST_EMBEDS = {
   containers: 'container_number',
   customers: 'name',
 } as const;
 &nbsp;
 /** Related tables (detail / week 2+). */
-export const LOAD_RELATED_TABLES = <span class="cstat-no" title="statement not covered" >{</span>
+export const LOAD_RELATED_TABLES = {
   load_messages: 'load_id',
   load_documents: 'load_id',
   containers: 'id',
@@ -246,7 +246,7 @@ export const LOAD_RELATED_TABLES = <span class="cstat-no" title="statement not c
 } as const;
 &nbsp;
 /** Default page size for driver load list (task 2.2). */
-export const LOAD_LIST_PAGE_SIZE = <span class="cstat-no" title="statement not covered" >20;</span>
+export const LOAD_LIST_PAGE_SIZE = 20;
 &nbsp;
 /** Filter for mobile driver list (must match RLS). */
 export function <span class="fstat-no" title="function not covered" >driverLoadsFilter(</span>driverUserId: string) {
@@ -262,7 +262,7 @@ export function <span class="fstat-no" title="function not covered" >driverLoads
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-19T20:50:41.985Z
+                at 2026-05-20T20:45:35.630Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

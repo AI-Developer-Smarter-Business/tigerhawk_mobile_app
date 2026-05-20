@@ -50,4 +50,14 @@ export const safeLog = {
     if (!__DEV__) return;
     console.warn(`[${scope}]`, message);
   },
+  /** Structured dev telemetry (task 3.5). No secrets in meta. */
+  event(scope: string, eventName: string, meta?: Record<string, unknown>): void {
+    if (!__DEV__) return;
+    const safeMeta = sanitizeMeta(meta);
+    if (safeMeta && Object.keys(safeMeta).length > 0) {
+      console.warn(`[${scope}:${eventName}]`, safeMeta);
+    } else {
+      console.warn(`[${scope}:${eventName}]`);
+    }
+  },
 };

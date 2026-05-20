@@ -7,7 +7,7 @@ export default function AuthLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: PP2Theme.colors.background },
+        contentStyle: { backgroundColor: PP2Theme.colors.tms.pageBackground },
       }}>
       <Stack.Screen name="login" />
     </Stack>

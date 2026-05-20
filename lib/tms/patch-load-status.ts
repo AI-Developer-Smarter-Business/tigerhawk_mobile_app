@@ -1,9 +1,13 @@
 import type { LoadStatus } from '@/types';
 
 import { assertDriverFieldStatusTarget } from './assert-driver-status';
-import { TmsStatusChangeError } from './errors';
 import { tmsApiPath } from './client';
+import { TmsStatusChangeError } from './errors';
 import { parseStatusPatchError } from './parse-status-error';
+import {
+  buildStatusPatchPath,
+  buildStatusPatchRequestInit,
+} from './status-patch-request';
 
 export type PatchLoadStatusParams = {
   loadId: string;
@@ -27,21 +31,12 @@ export async function patchLoadStatus(
     assertDriverFieldStatusTarget(status);
   }
 
-  const url = tmsApiPath(
-    `/api/dispatcher/loads/${encodeURIComponent(loadId)}/status`,
-  );
+  const url = tmsApiPath(buildStatusPatchPath(loadId));
+  const init = buildStatusPatchRequestInit(accessToken, status);
 
   let response: Response;
   try {
-    response = await fetch(url, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({ status }),
-    });
+    response = await fetch(url, init);
   } catch {
     throw new TmsStatusChangeError(
       'Network error. Check your connection and try again.',

@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 
+import { BrandHeader } from '@/components/brand/BrandHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
@@ -11,6 +12,8 @@ import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { getAuthRedirectUri } from '@/lib/auth/redirect-uri';
 import { useAuth } from '@/hooks/useAuth';
+
+const tms = PP2Theme.colors.tms;
 
 export default function LoginScreen() {
   const { authError } = useLocalSearchParams<{ authError?: string }>();
@@ -61,20 +64,17 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen>
+    <Screen variant="chrome">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}>
-        <View style={styles.header}>
-          <Text style={styles.brand}>PP2</Text>
-          <Text style={styles.subtitle}>{strings.auth.driverSubtitle}</Text>
-        </View>
+        <BrandHeader variant="login" style={styles.header} />
 
-        <Card title={strings.auth.signIn}>
-          <Text style={styles.supabaseOk}>
+        <Card title={strings.auth.signIn} variant="chrome">
+          <Text style={styles.sessionHint}>
             {strings.auth.supabaseLabel}:{' '}
             {initError
-              ? `error`
+              ? 'error'
               : isSupabaseAuthenticated
                 ? strings.auth.sessionActive
                 : strings.auth.sessionReady}
@@ -89,6 +89,7 @@ export default function LoginScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
+            variant="chrome"
           />
           <Input
             label={strings.auth.password}
@@ -96,15 +97,17 @@ export default function LoginScreen() {
             onChangeText={setPassword}
             secureTextEntry
             autoComplete="password"
+            variant="chrome"
           />
           <Button
             title={strings.auth.signInButton}
+            variant="accent"
             onPress={handlePasswordLogin}
             loading={loading}
           />
           <Button
             title={strings.auth.sendMagicLink}
-            variant="outline"
+            variant="outlineAccent"
             onPress={handleMagicLink}
             loading={loading}
             style={styles.mt}
@@ -124,28 +127,18 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: {
     marginBottom: PP2Theme.spacing.lg,
-    marginTop: PP2Theme.spacing.xl,
+    marginTop: PP2Theme.spacing.lg,
   },
-  brand: {
-    fontSize: PP2Theme.typography.sizes.headline,
-    fontWeight: '700',
-    color: PP2Theme.colors.primary,
-  },
-  subtitle: {
-    fontSize: PP2Theme.typography.sizes.body,
-    color: PP2Theme.colors.textMuted,
-    marginTop: PP2Theme.spacing.xs,
+  sessionHint: {
+    fontSize: PP2Theme.typography.sizes.caption,
+    color: tms.navActive,
+    marginBottom: PP2Theme.spacing.sm,
   },
   redirect: {
     marginTop: PP2Theme.spacing.sm,
     fontSize: 10,
-    color: PP2Theme.colors.textMuted,
+    color: tms.navItem,
     textAlign: 'center',
-  },
-  supabaseOk: {
-    fontSize: PP2Theme.typography.sizes.caption,
-    color: PP2Theme.colors.primary,
-    marginBottom: PP2Theme.spacing.sm,
   },
   info: {
     fontSize: PP2Theme.typography.sizes.body,

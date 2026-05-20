@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BrandHeader } from '@/components/brand/BrandHeader';
 import { DRIVER_DRAWER_ITEMS } from '@/constants/navigation';
 import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
@@ -33,9 +34,7 @@ export function AppDrawerContent(props: DrawerContentComponentProps) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.brandBlock}>
-        <Text style={styles.brandTitle}>{strings.nav.brandTitle}</Text>
-        <Text style={styles.brandSubtitle}>{strings.nav.brandSubtitle}</Text>
-        <Text style={styles.appTag}>PP2 · Driver</Text>
+        <BrandHeader variant="drawer" />
       </View>
 
       <DrawerContentScrollView
@@ -95,30 +94,10 @@ const styles = StyleSheet.create({
     borderRightColor: tms.sidebarBorder,
   },
   brandBlock: {
-    paddingHorizontal: PP2Theme.spacing.md,
-    paddingVertical: PP2Theme.spacing.lg,
+    paddingHorizontal: PP2Theme.spacing.sm,
+    paddingVertical: PP2Theme.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: tms.sidebarBorder,
-    alignItems: 'center',
-  },
-  brandTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: tms.navActiveText,
-    letterSpacing: 0.5,
-  },
-  brandSubtitle: {
-    fontSize: PP2Theme.typography.sizes.caption,
-    color: tms.navItem,
-    marginTop: 2,
-  },
-  appTag: {
-    marginTop: PP2Theme.spacing.sm,
-    fontSize: 11,
-    fontWeight: '600',
-    color: tms.navActive,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
   },
   scroll: {
     backgroundColor: tms.sidebarBackground,
@@ -130,6 +109,7 @@ const styles = StyleSheet.create({
   item: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: PP2Theme.layout.minTouchTarget,
     paddingVertical: 12,
     paddingHorizontal: PP2Theme.spacing.md,
     borderRadius: PP2Theme.radius.md,

@@ -25,7 +25,7 @@ On **sign out**, `QueryCacheAuthSync` calls `queryClient.clear()`.
 | `useAssignedLoadsQuery` | `useInfiniteQuery` | `queryKeys.loads.list(userId)` |
 | `useLoadDetailQuery` | `useQuery` | `queryKeys.loads.detail(userId, loadId)` |
 
-`LoadsContext` still mirrors list/detail for navigation placeholders (`placeholderData` on detail) and optimistic status until TMS API (week 3).
+`LoadsContext` mirrors list/detail for navigation placeholders (`placeholderData` on detail). Optimistic status updates run only when `canOptimisticallyUpdateLoadStatus` is true; see `runDriverStatusChange` and `docs/MOBILE_TELEMETRY.md`.
 
 ---
 

@@ -10,6 +10,8 @@ import { env } from '@/lib/config/env';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 
+const tms = PP2Theme.colors.tms;
+
 export default function AccountScreen() {
   const {
     session,
@@ -32,10 +34,11 @@ export default function AccountScreen() {
   };
 
   return (
-    <Screen scroll>
+    <Screen scroll variant="chrome">
       <Text style={styles.heading}>{strings.account.title}</Text>
+      <Text style={styles.subheading}>{strings.app.tagline}</Text>
 
-      <Card title={displayName}>
+      <Card title={displayName} variant="chrome">
         {profile ? (
           <>
             <Text style={styles.label}>{strings.account.roleLabel}</Text>
@@ -52,7 +55,7 @@ export default function AccountScreen() {
         )}
       </Card>
 
-      <Card title={strings.auth.supabaseLabel}>
+      <Card title={strings.auth.supabaseLabel} variant="chrome">
         <Text style={styles.label}>{strings.account.sessionLabel}</Text>
         <Text style={styles.value}>
           {isSupabaseAuthenticated
@@ -73,7 +76,7 @@ export default function AccountScreen() {
         ) : null}
         <Button
           title={strings.account.refreshSession}
-          variant="outline"
+          variant="outlineAccent"
           onPress={async () => {
             await refreshSession();
             await refetch();
@@ -82,12 +85,12 @@ export default function AccountScreen() {
         />
       </Card>
 
-      <Card title={strings.account.environment}>
+      <Card title={strings.account.environment} variant="chrome">
         <Text style={styles.label}>{strings.account.projectLabel}</Text>
         <Text style={styles.value}>{supabaseHost}…</Text>
       </Card>
 
-      <Button title={strings.auth.signOut} variant="outline" onPress={handleLogout} />
+      <Button title={strings.auth.signOut} variant="accent" onPress={handleLogout} />
     </Screen>
   );
 }
@@ -96,23 +99,28 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: PP2Theme.typography.sizes.headline,
     fontWeight: '700',
-    color: PP2Theme.colors.text,
+    color: tms.navActiveText,
+    marginBottom: PP2Theme.spacing.xs,
+  },
+  subheading: {
+    fontSize: PP2Theme.typography.sizes.body,
+    color: tms.navItem,
     marginBottom: PP2Theme.spacing.lg,
   },
   label: {
     fontSize: PP2Theme.typography.sizes.caption,
-    color: PP2Theme.colors.textMuted,
+    color: tms.navItem,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   value: {
     fontSize: PP2Theme.typography.sizes.body,
-    color: PP2Theme.colors.text,
+    color: tms.navActiveText,
     marginTop: 4,
   },
   muted: {
     fontSize: PP2Theme.typography.sizes.body,
-    color: PP2Theme.colors.textMuted,
+    color: tms.navItem,
   },
   error: {
     fontSize: PP2Theme.typography.sizes.body,

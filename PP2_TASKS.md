@@ -122,7 +122,7 @@ If the client needs legal/brand alignment (“PP2” vs internal TigerHawk namin
 | 3.5 | **Optimistic UI** only where safe; rollback on failure. Minimal **telemetry** in dev (and Sentry or similar in staging if the project uses it). |
 | 3.6 | Unit tests for the action layer (pure functions and validation of payloads sent to the API). |
 | 3.7 | Manual cross-testing with the web **Driver Action Panel** (same user and load); short **accessibility** review (touch target size, contrast). |
-| 3.8 | Update the client’s `HANDOFF_DEV.md` with changes versus the initial markup. |
+| 3.8 | ✅ **Done.** `HANDOFF_DEV.md` updated: mockup vs weeks 1–3 delta, routes, env, TMS actions, limits, checklist. |
 
 ---
 

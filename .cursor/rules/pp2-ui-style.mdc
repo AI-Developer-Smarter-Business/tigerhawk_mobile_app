@@ -1,0 +1,40 @@
+---
+description: PP2 mobile UI must use PP2Theme and TMS chrome tokens for visual consistency
+alwaysApply: true
+---
+
+# PP2 Driver — estilo visual uniforme
+
+## Marca
+
+- Nombre visible en UI: **Tigerhawk Mobile** (`strings.app.name` — login, drawer, cabecera).
+- Código interno del repo puede seguir `pp2-mobile` / slug `pp2`; no cambiar salvo tarea de build.
+
+## Tokens obligatorios
+
+- Fuente única de verdad: `constants/theme.ts` → `PP2Theme`.
+- Navegación / auth / account: paleta **`PP2Theme.colors.tms`** (sidebar oscuro `#111827`, fondo `#0B1120`, acento naranja `#E8700A`, texto `#FFFFFF` / `#9CA3AF`).
+- Listados y detalle de cargas: fondo claro `PP2Theme.colors.background` (área de contenido).
+
+## Pantallas nuevas
+
+Al añadir pantallas o componentes UI:
+
+1. Reutilizar `Screen`, `Card`, `Button`, `Input` de `components/ui/`.
+2. Elegir variante según contexto:
+   - **`variant="chrome"`** en `Screen` / `Card` / `Input` → login, account, flujos sin drawer con look TMS.
+   - **`variant="default"`** → listas, detalle, formularios sobre fondo claro.
+3. Botón principal en chrome: **`variant="accent"`** (naranja TMS). Secundario: **`outlineAccent`**.
+4. No hardcodear colores hex sueltos salvo en `theme.ts`. Usar `PP2Theme.spacing`, `PP2Theme.radius`.
+5. Cabeceras del drawer: `headerStyle` ya definido en `app/(drawer)/_layout.tsx`; no contradecir esos colores.
+
+## Accesibilidad (tarea 3.7+)
+
+- Objetivo táctil mínimo **48dp**: `PP2Theme.layout.minTouchTarget` en `Button` y ítems del drawer.
+- Acciones de carga: `Button` `variant="accent"` + `accessibilityLabel` en `DriverActionBar`.
+- QA manual web vs móvil: `docs/QA_DRIVER_ACTIONS_3_7.md`.
+
+## Referencia visual
+
+- Barra lateral: `components/navigation/AppDrawerContent.tsx`
+- Login alineado: `app/(auth)/login.tsx`

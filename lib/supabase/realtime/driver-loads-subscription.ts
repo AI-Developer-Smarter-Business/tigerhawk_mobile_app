@@ -10,7 +10,8 @@ import {
   invalidateLoadDetail,
 } from '@/lib/query/invalidate-loads';
 
-const DEFAULT_DEBOUNCE_MS = 450;
+/** Coalesce bursts when TMS assigns many loads at once. */
+const DEFAULT_DEBOUNCE_MS = 750;
 
 type LoadRow = { id?: string; driver_id?: string | null };
 

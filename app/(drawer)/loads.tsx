@@ -1,5 +1,5 @@
 import { router, type Href } from 'expo-router';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   FlatList,
   RefreshControl,
@@ -38,19 +38,33 @@ export default function LoadsScreen() {
     retry,
   } = useAssignedLoadsQuery();
 
+  const endReachedLock = useRef(false);
+
   useEffect(() => {
     syncLoads(loads);
   }, [loads, syncLoads]);
+
+  useEffect(() => {
+    if (!loadingMore) {
+      endReachedLock.current = false;
+    }
+  }, [loadingMore]);
 
   const onRefresh = useCallback(() => {
     void refetch();
   }, [refetch]);
 
   const onEndReached = useCallback(() => {
+    if (endReachedLock.current) return;
     if (!loading && !refreshing && !loadingMore && hasMore && !error) {
+      endReachedLock.current = true;
       void loadMore();
     }
   }, [loading, refreshing, loadingMore, hasMore, error, loadMore]);
+
+  const onMomentumScrollBegin = useCallback(() => {
+    endReachedLock.current = false;
+  }, []);
 
   const countLabel =
     totalCount != null
@@ -91,7 +105,8 @@ export default function LoadsScreen() {
             />
           }
           onEndReached={onEndReached}
-          onEndReachedThreshold={0.4}
+          onEndReachedThreshold={0.35}
+          onMomentumScrollBegin={onMomentumScrollBegin}
           ItemSeparatorComponent={ListSeparator}
           showsVerticalScrollIndicator={false}
           removeClippedSubviews

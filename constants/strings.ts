@@ -1,5 +1,10 @@
 /** User-facing copy (English). */
 export const strings = {
+  app: {
+    /** Display name on login, drawer, and device home screen (via app.json). */
+    name: 'Tigerhawk Mobile',
+    tagline: 'Houston Drayage',
+  },
   auth: {
     signIn: 'Sign in',
     email: 'Email',
@@ -18,7 +23,7 @@ export const strings = {
     callbackInvalid: 'Invalid sign-in redirect.',
     magicLinkSent: 'Check your email for the sign-in link.',
     sendMagicLink: 'Email me a sign-in link',
-    driverSubtitle: 'Driver · Houston Drayage',
+    driverSubtitle: 'Driver app',
     devMockHint: 'Dev demo (mock only):',
     notDriverRole: 'This account is not a driver. Use a driver profile to access loads.',
   },
@@ -30,8 +35,8 @@ export const strings = {
     loads: 'My Loads',
     account: 'Account',
     logOut: 'Log Out',
-    brandTitle: 'TigerHawk',
-    brandSubtitle: 'Logistics',
+    brandTitle: 'Tigerhawk Mobile',
+    brandSubtitle: 'Houston Drayage',
   },
   loads: {
     title: 'My loads',
@@ -111,7 +116,7 @@ export const strings = {
     noMessages: 'No messages on this load.',
     pod: 'POD / Documents',
     podNote:
-      'Photo/POD upload requires TMS API work (POST documents is staff-only today). See PP2_DOCUMENTACION.md §3.4.',
+      'Photo/POD upload requires TMS API work (POST documents is staff-only today).',
     podPlaceholder: '[ Placeholder: camera / gallery ]',
     screenTitle: 'Load details',
     emDash: '—',
@@ -123,5 +128,7 @@ export const strings = {
     updated: 'Updated',
     sessionRequired: 'Session expired. Sign in again.',
     updateFailed: 'Failed to update status.',
+    changeStatusA11y: 'Change status to',
+    blockedByHoldsA11y: 'Blocked while holds are active',
   },
 } as const;

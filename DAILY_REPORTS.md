@@ -381,6 +381,81 @@ Do not paste a full QA guide; only what is needed to repeat that day’s check.
 - Login `driver_test@test.com` → open `Dispatched` load → tap **In transit** → status should stick after pull-to-refresh.
 - `npm run ci` passes.
 
+### Task 5 — Safe optimistic UI + dev telemetry (dev 3.5)
+
+**What was implemented**
+
+- **`canOptimisticallyUpdateLoadStatus`:** React Query cache and `LoadsContext` update before PATCH only when there are no holds, the transition is valid for the driver, and the target is a field status.
+- **`runDriverStatusChange`:** orchestrates optimistic apply → `patchLoadStatus` → invalidation; rolls back cache and context if TMS fails.
+- **`hooks/useDriverStatusChange.ts`:** `app/load/[id].tsx` delegates status changes to the hook (`load/[id]` route unchanged).
+- **Telemetry:** `driverStatusTelemetry` + `safeLog.event` (`attempt` / `success` / `failure` with `optimistic`, `rolledBack`, `code`) in `__DEV__` only.
+- **Docs:** `docs/MOBILE_TELEMETRY.md`; cross-links in `docs/QUERY_CACHE.md` and `docs/MOBILE_API.md`.
+
+**What is available**
+
+- Immediate UI on safe transitions; if the server rejects (403, holds, network), status reverts without a stale UI.
+- Structured Metro logs for debugging status changes without leaking tokens.
+
+**How to test**
+
+- `npm run ci` — 96 tests green (includes `optimistic-status.test.ts` and `run-driver-status-change.test.ts`).
+- Driver login → open `Dispatched` load → **In Transit** → dev console: `[driver.status:attempt]` with `optimistic: true`; on success: `[driver.status:success]`.
+- Stop TMS or force 403 → status badge should revert and `[driver.status:failure]` with `rolledBack: true`.
+- Full policy: `docs/MOBILE_TELEMETRY.md`.
+
+### Task 6 — Driver action layer unit tests (dev 3.6)
+
+**What was implemented**
+
+- **`lib/tms/status-patch-request.ts`:** pure builders for path, headers, body, and fetch init (`PATCH …/status` + `{ status }`).
+- **`patchLoadStatus`** refactored to use those builders (same URL/payload the tests assert).
+- Tests: `status-patch-request.test.ts`, expanded `patch-load-status.test.ts` (encoded id, network, 401, 400, `enforceDriverFieldOnly`), `driver-status-action.test.ts` (orchestration + payload alignment).
+
+**What is available**
+
+- Automated regression that the mobile app sends the agreed TMS route and JSON without a physical device.
+
+**How to test**
+
+- `npm run ci` — `lib/tms/__tests__` and `lib/driver-status/__tests__` green.
+- `npm test lib/tms/__tests__/status-patch-request.test.ts` to validate payloads only.
+
+### Task 7 — Cross-web QA + accessibility (dev 3.7)
+
+**What was implemented**
+
+- **`docs/QA_DRIVER_ACTIONS_3_7.md`:** manual matrix mobile vs TMS `DriverActionPanel` (same user/load), holds, errors, and a11y checklist.
+- **Automated parity:** `web-panel-reference.ts` + `web-driver-panel-parity.test.ts` (same driver status sets/filters as TMS).
+- **Accessibility:** 48dp `minTouchTarget` in theme; `Button` `accessibilityLabel` / `accessibilityState`; load actions use `accent` (TMS orange contrast); drawer rows `minHeight` 48; `ErrorBanner` retry touch area.
+
+**What is available**
+
+- Repeatable guide to confirm mobile and web show the same driver actions and status after PATCH.
+- More usable field UI (larger targets, screen reader labels).
+
+**How to test**
+
+- `npm run ci` — includes `web-driver-panel-parity.test.ts`.
+- Follow `docs/QA_DRIVER_ACTIONS_3_7.md`: login `driver_test@test.com` → same load on TMS and phone → row 1 (`Dispatched` → **In Transit**) on both; confirm sync.
+- On device: tall action buttons; with active holds, disabled buttons and hold message.
+
+### Task 8 — Developer / client handoff doc (dev 3.8)
+
+**What was implemented**
+
+- **`HANDOFF_DEV.md` rewritten:** table *initial mockup vs current state* (Supabase auth, real list/detail, TMS PATCH, Realtime, errors, PP2 Driver UI, tests).
+- Routes, `driver_test` credentials, `.env.local` vars, week-3 action layer file map, known limits (POD, messages, magic link), and week 4+ priorities.
+- Updated delivery checklist; link from `README.md` (v0.2 scope).
+
+**What is available**
+
+- Single onboarding doc: what the client delivered with mocks vs what dev completed through week 3.
+
+**How to test**
+
+- Read `HANDOFF_DEV.md` and compare to the running app: real login → loads → detail → status change should match the “Driver action layer” section.
+- Confirm outdated lines (“mock auth”, “local-only status”) are gone.
+
 ---
 
 *When closing each day, add a `## [date]` section with tasks numbered in ascending order.*

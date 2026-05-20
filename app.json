@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "PP2",
+    "name": "Tigerhawk Mobile",
     "slug": "pp2",
     "version": "0.1.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo.png",
     "scheme": "pp2",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0B3D6E"
+      "backgroundColor": "#0B1120"
     },
     "ios": {
       "supportsTablet": false,
@@ -20,8 +20,8 @@
     "android": {
       "package": "com.tigerhawk.pp2",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#0B3D6E"
+        "foregroundImage": "./assets/images/logo.png",
+        "backgroundColor": "#0B1120"
       },
       "edgeToEdgeEnabled": true,
       "intentFilters": [
@@ -41,9 +41,21 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/logo.png"
     },
-    "plugins": ["expo-router", "expo-secure-store"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/logo.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0B1120",
+          "imageWidth": 280
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },

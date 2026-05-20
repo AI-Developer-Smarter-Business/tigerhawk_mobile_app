@@ -30,6 +30,8 @@ export function ErrorBanner({
         <Pressable
           onPress={onAction}
           accessibilityRole="button"
+          accessibilityLabel={actionLabel}
+          hitSlop={8}
           style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}>
           <Text style={styles.actionText}>{actionLabel}</Text>
         </Pressable>
@@ -65,6 +67,8 @@ const styles = StyleSheet.create({
   action: {
     marginTop: PP2Theme.spacing.sm,
     alignSelf: 'flex-start',
+    minHeight: PP2Theme.accessibility.minTouchTargetSmall,
+    justifyContent: 'center',
     paddingVertical: PP2Theme.spacing.xs,
     paddingHorizontal: PP2Theme.spacing.sm,
   },

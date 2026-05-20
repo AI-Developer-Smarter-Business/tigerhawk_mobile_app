@@ -44,7 +44,7 @@ export default function DrawerLayout() {
         name="loads"
         options={{
           title: strings.loads.title,
-          headerTitle: 'PP2',
+          headerTitle: strings.app.name,
         }}
       />
       <Drawer.Screen

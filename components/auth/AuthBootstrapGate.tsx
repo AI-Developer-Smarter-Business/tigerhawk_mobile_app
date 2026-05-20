@@ -1,5 +1,6 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { BrandHeader } from '@/components/brand/BrandHeader';
 import { PP2Theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -10,7 +11,12 @@ export function AuthBootstrapGate({ children }: { children: React.ReactNode }) {
   if (!isInitialized) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={PP2Theme.colors.primary} />
+        <BrandHeader variant="bootstrap" style={styles.brand} />
+        <ActivityIndicator
+          size="large"
+          color={PP2Theme.colors.tms.navActive}
+          style={styles.spinner}
+        />
       </View>
     );
   }
@@ -23,6 +29,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: PP2Theme.colors.background,
+    backgroundColor: PP2Theme.colors.tms.pageBackground,
+  },
+  brand: {
+    marginBottom: PP2Theme.spacing.xl,
+  },
+  spinner: {
+    marginTop: PP2Theme.spacing.md,
   },
 });

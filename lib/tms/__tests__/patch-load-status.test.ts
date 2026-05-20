@@ -1,4 +1,9 @@
 import { patchLoadStatus } from '../patch-load-status';
+import {
+  buildStatusPatchBody,
+  buildStatusPatchHeaders,
+  buildStatusPatchPath,
+} from '../status-patch-request';
 
 jest.mock('@/lib/config/env', () => ({
   env: { tmsApiUrl: 'https://tms.example.com' },
@@ -15,7 +20,7 @@ describe('patchLoadStatus', () => {
     global.fetch = originalFetch;
   });
 
-  it('PATCHes status with bearer token', async () => {
+  it('PATCHes status with bearer token and TMS payload contract', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       text: async () => '{}',
@@ -28,15 +33,30 @@ describe('patchLoadStatus', () => {
     });
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://tms.example.com/api/dispatcher/loads/load-uuid/status',
-      expect.objectContaining({
+      `https://tms.example.com${buildStatusPatchPath('load-uuid')}`,
+      {
         method: 'PATCH',
-        headers: expect.objectContaining({
-          Authorization: 'Bearer jwt-token',
-          'Content-Type': 'application/json',
-        }),
-        body: JSON.stringify({ status: 'In Transit' }),
-      }),
+        headers: buildStatusPatchHeaders('jwt-token'),
+        body: buildStatusPatchBody('In Transit'),
+      },
+    );
+  });
+
+  it('encodes special characters in load id in the URL', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      text: async () => '',
+    });
+
+    await patchLoadStatus({
+      loadId: 'id/with space',
+      status: 'In Transit',
+      accessToken: 't',
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `https://tms.example.com${buildStatusPatchPath('id/with space')}`,
+      expect.any(Object),
     );
   });
 
@@ -50,6 +70,39 @@ describe('patchLoadStatus', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
 
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('allows non-field status when enforceDriverFieldOnly is false', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      text: async () => '{}',
+    });
+
+    await patchLoadStatus({
+      loadId: 'x',
+      status: 'Completed',
+      accessToken: 't',
+      enforceDriverFieldOnly: false,
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: buildStatusPatchBody('Completed'),
+      }),
+    );
+  });
+
+  it('throws NETWORK when fetch fails', async () => {
+    (global.fetch as jest.Mock).mockRejectedValue(new TypeError('Failed to fetch'));
+
+    await expect(
+      patchLoadStatus({
+        loadId: 'x',
+        status: 'In Transit',
+        accessToken: 't',
+      }),
+    ).rejects.toMatchObject({ code: 'NETWORK' });
   });
 
   it('throws TmsStatusChangeError on ACTIVE_HOLDS', async () => {
@@ -71,5 +124,45 @@ describe('patchLoadStatus', () => {
         accessToken: 't',
       }),
     ).rejects.toMatchObject({ code: 'ACTIVE_HOLDS' });
+  });
+
+  it('throws UNAUTHORIZED on 401', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 401,
+      text: async () => JSON.stringify({ error: 'Unauthorized' }),
+    });
+
+    await expect(
+      patchLoadStatus({
+        loadId: 'x',
+        status: 'In Transit',
+        accessToken: 't',
+      }),
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  it('throws INVALID_TRANSITION on 400 with validNextStates', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () =>
+        JSON.stringify({
+          error: 'Invalid transition',
+          validNextStates: ['In Transit', 'Cancelled'],
+        }),
+    });
+
+    await expect(
+      patchLoadStatus({
+        loadId: 'x',
+        status: 'Delivered',
+        accessToken: 't',
+        enforceDriverFieldOnly: false,
+      }),
+    ).rejects.toMatchObject({
+      code: 'INVALID_TRANSITION',
+      validNextStates: ['In Transit', 'Cancelled'],
+    });
   });
 });

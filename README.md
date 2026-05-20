@@ -144,14 +144,16 @@ Files: `supabase/sql-editor/*.sql` (run) and `supabase/migrations/*.sql` (versio
 
 Optional CLI: `npm run db:apply-rls` if `SUPABASE_DB_PASSWORD` is set (not required for SQL Editor workflow).
 
-## Current scope (v0.2.x)
+## Current scope (v0.2.x — through dev week 3)
 
 - Supabase Auth: password login, magic link + deep link `pp2://auth/callback`
-- Driver loads list from Supabase (RLS); test user `driver_test@test.com`
-- Load detail, driver status actions (local map; TMS API week 3), POD placeholder
-- Jest + GitHub Actions CI + client secrets guard
+- Driver loads list/detail from Supabase (RLS); pagination; Realtime refresh
+- Status changes via TMS `PATCH …/loads/[id]/status` (driver-field only); errors + optimistic UI
+- UI: PP2 Driver drawer chrome; login/account styled; a11y touch targets
+- Jest (115+ tests) + GitHub Actions CI + client secrets guard
 
-**Next:** `PP2_TAREAS_DEV.md` — TMS API status PATCH, POD, E2E.
+**Handoff vs initial mockup:** `HANDOFF_DEV.md`  
+**Next:** `PP2_TAREAS_DEV.md` — week 4 POD, messages, E2E.
 
 ## TMS reference
 

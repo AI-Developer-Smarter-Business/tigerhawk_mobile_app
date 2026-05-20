@@ -2,18 +2,29 @@ import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-na
 
 import { PP2Theme } from '@/constants/theme';
 
+const tms = PP2Theme.colors.tms;
+
+export type InputVariant = 'default' | 'chrome';
+
 type InputProps = TextInputProps & {
   label: string;
   error?: string;
+  variant?: InputVariant;
 };
 
-export function Input({ label, error, style, ...rest }: InputProps) {
+export function Input({ label, error, style, variant = 'default', ...rest }: InputProps) {
+  const isChrome = variant === 'chrome';
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, isChrome && styles.labelChrome]}>{label}</Text>
       <TextInput
-        placeholderTextColor={PP2Theme.colors.textMuted}
-        style={[styles.input, error ? styles.inputError : null, style]}
+        placeholderTextColor={isChrome ? tms.navItem : PP2Theme.colors.textMuted}
+        style={[
+          styles.input,
+          isChrome && styles.inputChrome,
+          error ? styles.inputError : null,
+          style,
+        ]}
         {...rest}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -29,6 +40,11 @@ const styles = StyleSheet.create({
     marginBottom: PP2Theme.spacing.xs,
     fontWeight: '600',
   },
+  labelChrome: {
+    color: tms.navItem,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   input: {
     borderWidth: 1,
     borderColor: PP2Theme.colors.border,
@@ -38,6 +54,11 @@ const styles = StyleSheet.create({
     fontSize: PP2Theme.typography.sizes.body,
     color: PP2Theme.colors.text,
     backgroundColor: PP2Theme.colors.surface,
+  },
+  inputChrome: {
+    borderColor: tms.sidebarBorder,
+    backgroundColor: tms.inputBackground,
+    color: tms.navActiveText,
   },
   inputError: { borderColor: PP2Theme.colors.error },
   error: {

@@ -118,6 +118,7 @@ async function main() {
   }
 
   const ids = candidates.map((l) => l.id);
+  // Single batch update — one Realtime burst on the app (debounced refresh).
   const { error: updateErr } = await admin
     .from('loads')
     .update({ driver_id: profile.id, status: TARGET_STATUS })
@@ -138,7 +139,9 @@ async function main() {
   );
   console.log(`Total loads now assigned to this driver: ${totalAssigned ?? '?'}`);
   if ((totalAssigned ?? 0) > 20) {
-    console.log('Pagination: scroll the Loads list — page size is 20 (infinite scroll).');
+    console.log(
+      'Pagination: scroll the Loads list — page size is 20. If the app feels slow right after assign, pull-to-refresh once (list resets to page 1).',
+    );
   } else if ((totalAssigned ?? 0) <= 20) {
     console.log(
       `Pagination: need >20 assigned loads for a second page (currently ${totalAssigned ?? 0}).`,

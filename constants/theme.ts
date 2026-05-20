@@ -34,6 +34,9 @@ export const PP2Theme = {
       navActiveText: '#FFFFFF',
       headerBackground: '#111827',
       headerBorder: 'rgba(255,255,255,0.05)',
+      /** Slightly elevated surface on dark chrome screens (login, account) */
+      cardBackground: '#1F2937',
+      inputBackground: 'rgba(255,255,255,0.06)',
     },
   },
   spacing: {
@@ -60,5 +63,11 @@ export const PP2Theme = {
   layout: {
     drawerWidthPercent: 0.72,
     drawerMaxWidth: 300,
+    /** WCAG 2.5.5 — minimum touch target (dp). */
+    minTouchTarget: 48,
+  },
+  accessibility: {
+    minTouchTarget: 48,
+    minTouchTargetSmall: 44,
   },
 } as const;

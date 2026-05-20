@@ -389,6 +389,81 @@ No repetir la guía completa de QA; solo lo necesario para repetir la prueba ese
 - Login `driver_test@test.com` → abrir carga `Dispatched` → **In transit** → debe persistir tras pull-to-refresh.
 - `npm run ci` en verde.
 
+### Tarea 5 — UI optimista segura + telemetría dev (dev 3.5)
+
+**Qué se implementó**
+
+- **`canOptimisticallyUpdateLoadStatus`:** la caché React Query y `LoadsContext` solo se actualizan antes del PATCH si no hay holds, la transición es válida para conductor y el destino es estado de campo.
+- **`runDriverStatusChange`:** orquesta apply optimista → `patchLoadStatus` → invalidación; rollback de caché y contexto si el TMS falla.
+- **`hooks/useDriverStatusChange.ts`:** la pantalla `app/load/[id].tsx` delega el cambio de estado al hook (ruta `load/[id]` sin cambios).
+- **Telemetría:** `driverStatusTelemetry` + `safeLog.event` (`attempt` / `success` / `failure` con `optimistic`, `rolledBack`, `code`) solo en `__DEV__`.
+- **Docs:** `docs/MOBILE_TELEMETRY.md`; referencia en `docs/QUERY_CACHE.md` y `docs/MOBILE_API.md`.
+
+**Funcionalidad disponible**
+
+- Respuesta visual inmediata en transiciones seguras; si el servidor rechaza (403, holds, red), el estado vuelve al anterior sin dejar la UI inconsistente.
+- En Metro, eventos estructurados para depurar cambios de estado sin volcar tokens.
+
+**Cómo probar**
+
+- `npm run ci` — 96 tests en verde (incluye `optimistic-status.test.ts` y `run-driver-status-change.test.ts`).
+- Login conductor → detalle carga `Dispatched` → **In Transit** → en consola dev: `[driver.status:attempt]` con `optimistic: true`; tras éxito: `[driver.status:success]`.
+- Detener el TMS o forzar error 403 → el badge de estado debe volver al anterior y aparecer `[driver.status:failure]` con `rolledBack: true`.
+- Ver política completa en `docs/MOBILE_TELEMETRY.md`.
+
+### Tarea 6 — Tests capa de acciones conductor (dev 3.6)
+
+**Qué se implementó**
+
+- **`lib/tms/status-patch-request.ts`:** funciones puras `buildStatusPatchPath`, `buildStatusPatchBody`, `buildStatusPatchHeaders`, `buildStatusPatchRequestInit` (contrato `PATCH …/status` + `{ status }`).
+- **`patchLoadStatus`** refactorizado para usar esos builders (misma URL y payload que validan los tests).
+- Tests: `status-patch-request.test.ts`, `patch-load-status.test.ts` ampliado (encode id, red, 401, 400, `enforceDriverFieldOnly`), `driver-status-action.test.ts` (orquestación + alineación payload).
+
+**Funcionalidad disponible**
+
+- Regresión automática de que el móvil envía al TMS exactamente la ruta y el JSON acordados, sin depender del dispositivo.
+
+**Cómo probar**
+
+- `npm run ci` — suites `lib/tms/__tests__` y `lib/driver-status/__tests__` en verde.
+- `npm test lib/tms/__tests__/status-patch-request.test.ts` para validar solo payloads.
+
+### Tarea 7 — QA cruzado web + accesibilidad (dev 3.7)
+
+**Qué se implementó**
+
+- **`docs/QA_DRIVER_ACTIONS_3_7.md`:** matriz manual móvil vs `DriverActionPanel` (mismo usuario/carga), holds, errores y checklist a11y.
+- **Paridad automática:** `web-panel-reference.ts` + `web-driver-panel-parity.test.ts` (mismos `DRIVER_STATUSES` / filtros que TMS).
+- **Accesibilidad:** `minTouchTarget` 48dp en tema, `Button` con `accessibilityLabel`/`accessibilityState`, acciones de carga en `accent` (contraste naranja TMS), drawer con `minHeight` 48, `ErrorBanner` con área táctil en retry.
+
+**Funcionalidad disponible**
+
+- Guía reproducible para validar que móvil y web muestran las mismas acciones de conductor y el mismo estado tras PATCH.
+- UI de acciones más usable en campo (botones grandes, labels para lector de pantalla).
+
+**Cómo probar**
+
+- `npm run ci` — incluye `web-driver-panel-parity.test.ts`.
+- Seguir `docs/QA_DRIVER_ACTIONS_3_7.md`: login `driver_test@test.com` → misma carga en TMS y móvil → fila 1 (`Dispatched` → **In Transit**) en web y app; confirmar sync.
+- Revisar en dispositivo: botones de acciones altos y legibles; con holds activos, botones deshabilitados y mensaje de hold.
+
+### Tarea 8 — Handoff desarrollador / cliente (dev 3.8)
+
+**Qué se implementó**
+
+- **`HANDOFF_DEV.md` reescrito:** tabla *maquetado inicial vs estado actual* (auth Supabase, lista/detalle reales, PATCH TMS, Realtime, errores, UI PP2 Driver, tests).
+- Rutas, credenciales `driver_test`, variables `.env.local`, mapa de archivos de la capa de acciones (semana 3), limitaciones (POD, mensajes, magic link) y prioridad semana 4+.
+- Checklist de entrega actualizado; enlace desde `README.md` (scope v0.2).
+
+**Funcionalidad disponible**
+
+- Documento único para onboarding: qué entregó el cliente con mocks y qué hizo el dev hasta cerrar la semana 3.
+
+**Cómo probar**
+
+- Leer `HANDOFF_DEV.md` y contrastar con la app: login real → loads → detalle → cambio de estado debe coincidir con la sección “Capa de acciones”.
+- Verificar que ya no indica “mock auth” ni “estado solo local” (texto obsoleto eliminado).
+
 ---
 
 *Al cerrar cada día, añadir sección `## [fecha]` con tareas numeradas en orden ascendente.*

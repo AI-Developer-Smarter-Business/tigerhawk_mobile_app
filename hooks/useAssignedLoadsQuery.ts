@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -53,6 +53,7 @@ export function useAssignedLoadsQuery(): UseAssignedLoadsQueryResult {
   const query = useInfiniteQuery({
     queryKey: queryKeys.loads.list(userId),
     enabled,
+    placeholderData: keepPreviousData,
     initialPageParam: 0,
     queryFn: async ({ pageParam }): Promise<DriverLoadsPageResult> => {
       const result = await fetchDriverLoadsPage(getSupabase(), userId, {

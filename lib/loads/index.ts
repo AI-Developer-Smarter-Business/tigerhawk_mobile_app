@@ -10,6 +10,7 @@ export {
   isDriverFieldStatus,
   isFinalLoadStatus,
 } from './driver-actions';
+export { canOptimisticallyUpdateLoadStatus } from './optimistic-status';
 export {
   formatAppointment,
   formatAppointmentRange,

@@ -2,13 +2,16 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from './query-keys';
 
-/** Invalidates paginated list + all load detail queries for the driver. */
+/**
+ * Resets the infinite loads list to page 0 (avoids refetching every scrolled page
+ * after bulk TMS assigns or Realtime bursts — main cause of list "lag").
+ */
 export async function invalidateDriverLoads(
   queryClient: QueryClient,
   userId: string,
 ): Promise<void> {
-  await queryClient.invalidateQueries({
-    queryKey: queryKeys.loads.all(userId),
+  await queryClient.resetQueries({
+    queryKey: queryKeys.loads.list(userId),
   });
 }
 

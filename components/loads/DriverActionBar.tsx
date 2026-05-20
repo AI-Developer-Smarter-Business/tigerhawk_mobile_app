@@ -62,14 +62,20 @@ export function DriverActionBar({
 
   if (actions.length === 0) {
     return (
-      <View style={styles.wrap}>
+      <View
+        style={styles.wrap}
+        accessibilityRole="summary"
+        accessibilityLabel={strings.driverActions.noActions}>
         <Text style={styles.done}>{strings.driverActions.noActions}</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.wrap}>
+    <View
+      style={styles.wrap}
+      accessibilityRole="menu"
+      accessibilityLabel={strings.driverActions.title}>
       <Text style={styles.title}>{strings.driverActions.title}</Text>
       {actionError ? (
         <ErrorBanner
@@ -79,21 +85,28 @@ export function DriverActionBar({
         />
       ) : null}
       {lastChange ? (
-        <Text style={styles.success}>
+        <Text style={styles.success} accessibilityLiveRegion="polite">
           {strings.driverActions.updated}: {lastChange}
         </Text>
       ) : null}
-      {actions.map((action) => (
-        <Button
-          key={action}
-          title={formatLoadStatus(action)}
-          variant="primary"
-          loading={pending === action}
-          disabled={blocked || (pending !== null && pending !== action)}
-          onPress={() => handleAction(action)}
-          style={styles.btn}
-        />
-      ))}
+      {actions.map((action) => {
+        const label = formatLoadStatus(action);
+        return (
+          <Button
+            key={action}
+            title={label}
+            variant="accent"
+            loading={pending === action}
+            disabled={blocked || (pending !== null && pending !== action)}
+            onPress={() => handleAction(action)}
+            style={styles.btn}
+            accessibilityLabel={`${strings.driverActions.changeStatusA11y} ${label}`}
+            accessibilityHint={
+              blocked ? strings.driverActions.blockedByHoldsA11y : undefined
+            }
+          />
+        );
+      })}
     </View>
   );
 }
@@ -115,5 +128,6 @@ const styles = StyleSheet.create({
     fontSize: PP2Theme.typography.sizes.caption,
     color: PP2Theme.colors.success,
     marginBottom: PP2Theme.spacing.sm,
+    fontWeight: '600',
   },
 });

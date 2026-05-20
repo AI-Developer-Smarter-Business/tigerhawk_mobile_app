@@ -217,7 +217,7 @@ If `env.tmsApiUrl` is empty, status calls must fail fast with a clear config err
 
 | Behaviour | Where | Notes |
 |-----------|-------|-------|
-| Driver status buttons | `DriverActionBar` → `patchLoadStatus` + `setLoadStatusInCache` | TMS PATCH with optimistic cache; rollback on error; refetch on success |
+| Driver status buttons | `DriverActionBar` → `useDriverStatusChange` → `runDriverStatusChange` | Optimistic cache only when safe; rollback on error; invalidate on success; dev telemetry |
 | Pull-to-refresh | `useAssignedLoadsQuery` / `useLoadDetailQuery` | Refetch from Supabase; overwrites local status demo |
 | Mock auth | `EXPO_PUBLIC_ENABLE_MOCK_AUTH=1` | Dev only; off by default |
 

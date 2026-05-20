@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">62.5% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>5/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>3/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">60% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/5</span>
+                <span class='fraction'>3/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">57.14% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/7</span>
+                <span class='fraction'>4/7</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -116,15 +116,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -144,24 +144,24 @@ import type { DriverLoadsPageResult } from '@/lib/supabase/queries/loads';
 import type { LoadDetail, LoadStatus } from '@/types';
 &nbsp;
 /**
- * Optimistic status update in React Query (used before TMS PATCH confirms).
- * Roll back on API failure; refetch after success for server truth.
+ * Optimistic status update in React Query (only via `runDriverStatusChange` when safe).
+ * Roll back on API failure; invalidate after success for server truth.
  */
-export function <span class="fstat-no" title="function not covered" >setLoadStatusInCache(</span>
+export function setLoadStatusInCache(
   queryClient: QueryClient,
   userId: string,
   loadId: string,
   status: LoadStatus,
 ): void {
-<span class="cstat-no" title="statement not covered" >  queryClient.setQueryData&lt;LoadDetail | null&gt;(</span>
+  queryClient.setQueryData&lt;LoadDetail | null&gt;(
     queryKeys.loads.detail(userId, loadId),
-<span class="fstat-no" title="function not covered" >    (c</span>urrent) =&gt; (<span class="cstat-no" title="statement not covered" >current ? { ...current, status } : current)</span>,
+    (current) =&gt; (current ? { ...current, status } : current),
   );
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  queryClient.setQueryData&lt;InfiniteData&lt;DriverLoadsPageResult&gt;&gt;(</span>
+  queryClient.setQueryData&lt;InfiniteData&lt;DriverLoadsPageResult&gt;&gt;(
     queryKeys.loads.list(userId),
-<span class="fstat-no" title="function not covered" >    (c</span>urrent) =&gt; {
-<span class="cstat-no" title="statement not covered" >      if (!current) <span class="cstat-no" title="statement not covered" >return current;</span></span>
+    (current) =&gt; {
+      <span class="missing-if-branch" title="else path not taken" >E</span>if (!current) return current;
 <span class="cstat-no" title="statement not covered" >      return {</span>
         ...current,
         pages: current.pages.map(<span class="fstat-no" title="function not covered" >(p</span>age) =&gt; (<span class="cstat-no" title="statement not covered" >{</span>
@@ -181,7 +181,7 @@ export function <span class="fstat-no" title="function not covered" >setLoadStat
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-19T20:50:41.985Z
+                at 2026-05-20T20:45:35.630Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
