@@ -33,7 +33,7 @@ Antes de escribir código Expo, consultar la documentación de la versión insta
 
 - **Idioma de la app:** todo texto visible al usuario en **inglés** (`constants/strings.ts`).
 - **README.md:** inglés.
-- **REPORTES_DIARIOS.md** (español) y **DAILY_REPORTS.md** (inglés): registrar cada cambio funcional el mismo día en ambos (ver directiva al inicio). Mapear a tarea `PP2_TAREAS_DEV.md` cuando aplique. Incluir siempre una sección breve **Cómo probar** / **How to test** (app o `npm test` / `npm run ci`).
+- **REPORTES_DIARIOS.md** (español) y **DAILY_REPORTS.md** (inglés): registrar cada cambio funcional el mismo día en ambos (ver directiva al inicio). Mapear a tarea `PP2_TAREAS_DEV.md` cuando aplique. Incluir siempre una sección breve **Cómo probar** / **How to test** (app o `npm test` / `npm run ci`). **No citar `PROYECTO_MUESTRA/`** en los reportes diarios — usar «TMS» / rutas API / `docs/`.
 - **Logging:** usar `safeLog` (`lib/logging/safe-log.ts`); nunca `console.log` de contraseñas, tokens o sesiones. Telemetría de cambio de estado: `docs/MOBILE_TELEMETRY.md`.
 - **UI:** marca visible **Tigerhawk Mobile** (`strings.app.name`); colores en `PP2Theme` + `variant="chrome"` / `accent` (regla `.cursor/rules/pp2-ui-style.mdc`).
 - **Supabase SQL:** aplicar migraciones vía **SQL Editor**; copias en `supabase/sql-editor/`.

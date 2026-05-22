@@ -10,3 +10,8 @@ export {
   type DriverLoadsPageResult,
   type FetchDriverLoadsPageOptions,
 } from './loads';
+export {
+  fetchLoadDocumentsForDriver,
+  type LoadDocumentsQueryResult,
+} from './fetch-load-documents';
+export { mapLoadDocumentRow, type LoadDocumentRow } from './map-load-document-row';

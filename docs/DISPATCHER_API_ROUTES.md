@@ -17,7 +17,7 @@ The mobile app **does not call these routes today** for list/detail master data;
 | `GET` | `/api/dispatcher/loads/[id]/messages` | Future | Chat thread |
 | `POST` | `/api/dispatcher/loads/[id]/messages` | Future | Send message |
 | `GET` | `/api/dispatcher/loads/[id]/documents` | Future | POD list |
-| `POST` | `/api/dispatcher/loads/[id]/documents` | Future | Upload POD (staff-only POST today) |
+| `POST` | `/api/dispatcher/loads/[id]/documents` | Ready (4.1) | Upload POD — TMS patch A in `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md`; mobile `lib/tms/upload-load-document.ts` |
 
 Routes **not** used by drivers: billing, payments, assign-driver, audit, pipeline, problem-containers, street-turns.
 

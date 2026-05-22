@@ -1,13 +1,18 @@
+import { TmsDocumentUploadError } from '@/lib/tms/document-errors';
 import { TmsStatusChangeError } from '@/lib/tms/errors';
 
+import { mapDocumentUploadError } from './map-document-error';
 import { mapSupabaseError } from './map-supabase-error';
 import { mapStatusChangeError } from './map-status-error';
 import type { UserFacingError } from './types';
 
 /**
- * Single entry point: PostgREST, TMS status PATCH, or unknown errors.
+ * Single entry point: PostgREST, TMS status PATCH, document POST, or unknown errors.
  */
 export function mapErrorToUserFacing(error: unknown): UserFacingError {
+  if (error instanceof TmsDocumentUploadError) {
+    return mapDocumentUploadError(error);
+  }
   if (error instanceof TmsStatusChangeError) {
     return mapStatusChangeError(error);
   }

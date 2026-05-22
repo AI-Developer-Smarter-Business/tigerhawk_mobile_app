@@ -8,6 +8,7 @@ import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { useLoads } from '@/context/LoadsContext';
 import { useDriverStatusChange } from '@/hooks/useDriverStatusChange';
+import { useLoadDocumentsQuery } from '@/hooks/useLoadDocumentsQuery';
 import { useLoadDetailQuery } from '@/hooks/useLoadDetailQuery';
 import { formatReference } from '@/lib/loads';
 import { resolveRouteParam } from '@/lib/router/route-params';
@@ -18,8 +19,16 @@ export default function LoadDetailScreen() {
   const { upsertLoad } = useLoads();
   const { load, loading, refreshing, error, notFound, retry, refetch } =
     useLoadDetailQuery(loadId);
+  const { refreshing: documentsRefreshing, ...documentsQuery } =
+    useLoadDocumentsQuery(loadId);
+  const {
+    documents,
+    loading: documentsLoading,
+    error: documentsError,
+    refetch: refetchDocuments,
+    retry: retryDocuments,
+  } = documentsQuery;
   const handleStatusChange = useDriverStatusChange(load);
-
   useEffect(() => {
     if (load) {
       upsertLoad(load);
@@ -56,8 +65,8 @@ export default function LoadDetailScreen() {
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => void refetch()}
+            refreshing={refreshing || documentsRefreshing}
+            onRefresh={() => void Promise.all([refetch(), refetchDocuments()])}
             tintColor={PP2Theme.colors.tms.navActive}
           />
         }>
@@ -66,6 +75,10 @@ export default function LoadDetailScreen() {
           error={error}
           onRetry={() => void retry()}
           onStatusChange={handleStatusChange}
+          documents={documents}
+          documentsLoading={documentsLoading}
+          documentsError={documentsError}
+          onDocumentsRetry={() => void retryDocuments()}
         />
       </ScrollView>
     </>

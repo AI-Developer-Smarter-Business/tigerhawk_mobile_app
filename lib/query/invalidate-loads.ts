@@ -15,12 +15,25 @@ export async function invalidateDriverLoads(
   });
 }
 
-export async function invalidateLoadDetail(
+export async function invalidateLoadDocuments(
   queryClient: QueryClient,
   userId: string,
   loadId: string,
 ): Promise<void> {
   await queryClient.invalidateQueries({
-    queryKey: queryKeys.loads.detail(userId, loadId),
+    queryKey: queryKeys.loads.documents(userId, loadId),
   });
+}
+
+export async function invalidateLoadDetail(
+  queryClient: QueryClient,
+  userId: string,
+  loadId: string,
+): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.loads.detail(userId, loadId),
+    }),
+    invalidateLoadDocuments(queryClient, userId, loadId),
+  ]);
 }

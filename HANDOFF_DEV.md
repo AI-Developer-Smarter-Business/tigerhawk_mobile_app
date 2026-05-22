@@ -19,7 +19,7 @@ Documento de entrega tras la **fase maquetado** (`PP2_TAREAS_CLIENTE.md`) y las 
 | **Sync TMS ↔ app** | No existía | Realtime `loads` + invalidación React Query |
 | **Navegación** | Tabs simples | Drawer TMS (oscuro) + cabecera **PP2 Driver** |
 | **Login / Account** | Fondo claro genérico | Estilo **chrome** alineado al drawer (naranja `#E8700A`) |
-| **POD / fotos** | Placeholder UI | Sigue placeholder — **semana 4** |
+| **POD / fotos** | `PodUploadSection` + `expo-image-picker` | Subida vía `uploadLoadDocument`; TMS debe tener parche 4.1 en el host de `EXPO_PUBLIC_TMS_API_URL` |
 | **Mensajes en carga** | Mock lectura | Pendiente POST / realtime — **semana 5+** |
 | **Tests** | Ninguno | Jest: 115+ tests, `npm run ci` en GitHub Actions |
 
@@ -121,7 +121,7 @@ Flujo en detalle de carga:
 
 ## Limitaciones conocidas (v0.2 — post semana 3)
 
-1. **POD / documentos:** UI placeholder; TMS `POST …/documents` aún restringido a admin/dispatcher — ver `PP2_TAREAS_DEV.md` §4.1.
+1. **POD / documentos:** UI placeholder; parche TMS documentado (4.1 ✅) — desplegar en Netlify antes de QA E2E; wiring `expo-image-picker` en 4.2.
 2. **Mensajes en carga:** lectura vía Supabase donde RLS aplique; sin hilo completo ni POST conductor en móvil.
 3. **Transiciones:** mapa estático `MOCK_LOAD_TRANSITIONS` en cliente; el TMS puede usar `GET /api/admin/transitions` — alinear cuando se wiree.
 4. **Magic link:** requiere redirect URLs en Supabase (`docs/SUPABASE_AUTH_REDIRECTS.md`); mensaje verde = “revisa tu correo”, no sesión abierta aún.
@@ -134,7 +134,7 @@ Flujo en detalle de carga:
 
 Orden en `PP2_TAREAS_DEV.md`:
 
-1. **Semana 4** — POD / `expo-image-picker` + API TMS o Storage+RLS  
+1. **Semana 4** — desplegar parche TMS 4.1 + `expo-image-picker` (4.2)  
 2. **Semana 5** — Mensajes en carga  
 3. **Semana 6+** — GPS, offline avanzado, E2E (Maestro/Detox)  
 4. Aplicar en repo TMS el patch de `docs/TMS_PATCH_3_3_DRIVER_STATUS.md` si aún no está en producción  

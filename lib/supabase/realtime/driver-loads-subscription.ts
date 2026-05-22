@@ -8,15 +8,18 @@ import type {
 import {
   invalidateDriverLoads,
   invalidateLoadDetail,
+  invalidateLoadDocuments,
 } from '@/lib/query/invalidate-loads';
 
 /** Coalesce bursts when TMS assigns many loads at once. */
 const DEFAULT_DEBOUNCE_MS = 750;
 
 type LoadRow = { id?: string; driver_id?: string | null };
+type LoadDocumentRealtimeRow = { id?: string; load_id?: string };
 
 export type DriverLoadsRealtimeHandle = {
   onChange: (loadId?: string) => void;
+  onDocumentsChange: (loadId: string) => void;
   dispose: () => void;
 };
 
@@ -28,6 +31,26 @@ export function createDriverLoadsRealtimeHandler(
 ): DriverLoadsRealtimeHandle {
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   const pendingDetailIds = new Set<string>();
+  const pendingDocumentLoadIds = new Set<string>();
+
+  const flush = () => {
+    debounceTimer = null;
+    void invalidateDriverLoads(queryClient, userId).then(() => {
+      for (const id of pendingDetailIds) {
+        void invalidateLoadDetail(queryClient, userId, id);
+      }
+      pendingDetailIds.clear();
+      for (const id of pendingDocumentLoadIds) {
+        void invalidateLoadDocuments(queryClient, userId, id);
+      }
+      pendingDocumentLoadIds.clear();
+    });
+  };
+
+  const scheduleFlush = () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(flush, debounceMs);
+  };
 
   const dispose = () => {
     if (debounceTimer) {
@@ -35,22 +58,20 @@ export function createDriverLoadsRealtimeHandler(
       debounceTimer = null;
     }
     pendingDetailIds.clear();
+    pendingDocumentLoadIds.clear();
   };
 
   const onChange = (loadId?: string) => {
     if (loadId) pendingDetailIds.add(loadId);
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      void invalidateDriverLoads(queryClient, userId).then(() => {
-        for (const id of pendingDetailIds) {
-          void invalidateLoadDetail(queryClient, userId, id);
-        }
-        pendingDetailIds.clear();
-      });
-    }, debounceMs);
+    scheduleFlush();
   };
 
-  return { onChange, dispose };
+  const onDocumentsChange = (loadId: string) => {
+    pendingDocumentLoadIds.add(loadId);
+    scheduleFlush();
+  };
+
+  return { onChange, onDocumentsChange, dispose };
 }
 
 function affectsDriver(
@@ -70,9 +91,17 @@ function loadIdFromPayload(
   return next?.id ?? prev?.id;
 }
 
+function loadIdFromDocumentPayload(
+  payload: RealtimePostgresChangesPayload<LoadDocumentRealtimeRow>,
+): string | undefined {
+  const next = payload.new as LoadDocumentRealtimeRow | null;
+  const prev = payload.old as LoadDocumentRealtimeRow | null;
+  return next?.load_id ?? prev?.load_id;
+}
+
 /**
  * Subscribes to `loads` changes for the signed-in driver (assignments, status, unassign).
- * Requires `loads` in Supabase publication `supabase_realtime` (see sql-editor note).
+ * Requires `loads` and `load_documents` in publication `supabase_realtime` (sql-editor).
  */
 export function subscribeDriverLoadsRealtime(
   supabase: SupabaseClient,
@@ -83,12 +112,44 @@ export function subscribeDriverLoadsRealtime(
   let channel: RealtimeChannel | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let disposed = false;
+  let tearingDown = false;
+
+  const clearReconnectTimer = () => {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+  };
+
+  /** Drop channel reference without calling removeChannel from inside subscribe (avoids stack overflow). */
+  const detachChannel = () => {
+    channel = null;
+  };
+
+  const removeChannelSafe = (ch: RealtimeChannel) => {
+    if (tearingDown) return;
+    tearingDown = true;
+    void supabase.removeChannel(ch).finally(() => {
+      tearingDown = false;
+    });
+  };
+
+  const scheduleReconnect = () => {
+    if (disposed || reconnectTimer) return;
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      wireChannel();
+    }, 2000);
+  };
 
   const wireChannel = () => {
     if (disposed) return;
 
-    channel = supabase.channel(`pp2-driver-loads:${userId}:${Date.now()}`);
-    channel.on(
+    detachChannel();
+    const nextChannel = supabase.channel(`pp2-driver-loads:${userId}:${Date.now()}`);
+    channel = nextChannel;
+
+    nextChannel.on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'loads' },
       (payload: RealtimePostgresChangesPayload<LoadRow>) => {
@@ -97,7 +158,16 @@ export function subscribeDriverLoadsRealtime(
       },
     );
 
-    channel.subscribe((status) => {
+    nextChannel.on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'load_documents' },
+      (payload: RealtimePostgresChangesPayload<LoadDocumentRealtimeRow>) => {
+        const loadId = loadIdFromDocumentPayload(payload);
+        if (loadId) handler.onDocumentsChange(loadId);
+      },
+    );
+
+    nextChannel.subscribe((status) => {
       if (disposed) return;
       if (status === 'SUBSCRIBED') return;
       if (
@@ -105,10 +175,9 @@ export function subscribeDriverLoadsRealtime(
         status === 'TIMED_OUT' ||
         status === 'CLOSED'
       ) {
-        if (channel) void supabase.removeChannel(channel);
-        channel = null;
-        if (reconnectTimer) clearTimeout(reconnectTimer);
-        reconnectTimer = setTimeout(wireChannel, 2000);
+        // Do not call removeChannel here — it re-enters subscribe → CLOSED → removeChannel (RangeError).
+        detachChannel();
+        scheduleReconnect();
       }
     });
   };
@@ -119,8 +188,10 @@ export function subscribeDriverLoadsRealtime(
     unsubscribe: () => {
       disposed = true;
       handler.dispose();
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      if (channel) void supabase.removeChannel(channel);
+      clearReconnectTimer();
+      const ch = channel;
+      detachChannel();
+      if (ch) removeChannelSafe(ch);
     },
   };
 }

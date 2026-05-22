@@ -6,6 +6,8 @@ Registro de avances **relevantes para el producto**: nuevas funcionalidades, int
 
 **No documentar aquí:** renombres, ajustes de documentación sin código, refactors cosméticos.
 
+**No mencionar `PROYECTO_MUESTRA/`** en este archivo (ni rutas bajo esa carpeta). Referir el TMS web como **«TMS»**, **«API TMS»** o rutas HTTP (`/api/dispatcher/…`); detalle técnico en `docs/` (`MOBILE_API.md`, parches `TMS_PATCH_*.md`).
+
 **Formato:** una fecha por día; bajo ella **Tarea 1**, **Tarea 2**, … en **orden numérico ascendente** (sin repetir la fecha).
 
 ---
@@ -19,6 +21,7 @@ Registro de avances **relevantes para el producto**: nuevas funcionalidades, int
 3. Incluir: **qué se implementó**, **funcionalidad disponible**, y enlaces a archivos clave si ayuda.
 4. Añadir **Cómo probar** (obligatorio): pasos breves para validar lo nuevo en la app o en tests; lenguaje claro, sin párrafos largos.
 5. No duplicar la fecha en cada párrafo; numerar tareas dentro del día en orden ascendente (1, 2, 3, …).
+6. No citar la carpeta `PROYECTO_MUESTRA/` ni rutas bajo ella; usar «TMS», rutas `/api/…` o `docs/`.
 
 Si un día abarca varias tareas dev, usar **Tarea 7**, **Tarea 8**, etc. en orden cronológico.
 
@@ -146,7 +149,7 @@ No repetir la guía completa de QA; solo lo necesario para repetir la prueba ese
 
 **Qué se hizo**
 
-- Revisión **solo lectura** en `PROYECTO_MUESTRA/`: `DriverActionPanel.tsx`, `PATCH …/status/route.ts`, `…/documents/route.ts`.
+- Revisión **solo lectura** del TMS web: panel conductor (`DriverActionPanel`), `PATCH …/status`, `POST …/documents` (rutas documentadas en `docs/MOBILE_API.md`).
 - Documento **`docs/MOBILE_API.md`**: matriz Supabase vs API Next, contrato PATCH status, gap POD (POST solo admin/dispatcher), subconjunto de estados Driver, catálogo de errores (`ACTIVE_HOLDS`, 403, 400), modelo `driver_id` (FK `drivers.id` vs RLS `auth.uid()`).
 - Ajustes de consistencia: `docs/DATA_CONTRACT.md` §lista de cargas; comentario en `lib/loads/constants.ts` apuntando al doc.
 
@@ -463,6 +466,103 @@ No repetir la guía completa de QA; solo lo necesario para repetir la prueba ese
 
 - Leer `HANDOFF_DEV.md` y contrastar con la app: login real → loads → detalle → cambio de estado debe coincidir con la sección “Capa de acciones”.
 - Verificar que ya no indica “mock auth” ni “estado solo local” (texto obsoleto eliminado).
+
+---
+
+## 22 de mayo de 2026
+
+### Tarea 1 — Brecha POD / documentos TMS (dev 4.1)
+
+**Qué se implementó**
+
+- **Decisión:** opción **(A)** — ampliar `POST /api/dispatcher/loads/[id]/documents` al conductor asignado (mismo patrón que `PATCH …/status`), sin ruta nueva ni Storage directo desde móvil.
+- **Parche TMS:** `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md` (permiso `isAssignedDriver`, restricción `POD`/`Photo` para rol `driver`, límites 50 MB / 255 caracteres sin cambios).
+- **Capa móvil:** `lib/tms/upload-load-document.ts`, `document-upload-request.ts`, `document-upload-limits.ts`, `assert-driver-document-type.ts`, `parse-document-error.ts`, `tmsDocumentApiPath` en `client.ts`.
+- **Tests:** `document-upload-request.test.ts`, `parse-document-error.test.ts`, `upload-load-document.test.ts`; `client.test.ts` ampliado.
+- **Docs:** `docs/MOBILE_API.md` §5.2 y matriz §4; `docs/DISPATCHER_API_ROUTES.md`; `PP2_TAREAS_DEV.md` 4.1 marcada completada.
+
+**Funcionalidad disponible**
+
+- Contrato y cliente HTTP listos para subida POD vía TMS; la UI sigue en placeholder hasta **4.2** (`expo-image-picker`).
+- El equipo TMS debe aplicar el parche en el repo Next.js y desplegar staging antes de probar subida real desde la app.
+
+**Cómo probar**
+
+- `npm run ci` — suites `lib/tms/__tests__` en verde (incluye document upload).
+- `npm test lib/tms/__tests__/document-upload-request.test.ts` — path, headers, validación 50 MB.
+- Tras desplegar parche TMS: `curl` o Postman `POST` multipart con JWT de `driver_test@test.com`, carga asignada, `document_type=POD` → **201** (ver checklist en `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md`).
+
+### Tarea 2 — Subida POD con cámara/galería (dev 4.2)
+
+**Qué se implementó**
+
+- **`expo-image-picker`** + **`expo-file-system`** (tamaño de archivo); plugin y permisos iOS/Android en `app.json`.
+- **`PodUploadSection`:** elegir cámara o galería, vista previa, **Upload POD** / **Cancel** (descartar con confirmación).
+- **`useLoadDocumentUpload`** + ruta `app/load/[id].tsx` → `uploadLoadDocument` (TMS `POST …/documents`, tipo `POD`).
+- **`lib/media/`:** `pick-load-photo`, `map-picker-asset`, `resolve-upload-file-size`, MIME permitidos.
+- **Errores:** `mapDocumentUploadError` integrado en `mapErrorToUserFacing`.
+- **Tests:** `map-picker-asset.test.ts`, `map-document-error.test.ts`.
+- **Textos:** `constants/strings.ts` (sin placeholder).
+
+**Funcionalidad disponible**
+
+- En detalle de carga, el conductor puede seleccionar una foto, revisarla y subirla como POD vía API TMS (requiere parche 4.1 desplegado en el TMS en línea).
+
+**Cómo probar**
+
+- `npm run ci` — tests nuevos en verde.
+- `npx expo start` → login `driver_test@test.com` → abrir carga asignada → **POD / Documents** → **Add POD photo** → cámara o galería → vista previa → **Upload POD** o **Cancel**.
+- Con `EXPO_PUBLIC_TMS_API_URL` apuntando al TMS en línea y parche 4.1 aplicado: subida debe terminar en mensaje de éxito; sin parche, banner de error 403.
+
+### Tarea 3 — Corrección POD: red + Realtime (post 4.2)
+
+**Qué se corrigió**
+
+- **“Network error” al subir POD:** en dispositivo, `EXPO_PUBLIC_TMS_API_URL=http://localhost:3000` apunta al teléfono, no al TMS. Actualizado a `https://tms.tigerhawklogistics.com` en `.env.local` y validación `assertTmsUrlReachableFromDevice` con mensaje claro.
+- **`RangeError: Maximum call stack size exceeded`:** bucle en `subscribeDriverLoadsRealtime` al llamar `removeChannel` dentro del callback `subscribe` cuando el canal pasaba a `CLOSED` (p. ej. tras actividad en TMS/Supabase). Ya solo se reconecta sin `removeChannel` en ese callback; test `subscribe-driver-loads-realtime.test.ts`.
+
+**Cómo probar**
+
+- Reiniciar Metro (`npm start` con caché limpia si hace falta: `npx expo start -c`).
+- Móvil: subir POD de nuevo; si TMS sin parche 4.1 → 403 legible; si URL mal → mensaje de configuración, no “Network error” genérico.
+- Subir documento desde TMS web con la app abierta en detalle de la misma carga → no debe aparecer el error rojo de stack en Expo.
+
+### Tarea 4 — 401 POD: JWT Bearer en TMS (no es RLS Supabase)
+
+**Diagnóstico**
+
+- Lista/detalle de cargas funcionan → sesión Supabase y RLS del conductor están bien.
+- `POST …/documents` en TMS usa `createClient()` solo con **cookies**; la app móvil envía **Bearer** → `getUser()` vacío → **401** (no es política de `load_documents`).
+
+**Qué se añadió**
+
+- **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`:** `createClient(request)` + pasar `request` en POST/PATCH.
+- Móvil: `resolveSupabaseAccessToken()` (refresh antes de TMS) y mensaje claro si TMS devuelve 401.
+
+**Cómo probar**
+
+- Tras desplegar parche Bearer + 4.1 en TMS: subir POD desde la app → **201** o **403** (permiso), no “Session expired”.
+- `npm test lib/tms/__tests__/resolve-access-token.test.ts`
+
+### Tarea 5 — Ver documentos TMS en móvil (dev 4.2 reorientada)
+
+**Qué se implementó**
+
+- **Lista de documentos** de la carga vía Supabase (`load_documents`, RLS conductor asignado): `fetchLoadDocumentsForDriver`, `useLoadDocumentsQuery`, `LoadDocumentsSection` (nombre, tipo, tamaño, fecha, botón **View** con `Linking`).
+- **Tiempo real:** suscripción Realtime a `load_documents` + script `supabase/sql-editor/enable_realtime_load_documents.sql`.
+- **Pull-to-refresh** invalida detalle y documentos; tras subida del conductor, refresco de lista.
+- **Subida opcional:** `PodUploadSection` bajo “Driver photo (optional)” (evidencia POD/foto); prioridad UX = consultar lo que sube dispatch en TMS.
+
+**Funcionalidad disponible**
+
+- En detalle de carga `#TH-…`, el conductor ve p. ej. `codigo de barras principal.jpeg` subido en pestaña Documents del TMS y puede abrirlo; nuevos archivos aparecen al refrescar o con Realtime si está habilitado en Supabase.
+
+**Cómo probar**
+
+- `npm run ci` — tests `map-load-document-row`, `format-document`, realtime documents debounce.
+- SQL Editor (una vez): ejecutar `enable_realtime_load_documents.sql` si la lista no se actualiza sola.
+- `npx expo start` → login conductor → carga con documento en TMS → **POD / Documents** → fila del archivo → **View**.
+- Desde TMS: subir otro archivo a la misma carga con la app en detalle → debe aparecer (Realtime o pull-to-refresh).
 
 ---
 

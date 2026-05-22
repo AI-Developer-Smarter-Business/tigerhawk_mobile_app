@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { useLoads } from '@/context/LoadsContext';
 import { useAuth } from '@/hooks/useAuth';
 import { runDriverStatusChange } from '@/lib/driver-status';
-import { TmsStatusChangeError } from '@/lib/tms';
+import { rethrowIfTmsApiUnauthorized, resolveSupabaseAccessToken } from '@/lib/tms';
 import type { LoadDetail, LoadStatus } from '@/types';
 
 /**
@@ -12,30 +12,28 @@ import type { LoadDetail, LoadStatus } from '@/types';
  */
 export function useDriverStatusChange(load: LoadDetail | null) {
   const queryClient = useQueryClient();
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const { updateLoadStatus } = useLoads();
 
   return useCallback(
     async (status: LoadStatus) => {
       if (!load || !user?.id) return;
 
-      const accessToken = session?.access_token;
-      if (!accessToken) {
-        throw new TmsStatusChangeError(
-          'Session expired. Sign in again.',
-          'UNAUTHORIZED',
-        );
-      }
+      const accessToken = await resolveSupabaseAccessToken();
 
-      await runDriverStatusChange({
-        queryClient,
-        userId: user.id,
-        load,
-        targetStatus: status,
-        accessToken,
-        updateLoadStatus,
-      });
+      try {
+        await runDriverStatusChange({
+          queryClient,
+          userId: user.id,
+          load,
+          targetStatus: status,
+          accessToken,
+          updateLoadStatus,
+        });
+      } catch (err) {
+        rethrowIfTmsApiUnauthorized(err);
+      }
     },
-    [load, user?.id, session?.access_token, queryClient, updateLoadStatus],
+    [load, user?.id, queryClient, updateLoadStatus],
   );
 }

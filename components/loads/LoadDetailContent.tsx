@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { DriverActionBar } from '@/components/loads/DriverActionBar';
+import { LoadDocumentsSection } from '@/components/loads/LoadDocumentsSection';
 import { LoadDetailMeta, LoadDetailRow } from '@/components/loads/LoadDetailRow';
 import { Card } from '@/components/ui/Card';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
@@ -20,12 +21,17 @@ import {
   hasTimeline,
 } from '@/lib/loads/load-detail-helpers';
 import type { LoadDetail, LoadStatus } from '@/types';
+import type { LoadDocument } from '@/types/load-document';
 
 type LoadDetailContentProps = {
   load: LoadDetail;
   error: string | null;
   onRetry: () => void;
   onStatusChange: (status: LoadStatus) => Promise<void>;
+  documents: LoadDocument[];
+  documentsLoading: boolean;
+  documentsError: string | null;
+  onDocumentsRetry: () => void;
 };
 
 export function LoadDetailContent({
@@ -33,6 +39,10 @@ export function LoadDetailContent({
   error,
   onRetry,
   onStatusChange,
+  documents,
+  documentsLoading,
+  documentsError,
+  onDocumentsRetry,
 }: LoadDetailContentProps) {
   return (
     <>
@@ -191,10 +201,12 @@ export function LoadDetailContent({
       </Card>
 
       <Card title={strings.loadDetail.pod}>
-        <Text style={styles.podNote}>{strings.loadDetail.podNote}</Text>
-        <View style={styles.podPlaceholder}>
-          <Text style={styles.podPlaceholderText}>{strings.loadDetail.podPlaceholder}</Text>
-        </View>
+        <LoadDocumentsSection
+          documents={documents}
+          loading={documentsLoading}
+          error={documentsError}
+          onRetry={onDocumentsRetry}
+        />
       </Card>
 
       <DriverActionBar
@@ -224,26 +236,6 @@ const styles = StyleSheet.create({
   },
   muted: {
     fontSize: PP2Theme.typography.sizes.body,
-    color: PP2Theme.colors.textMuted,
-  },
-  podNote: {
-    fontSize: PP2Theme.typography.sizes.caption,
-    color: PP2Theme.colors.textMuted,
-    lineHeight: 18,
-    marginBottom: PP2Theme.spacing.md,
-  },
-  podPlaceholder: {
-    height: 120,
-    borderRadius: PP2Theme.radius.md,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: PP2Theme.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: PP2Theme.colors.background,
-  },
-  podPlaceholderText: {
-    fontSize: PP2Theme.typography.sizes.caption,
     color: PP2Theme.colors.textMuted,
   },
 });

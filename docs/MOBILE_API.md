@@ -181,7 +181,9 @@ All queries live in `lib/supabase/queries/`, called from hooks with React Query 
 
 **Base URL:** `env.tmsApiUrl` from `EXPO_PUBLIC_TMS_API_URL` or `NEXT_PUBLIC_APP_URL` (`.env.example`, `lib/config/env.ts`). Trailing slash stripped.
 
-**Status PATCH wired (task 3.1):** `lib/tms/patch-load-status.ts` → `PATCH {tmsApiUrl}/api/dispatcher/loads/[id]/status`. POD/messages still future.
+**Status PATCH wired (task 3.1):** `lib/tms/patch-load-status.ts` → `PATCH {tmsApiUrl}/api/dispatcher/loads/[id]/status`.
+
+**POD POST (task 4.1):** `lib/tms/upload-load-document.ts` → `POST {tmsApiUrl}/api/dispatcher/loads/[id]/documents` after TMS patch in `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md` (option **A**). UI wiring in task 4.2.
 
 | Capability | Method | TMS route | PP2 when | Why TMS (not Supabase client) |
 |------------|--------|-----------|----------|-------------------------------|
@@ -189,7 +191,7 @@ All queries live in `lib/supabase/queries/`, called from hooks with React Query 
 | Messages list | `GET` | `/api/dispatcher/loads/[id]/messages` | Future | Optional if not using direct SELECT |
 | Send message | `POST` | `/api/dispatcher/loads/[id]/messages` | Future | Assignment checks on server |
 | Documents list | `GET` | `/api/dispatcher/loads/[id]/documents` | Future | Signed URLs via admin client (§5.1) |
-| POD upload | `POST` | `/api/dispatcher/loads/[id]/documents` | Future | **Driver blocked today** on TMS POST (§5.2) |
+| POD upload | `POST` | `/api/dispatcher/loads/[id]/documents` | **Ready (4.1)** | TMS patch **A** documented; mobile client in `lib/tms/upload-load-document.ts` |
 | Load list / detail (staff) | `GET` | `/api/dispatcher/loads`, `…/loads/[id]` | **Not used** | Mobile uses Supabase equivalents |
 
 Route reference: `docs/DISPATCHER_API_ROUTES.md` (subset of `PROYECTO_MUESTRA/docs/DISPATCHER_API_ROUTES.md`).
@@ -252,19 +254,14 @@ Mobile may use **Supabase SELECT** on `load_documents` (RLS: driver scoped to as
 | Check | Rule |
 |-------|------|
 | Auth | Required |
-| Role | **`admin` or `dispatcher` only** — **403** `"Insufficient permissions"` for `driver` |
+| Role (today in TMS) | **`admin` or `dispatcher` only** — **403** for `driver` until patch applied |
+| Role (after patch 4.1) | Staff **or** assigned `driver` (`loads.driver_id === user.id`); drivers limited to **`POD`** / **`Photo`** |
 | Body | `multipart/form-data`: `file`, optional `document_type` (enum via `documentTypeSchema`) |
-| Size | Max **50 MB** (`52428800` bytes) |
+| Size | Max **50 MB** (`52428800` bytes) — mirrored in `lib/tms/document-upload-limits.ts` |
 | Filename | Max **255** chars; storage path `{loadId}/{timestamp}_{sanitizedName}` |
 | Storage | Admin client upload to `load-documents`, then insert `load_documents` row |
 
-**Gap (P0 for POD):** drivers cannot upload via this route today. Options (task 4.1):
-
-- **(A)** Extend POST to allow assigned `driver` (same assignment check as status route).
-- **(B)** Direct Storage upload + RLS INSERT on `load_documents`.
-- **(C)** Dedicated mobile route under TMS.
-
-Until then, PP2 POD screen remains placeholder only.
+**Task 4.1 decision:** option **(A)** — extend this POST (see `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md`). PP2 mobile: `uploadLoadDocument`, `assertDriverUploadDocumentType`, client validation before upload. **Deploy TMS patch** before end-to-end POD in the app (task 4.2).
 
 ---
 
@@ -310,7 +307,7 @@ Legacy drivers without auth may have `drivers.id` ≠ any `auth.users.id`; those
 | 3 | UI: only `DRIVER_FIELD_STATUSES` (+ optional `Completed` if approved) | 3.2 |
 | 4 | Server: restrict driver role to driver transitions | 3.3 |
 | 5 | Map `ACTIVE_HOLDS` and 403 UX | 3.4 |
-| 6 | POD upload path after TMS/backend decision | 4.1–4.2 |
+| 6 | POD upload path after TMS/backend decision | ✅ 4.1 (patch + `lib/tms`); UI 4.2 |
 | 7 | Messages: Supabase read and/or TMS POST with assignment checks | 2.x / 3.x |
 | 8 | Document `EXPO_PUBLIC_TMS_API_URL` for staging/production Netlify URL | ✅ `docs/MOBILE_API.md` §4.2, `.env.example` |
 

@@ -45,6 +45,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Tigerhawk Mobile needs access to your photos to upload proof of delivery.",
+          "cameraPermission": "Tigerhawk Mobile needs the camera to capture proof of delivery."
+        }
+      ],
       "expo-secure-store",
       [
         "expo-splash-screen",

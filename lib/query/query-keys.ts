@@ -7,5 +7,7 @@ export const queryKeys = {
     list: (userId: string) => [...queryKeys.loads.all(userId), 'list'] as const,
     detail: (userId: string, loadId: string) =>
       [...queryKeys.loads.all(userId), 'detail', loadId] as const,
+    documents: (userId: string, loadId: string) =>
+      [...queryKeys.loads.all(userId), 'documents', loadId] as const,
   },
 } as const;

@@ -1,5 +1,6 @@
 import type { LoadStatus } from '@/types';
 
+import { assertTmsUrlReachableFromDevice } from './assert-tms-device-url';
 import { assertDriverFieldStatusTarget } from './assert-driver-status';
 import { tmsApiPath } from './client';
 import { TmsStatusChangeError } from './errors';
@@ -30,6 +31,8 @@ export async function patchLoadStatus(
   if (enforceDriverFieldOnly) {
     assertDriverFieldStatusTarget(status);
   }
+
+  assertTmsUrlReachableFromDevice();
 
   const url = tmsApiPath(buildStatusPatchPath(loadId));
   const init = buildStatusPatchRequestInit(accessToken, status);

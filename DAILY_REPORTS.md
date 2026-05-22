@@ -4,6 +4,8 @@ Log of **product-relevant** progress: new features, integrations (login, Supabas
 
 **Do not log here:** renames, documentation-only edits with no code, cosmetic refactors.
 
+**Do not mention `PROYECTO_MUESTRA/`** in this file (or paths under that folder). Refer to the web TMS as **“TMS”**, **“TMS API”**, or HTTP routes (`/api/dispatcher/…`); technical detail lives in `docs/` (`MOBILE_API.md`, `TMS_PATCH_*.md`).
+
 **Format:** one date section per day; under it **Task 1**, **Task 2**, … in **ascending numeric order** (do not repeat the date on each line).
 
 **Spanish version:** [`REPORTES_DIARIOS.md`](REPORTES_DIARIOS.md) (same content, maintained in parallel).
@@ -19,6 +21,7 @@ Log of **product-relevant** progress: new features, integrations (login, Supabas
 3. Include: **what was implemented**, **what is available to users**, and links to key files when helpful.
 4. Add **How to test** (required): short steps to validate the change in the app or in tests; plain language, not long paragraphs.
 5. Do not repeat the date in every paragraph; number tasks within the day in ascending order (1, 2, 3, …).
+6. Do not cite the `PROYECTO_MUESTRA/` folder or paths under it; use “TMS”, `/api/…` routes, or `docs/`.
 
 If one day covers several dev tasks, use **Task 7**, **Task 8**, etc. in chronological order.
 
@@ -146,7 +149,7 @@ Do not paste a full QA guide; only what is needed to repeat that day’s check.
 
 **What was done**
 
-- **Read-only** review in `PROYECTO_MUESTRA/`: `DriverActionPanel.tsx`, `PATCH …/status/route.ts`, `…/documents/route.ts`.
+- **Read-only** review of the web TMS: driver panel (`DriverActionPanel`), `PATCH …/status`, `POST …/documents` (routes documented in `docs/MOBILE_API.md`).
 - Document **`docs/MOBILE_API.md`:** Supabase vs Next API matrix, PATCH status contract, POD gap (POST admin/dispatcher only), Driver status subset, error catalog (`ACTIVE_HOLDS`, 403, 400), `driver_id` model (FK `drivers.id` vs RLS `auth.uid()`).
 - Consistency updates: `docs/DATA_CONTRACT.md` §load list; comment in `lib/loads/constants.ts` pointing to the doc.
 
@@ -455,6 +458,73 @@ Do not paste a full QA guide; only what is needed to repeat that day’s check.
 
 - Read `HANDOFF_DEV.md` and compare to the running app: real login → loads → detail → status change should match the “Driver action layer” section.
 - Confirm outdated lines (“mock auth”, “local-only status”) are gone.
+
+---
+
+## May 22, 2026
+
+### Task 1 — POD / TMS documents gap (dev 4.1)
+
+**What was implemented**
+
+- **Decision:** option **(A)** — extend `POST /api/dispatcher/loads/[id]/documents` for the assigned driver (same pattern as status `PATCH`), no new route or direct Storage from mobile.
+- **TMS patch:** `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md` (`isAssignedDriver` permission, `POD`/`Photo` only for `driver` role, 50 MB / 255 char limits unchanged).
+- **Mobile layer:** `lib/tms/upload-load-document.ts`, `document-upload-request.ts`, `document-upload-limits.ts`, `assert-driver-document-type.ts`, `parse-document-error.ts`, `tmsDocumentApiPath` in `client.ts`.
+- **Tests:** `document-upload-request.test.ts`, `parse-document-error.test.ts`, `upload-load-document.test.ts`; extended `client.test.ts`.
+- **Docs:** `docs/MOBILE_API.md` §5.2 and §4 matrix; `docs/DISPATCHER_API_ROUTES.md`; `PP2_TAREAS_DEV.md` 4.1 marked complete.
+
+**What is available**
+
+- HTTP contract and client ready for POD upload via TMS; UI remains placeholder until **4.2** (`expo-image-picker`).
+- TMS team must apply the patch in the Next.js repo and deploy staging before real upload from the app.
+
+**How to test**
+
+- `npm run ci` — `lib/tms/__tests__` green (includes document upload).
+- `npm test lib/tms/__tests__/document-upload-request.test.ts` — path, headers, 50 MB validation.
+- After TMS patch deploy: `POST` multipart with `driver_test@test.com` JWT, assigned load, `document_type=POD` → **201** (see `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md`).
+
+### Task 2 — POD upload with camera/gallery (dev 4.2)
+
+**What was implemented**
+
+- **`expo-image-picker`** + **`expo-file-system`** (file size); plugin and iOS/Android permissions in `app.json`.
+- **`PodUploadSection`:** camera or gallery, preview, **Upload POD** / **Cancel** (discard with confirmation).
+- **`useLoadDocumentUpload`** + `app/load/[id].tsx` → `uploadLoadDocument` (TMS `POST …/documents`, type `POD`).
+- **`lib/media/`:** `pick-load-photo`, `map-picker-asset`, `resolve-upload-file-size`, allowed MIME types.
+- **Errors:** `mapDocumentUploadError` wired into `mapErrorToUserFacing`.
+- **Tests:** `map-picker-asset.test.ts`, `map-document-error.test.ts`.
+- **Copy:** `constants/strings.ts` (placeholder removed).
+
+**What is available**
+
+- On load detail, the driver can pick a photo, review it, and upload as POD via the TMS API (requires task 4.1 patch on the live TMS).
+
+**How to test**
+
+- `npm run ci` — new tests green.
+- `npx expo start` → login `driver_test@test.com` → open assigned load → **POD / Documents** → **Add POD photo** → camera or gallery → preview → **Upload POD** or **Cancel**.
+- With `EXPO_PUBLIC_TMS_API_URL` pointing at the live TMS and patch 4.1 applied: upload should show success; without patch, 403 error banner.
+
+### Task 5 — View TMS load documents on mobile (dev 4.2 re-scoped)
+
+**What was implemented**
+
+- **Document list** for the load via Supabase (`load_documents`, driver RLS): `fetchLoadDocumentsForDriver`, `useLoadDocumentsQuery`, `LoadDocumentsSection` (name, type, size, date, **View** via `Linking`).
+- **Realtime:** subscription on `load_documents` + `supabase/sql-editor/enable_realtime_load_documents.sql`.
+- **Pull-to-refresh** refreshes load detail and documents; list refreshes after driver upload.
+- **Optional upload:** `PodUploadSection` under “Driver photo (optional)” (POD/evidence); primary UX is reading dispatch uploads from TMS.
+
+**What is available**
+
+- On load detail (e.g. `#TH-MPEIQ624-8THS`), the driver sees files such as `codigo de barras principal.jpeg` uploaded in the TMS Documents tab and can open them; new files appear after refresh or Realtime when enabled in Supabase.
+
+**How to test**
+
+- `npm run ci` — `map-load-document-row`, `format-document`, realtime documents debounce tests green.
+- SQL Editor (once): run `enable_realtime_load_documents.sql` if the list does not auto-update.
+- `npx expo start` → driver login → load with a TMS document → **POD / Documents** → file row → **View**.
+- From TMS: upload another file to the same load with mobile on detail → should appear (Realtime or pull-to-refresh).
 
 ---
 

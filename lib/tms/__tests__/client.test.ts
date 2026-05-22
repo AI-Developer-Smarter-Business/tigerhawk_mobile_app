@@ -2,7 +2,8 @@ jest.mock('@/lib/config/env', () => ({
   env: { tmsApiUrl: '' },
 }));
 
-import { requireTmsApiUrl, tmsApiPath } from '../client';
+import { requireTmsApiUrl, tmsApiPath, tmsDocumentApiPath } from '../client';
+import { TmsDocumentUploadError } from '../document-errors';
 import { TmsStatusChangeError } from '../errors';
 
 describe('requireTmsApiUrl', () => {
@@ -25,6 +26,14 @@ describe('tmsApiPath', () => {
   it('throws CONFIG when base URL is missing', () => {
     expect(() => tmsApiPath('/api/dispatcher/loads/x/status')).toThrow(
       TmsStatusChangeError,
+    );
+  });
+});
+
+describe('tmsDocumentApiPath', () => {
+  it('throws TmsDocumentUploadError CONFIG when base URL is missing', () => {
+    expect(() => tmsDocumentApiPath('/api/dispatcher/loads/x/documents')).toThrow(
+      TmsDocumentUploadError,
     );
   });
 });
