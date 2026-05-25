@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1779732423688" clover="3.2.0">
-  <project timestamp="1779732423688" name="All files">
-    <metrics statements="1168" coveredstatements="579" conditionals="1074" coveredconditionals="461" methods="303" coveredmethods="156" elements="2545" coveredelements="1196" complexity="0" loc="1168" ncloc="1168" packages="25" files="114" classes="114"/>
+<coverage generated="1779749341984" clover="3.2.0">
+  <project timestamp="1779749341984" name="All files">
+    <metrics statements="1242" coveredstatements="616" conditionals="1118" coveredconditionals="481" methods="320" coveredmethods="164" elements="2680" coveredelements="1261" complexity="0" loc="1242" ncloc="1242" packages="26" files="123" classes="123"/>
     <package name="components.loads">
-      <metrics statements="103" coveredstatements="0" conditionals="121" coveredconditionals="0" methods="26" coveredmethods="0"/>
+      <metrics statements="113" coveredstatements="0" conditionals="133" coveredconditionals="0" methods="31" coveredmethods="0"/>
       <file name="DriverActionBar.tsx" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\components\loads\DriverActionBar.tsx">
         <metrics statements="27" coveredstatements="0" conditionals="15" coveredconditionals="0" methods="4" coveredmethods="0"/>
         <line num="28" count="0" type="stmt"/>
@@ -36,9 +36,9 @@
       </file>
       <file name="LoadDetailContent.tsx" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\components\loads\LoadDetailContent.tsx">
         <metrics statements="3" coveredstatements="0" conditionals="58" coveredconditionals="0" methods="2" coveredmethods="0"/>
-        <line num="49" count="0" type="stmt"/>
-        <line num="65" count="0" type="stmt"/>
-        <line num="224" count="0" type="stmt"/>
+        <line num="50" count="0" type="stmt"/>
+        <line num="66" count="0" type="stmt"/>
+        <line num="229" count="0" type="stmt"/>
       </file>
       <file name="LoadDetailRow.tsx" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\components\loads\LoadDetailRow.tsx">
         <metrics statements="3" coveredstatements="0" conditionals="2" coveredconditionals="0" methods="2" coveredmethods="0"/>
@@ -68,6 +68,19 @@
         <line num="17" count="0" type="stmt"/>
         <line num="20" count="0" type="stmt"/>
         <line num="47" count="0" type="stmt"/>
+      </file>
+      <file name="LoadLocationSection.tsx" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\components\loads\LoadLocationSection.tsx">
+        <metrics statements="10" coveredstatements="0" conditionals="12" coveredconditionals="0" methods="5" coveredmethods="0"/>
+        <line num="19" count="0" type="stmt"/>
+        <line num="24" count="0" type="stmt"/>
+        <line num="26" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="27" count="0" type="stmt"/>
+        <line num="34" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="36" count="0" type="stmt"/>
+        <line num="62" count="0" type="stmt"/>
+        <line num="74" count="0" type="stmt"/>
+        <line num="83" count="0" type="stmt"/>
+        <line num="92" count="0" type="stmt"/>
       </file>
       <file name="LoadsCountBadge.tsx" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\components\loads\LoadsCountBadge.tsx">
         <metrics statements="2" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
@@ -288,7 +301,7 @@
       </file>
     </package>
     <package name="hooks">
-      <metrics statements="123" coveredstatements="51" conditionals="114" coveredconditionals="54" methods="28" coveredmethods="8"/>
+      <metrics statements="143" coveredstatements="51" conditionals="120" coveredconditionals="54" methods="31" coveredmethods="8"/>
       <file name="useAssignedLoadsQuery.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\hooks\useAssignedLoadsQuery.ts">
         <metrics statements="33" coveredstatements="28" conditionals="30" coveredconditionals="25" methods="8" coveredmethods="6"/>
         <line num="33" count="8" type="stmt"/>
@@ -427,6 +440,29 @@
         <line num="72" count="0" type="cond" truecount="0" falsecount="4"/>
         <line num="74" count="0" type="stmt"/>
       </file>
+      <file name="useLoadLocationShare.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\hooks\useLoadLocationShare.ts">
+        <metrics statements="20" coveredstatements="0" conditionals="6" coveredconditionals="0" methods="3" coveredmethods="0"/>
+        <line num="19" count="0" type="stmt"/>
+        <line num="20" count="0" type="stmt"/>
+        <line num="21" count="0" type="stmt"/>
+        <line num="22" count="0" type="stmt"/>
+        <line num="24" count="0" type="stmt"/>
+        <line num="25" count="0" type="stmt"/>
+        <line num="26" count="0" type="stmt"/>
+        <line num="27" count="0" type="stmt"/>
+        <line num="29" count="0" type="stmt"/>
+        <line num="30" count="0" type="stmt"/>
+        <line num="31" count="0" type="stmt"/>
+        <line num="33" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="37" count="0" type="stmt"/>
+        <line num="45" count="0" type="cond" truecount="0" falsecount="4"/>
+        <line num="46" count="0" type="stmt"/>
+        <line num="48" count="0" type="stmt"/>
+        <line num="50" count="0" type="stmt"/>
+        <line num="54" count="0" type="stmt"/>
+        <line num="55" count="0" type="stmt"/>
+        <line num="58" count="0" type="stmt"/>
+      </file>
       <file name="useNetwork.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\hooks\useNetwork.ts">
         <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
       </file>
@@ -522,31 +558,33 @@
       </file>
     </package>
     <package name="lib.errors">
-      <metrics statements="64" coveredstatements="35" conditionals="120" coveredconditionals="45" methods="11" coveredmethods="8"/>
+      <metrics statements="72" coveredstatements="40" conditionals="128" coveredconditionals="49" methods="12" coveredmethods="9"/>
       <file name="index.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\lib\errors\index.ts">
         <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
       </file>
       <file name="map-api-error.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\lib\errors\map-api-error.ts">
-        <metrics statements="19" coveredstatements="14" conditionals="24" coveredconditionals="15" methods="3" coveredmethods="3"/>
-        <line num="17" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="22" count="1" type="stmt"/>
-        <line num="30" count="4" type="cond" truecount="1" falsecount="1"/>
-        <line num="31" count="0" type="stmt"/>
-        <line num="33" count="4" type="cond" truecount="2" falsecount="0"/>
-        <line num="34" count="1" type="stmt"/>
-        <line num="36" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="37" count="1" type="stmt"/>
-        <line num="39" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="40" count="1" type="stmt"/>
-        <line num="42" count="1" type="cond" truecount="3" falsecount="1"/>
-        <line num="43" count="1" type="stmt"/>
-        <line num="45" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="46" count="0" type="stmt"/>
-        <line num="48" count="0" type="stmt"/>
-        <line num="53" count="2" type="stmt"/>
-        <line num="54" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="55" count="0" type="stmt"/>
-        <line num="57" count="2" type="stmt"/>
+        <metrics statements="21" coveredstatements="15" conditionals="26" coveredconditionals="16" methods="3" coveredmethods="3"/>
+        <line num="19" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="24" count="1" type="stmt"/>
+        <line num="32" count="4" type="cond" truecount="1" falsecount="1"/>
+        <line num="33" count="0" type="stmt"/>
+        <line num="35" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="36" count="1" type="stmt"/>
+        <line num="38" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="39" count="1" type="stmt"/>
+        <line num="41" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="42" count="0" type="stmt"/>
+        <line num="44" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="45" count="1" type="stmt"/>
+        <line num="47" count="1" type="cond" truecount="3" falsecount="1"/>
+        <line num="48" count="1" type="stmt"/>
+        <line num="50" count="0" type="cond" truecount="0" falsecount="4"/>
+        <line num="51" count="0" type="stmt"/>
+        <line num="53" count="0" type="stmt"/>
+        <line num="58" count="2" type="stmt"/>
+        <line num="59" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="60" count="0" type="stmt"/>
+        <line num="62" count="2" type="stmt"/>
       </file>
       <file name="map-document-error.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\lib\errors\map-document-error.ts">
         <metrics statements="9" coveredstatements="3" conditionals="26" coveredconditionals="5" methods="1" coveredmethods="1"/>
@@ -559,6 +597,15 @@
         <line num="42" count="0" type="stmt"/>
         <line num="48" count="0" type="stmt"/>
         <line num="54" count="0" type="stmt"/>
+      </file>
+      <file name="map-location-error.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\lib\errors\map-location-error.ts">
+        <metrics statements="6" coveredstatements="4" conditionals="6" coveredconditionals="3" methods="1" coveredmethods="1"/>
+        <line num="7" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="8" count="1" type="cond" truecount="1" falsecount="3"/>
+        <line num="10" count="1" type="stmt"/>
+        <line num="16" count="0" type="stmt"/>
+        <line num="23" count="0" type="stmt"/>
+        <line num="31" count="1" type="stmt"/>
       </file>
       <file name="map-status-error.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\lib\errors\map-status-error.ts">
         <metrics statements="15" coveredstatements="4" conditionals="33" coveredconditionals="6" methods="5" coveredmethods="2"/>
@@ -791,6 +838,63 @@
         <line num="21" count="1" type="stmt"/>
         <line num="28" count="15" type="stmt"/>
         <line num="30" count="37" type="cond" truecount="2" falsecount="0"/>
+      </file>
+    </package>
+    <package name="lib.location">
+      <metrics statements="36" coveredstatements="32" conditionals="18" coveredconditionals="16" methods="8" coveredmethods="7"/>
+      <file name="format-coordinates.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\lib\location\format-coordinates.ts">
+        <metrics statements="11" coveredstatements="11" conditionals="6" coveredconditionals="5" methods="3" coveredmethods="3"/>
+        <line num="10" count="2" type="stmt"/>
+        <line num="15" count="4" type="cond" truecount="4" falsecount="0"/>
+        <line num="16" count="2" type="stmt"/>
+        <line num="18" count="2" type="stmt"/>
+        <line num="19" count="2" type="stmt"/>
+        <line num="29" count="1" type="stmt"/>
+        <line num="30" count="1" type="stmt"/>
+        <line num="34" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="35" count="1" type="stmt"/>
+        <line num="37" count="1" type="stmt"/>
+        <line num="38" count="1" type="stmt"/>
+      </file>
+      <file name="get-foreground-position.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\lib\location\get-foreground-position.ts">
+        <metrics statements="17" coveredstatements="15" conditionals="10" coveredconditionals="9" methods="2" coveredmethods="2"/>
+        <line num="14" count="2" type="stmt"/>
+        <line num="26" count="5" type="cond" truecount="1" falsecount="1"/>
+        <line num="27" count="0" type="stmt"/>
+        <line num="33" count="5" type="stmt"/>
+        <line num="34" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="35" count="2" type="stmt"/>
+        <line num="41" count="3" type="stmt"/>
+        <line num="42" count="3" type="stmt"/>
+        <line num="44" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="45" count="2" type="stmt"/>
+        <line num="46" count="2" type="stmt"/>
+        <line num="49" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="50" count="1" type="stmt"/>
+        <line num="53" count="2" type="stmt"/>
+        <line num="54" count="2" type="stmt"/>
+        <line num="57" count="2" type="stmt"/>
+        <line num="59" count="0" type="stmt"/>
+      </file>
+      <file name="gps-v1-policy.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\lib\location\gps-v1-policy.ts">
+        <metrics statements="3" coveredstatements="3" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
+        <line num="5" count="2" type="stmt"/>
+        <line num="19" count="2" type="stmt"/>
+        <line num="22" count="6" type="cond" truecount="2" falsecount="0"/>
+      </file>
+      <file name="index.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\lib\location\index.ts">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="location-errors.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\lib\location\location-errors.ts">
+        <metrics statements="3" coveredstatements="3" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
+        <line num="11" count="4" type="stmt"/>
+        <line num="12" count="4" type="stmt"/>
+        <line num="13" count="4" type="stmt"/>
+      </file>
+      <file name="share-load-location.ts" path="C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_PP2_app_mobile\lib\location\share-load-location.ts">
+        <metrics statements="2" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
+        <line num="11" count="0" type="stmt"/>
+        <line num="12" count="0" type="stmt"/>
       </file>
     </package>
     <package name="lib.logging">

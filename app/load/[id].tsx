@@ -12,11 +12,12 @@ import { useLoadDetailQuery } from '@/hooks/useLoadDetailQuery';
 import { useLoadDocumentsQuery } from '@/hooks/useLoadDocumentsQuery';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { formatReference } from '@/lib/loads';
+import { normalizeLoadIdParam } from '@/lib/loads/document-load-association';
 import { resolveRouteParam } from '@/lib/router/route-params';
 
 export default function LoadDetailScreen() {
   const { id: rawId } = useLocalSearchParams<{ id: string | string[] }>();
-  const loadId = resolveRouteParam(rawId);
+  const loadId = normalizeLoadIdParam(resolveRouteParam(rawId)) ?? undefined;
   const { upsertLoad } = useLoads();
   const { load, loading, error, notFound, retry, refetch } =
     useLoadDetailQuery(loadId);

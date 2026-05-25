@@ -1,10 +1,12 @@
 import { OfflineError } from '@/lib/network/offline-error';
 import { isNetworkFailure } from '@/lib/network/network-state';
+import { LocationError } from '@/lib/location/location-errors';
 import { TmsDocumentUploadError } from '@/lib/tms/document-errors';
 import { TmsStatusChangeError } from '@/lib/tms/errors';
 
 import { errorStrings } from './strings';
 import { mapDocumentUploadError } from './map-document-error';
+import { mapLocationError } from './map-location-error';
 import { mapSupabaseError } from './map-supabase-error';
 import { mapStatusChangeError } from './map-status-error';
 import type { UserFacingError } from './types';
@@ -35,6 +37,9 @@ export function mapErrorToUserFacing(error: unknown): UserFacingError {
   }
   if (error instanceof TmsDocumentUploadError) {
     return mapDocumentUploadError(error);
+  }
+  if (error instanceof LocationError) {
+    return mapLocationError(error);
   }
   if (error instanceof TmsStatusChangeError) {
     return mapStatusChangeError(error);

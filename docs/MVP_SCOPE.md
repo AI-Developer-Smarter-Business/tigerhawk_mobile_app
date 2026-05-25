@@ -20,7 +20,7 @@
 - Administración de usuarios y transiciones globales
 - Port Houston, import masivo, cron server-side
 - Botones de acción **Dispatcher** en la misma pantalla que el conductor
-- GPS en segundo plano, push, offline-first completo (backlog dev)
+- GPS **foreground** on load detail (task 5.2+); background tracking, push, offline-first completo (backlog v1.1)
 
 ## Referencia técnica
 

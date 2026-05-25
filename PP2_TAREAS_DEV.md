@@ -1,8 +1,10 @@
 # PP2 (móvil) — Tareas para el desarrollador
 
-**Regla de formato:** en **cada semana** (Semana 1 … Semana 8) hay **exactamente 8 tareas**, numeradas **N.1** a **N.8**. Son ocho entregas distintas por semana, no una sola tarea genérica por semana. El orden es sugerido; algunas tareas pueden solaparse en el tiempo.
+**Formato (desde el cierre · mayo–jun 2026):** las **Semanas 1–4** conservan el histórico completado. Del **26 may al 9 jun 2026** quedan **3 semanas de cierre** (**Semana 5 → 7**); el número de tareas por semana es **flexible** (ya no aplica la regla de exactamente 8). **Semana 7** cierra el **8 jun**; el **9 jun 2026** es deadline / buffer.
 
-**Premisa:** mismo **Supabase** que el TMS web; sin nuevo backend propio salvo que haga falta un **BFF** en Next.js por secretos o lógica que no pueda ir al cliente móvil.
+**Premisa:** mismo **Supabase** y **TMS en producción** (Netlify) que el web; los cambios en TMS se reflejan de inmediato en la app móvil vía `EXPO_PUBLIC_TMS_API_URL`. Sin backend propio salvo BFF en Next.js si hiciera falta.
+
+**Plan de ejecución:** `PP2_ROADMAP_ENTREGA_JUN9.md` · Resumen cliente: `PROXIMOS_PASOS.md`.
 
 ---
 
@@ -55,74 +57,76 @@
 
 | #   | Tarea                                                                                                                                                                                                                                                                                                                                                              |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 4.1 | ✅ **Completada (22 may 2026).** Opción **(A):** parche TMS `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md` (POST asignado + tipos `POD`/`Photo` para driver); capa móvil `lib/tms/upload-load-document.ts`, límites 50 MB/255, tests `document-upload-request`, `parse-document-error`, `upload-load-document`. Aplicar parche en repo TMS Netlify antes de QA E2E POD (4.2). |
-| 4.2 | ✅ **Completada (22 may 2026, reorientada).** **Ver** documentos de la carga subidos en TMS: `fetchLoadDocumentsForDriver` (Supabase RLS), `useLoadDocumentsQuery`, `LoadDocumentsSection` (lista + **View** con `Linking`); Realtime `load_documents` + `enable_realtime_load_documents.sql`; pull-to-refresh. **Opcional:** `PodUploadSection` como evidencia del conductor (POD/foto) vía TMS 4.1.                                                                                                                                                                                                                                   |
-| 4.3 | ⏸ **En espera.** Validar **tamaño máximo** y tipos MIME en cliente antes de subir (coherente con bucket/TMS). Lógica base en `lib/tms/document-upload-limits.ts`, `lib/media/allowed-image-mime.ts`; **QA E2E y habilitación en UI** pendientes de validación con cliente y despliegue parches TMS (subida conductor deshabilitada en app).                                                                                                                                                                                                                                                    |
-| 4.4 | ✅ **Completada (25 may 2026).** Asociación `load_id` / `load_documents`: `lib/loads/document-load-association.ts` (filtro post-query, prefijo `storage_path`, validación respuesta TMS); `fetchLoadDocumentsForDriver`, `uploadLoadDocument`, `normalizeLoadIdParam` en `/load/[id]` y `useLoadDocumentsQuery`; tests `document-load-association`, `fetch-load-documents`, `upload-load-document`.                                                                                                                                                                                                                                                     |
-| 4.5 | ✅ **Completada (25 may 2026).** Offline v1: NetInfo, banner, assert online, sin cola. **Reconexión:** `ProfileProvider`, `QueryNetworkRecovery`, `onlineManager` + `refetchOnReconnect`, perfil conservado en fallo de red, cancelación de queries offline. `docs/OFFLINE_V1.md`.                                                                                                                                                                                                                                                             |
+| 4.1 | ✅ **Completada (22 may 2026).** Opción **(A):** parche TMS `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md` (POST asignado + tipos `POD`/`Photo` para driver); capa móvil `lib/tms/upload-load-document.ts`, límites 50 MB/255, tests. **TMS en producción** — cambios en el repo TMS se reflejan en móvil al desplegar. |
+| 4.2 | ✅ **Completada (22 may 2026, reorientada).** **Ver** documentos de la carga subidos en TMS: `fetchLoadDocumentsForDriver` (Supabase RLS), `useLoadDocumentsQuery`, `LoadDocumentsSection` (lista + **View** con `Linking`); Realtime `load_documents` + `enable_realtime_load_documents.sql`; pull-to-refresh. Subida conductor → **Semana 6**. |
+| 4.3 | ↪ **Movida a Semana 6 (6.3).** Validación MIME/tamaño en UI + QA E2E de subida (lógica base ya en `document-upload-limits.ts`, `allowed-image-mime.ts`). |
+| 4.4 | ✅ **Completada (25 may 2026).** Asociación `load_id` / `load_documents`: `lib/loads/document-load-association.ts` (filtro post-query, prefijo `storage_path`, validación respuesta TMS); `fetchLoadDocumentsForDriver`, `uploadLoadDocument`, `normalizeLoadIdParam` en `/load/[id]` y `useLoadDocumentsQuery`; tests `document-load-association`, `fetch-load-documents`, `upload-load-document`. |
+| 4.5 | ✅ **Completada (25 may 2026).** Offline v1: NetInfo, banner, assert online, sin cola. **Reconexión:** `ProfileProvider`, `QueryNetworkRecovery`, `onlineManager` + `refetchOnReconnect`, perfil conservado en fallo de red, cancelación de queries offline. `docs/OFFLINE_V1.md`. **Regresión adicional** → **Semana 5 (5.5)**. |
 | 4.6 | ✅ **Completada (25 may 2026).** Tests FormData/metadatos: `lib/tms/testing/form-data-test-utils.ts` (captura `append`), ampliación `document-upload-request.test.ts`, `upload-load-document.test.ts` (multipart en fetch), `resolve-upload-file-size.test.ts` (mock `expo-file-system`), `map-picker-asset.test.ts` (nombre generado). |
-| 4.7 | ✅ **Completada (25 may 2026).** Checklist QA manual `docs/QA_DRIVER_DOCUMENTS_4_7.md` (TMS→móvil Realtime/pull, View/enlaces, offline, subida cuando UI activa). Restaurado `lib/loads/document-load-association.ts` + tests (`document-load-association`, `fetch-load-documents`) alineado a 4.4.                                                                                                                                                                        |
-| 4.8 | **Alcance con cliente:** confirmar que el conductor pueda subir **fotos de evidencia** (percances, daño, problemas de recepción, POD); habilitar UI de subida tras parches TMS; alinear textos (`strings`) y `PROXIMOS_PASOS.md`. *(Costos Storage/cuotas: responsabilidad del cliente en su panel Supabase, fuera del alcance dev móvil.)*                                                                                      |
+| 4.7 | ✅ **Completada (25 may 2026).** Checklist QA manual `docs/QA_DRIVER_DOCUMENTS_4_7.md` (TMS→móvil Realtime/pull, View/enlaces, offline). **Ejecución en producción** → **Semana 5 (5.6)**; §D subida → **Semana 6 (6.4)**. |
+| 4.8 | ↪ **Movida a Semana 6 (6.1).** Alcance negocio: evidencia **Driver photo (optional)** — POD (entrega, sello), Photo (percances, retrasos, docs extraordinarios); visible en pestaña Documents del TMS. |
 
 ---
 
-## Semana 5 — Ubicación (si entra en MVP)
+## Semana 5 — GPS, desconexión y estabilidad *(semana 1 del cierre · esta semana)*
 
-| #   | Tarea                                                                                                                                |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| 5.1 | Decisión **go/no-go** con negocio: ubicación solo en primer plano vs segundo plano (implica permisos iOS/Android y texto legal).     |
-| 5.2 | Integrar `expo-location` para **posición actual** en pantalla de carga o acción “compartir ubicación”.                               |
-| 5.3 | Si aplica: persistir puntos en tabla existente o vía API del TMS (sin migraciones inventadas sin revisión).                          |
-| 5.4 | Pruebas en **dispositivo real**: batería, permiso denegado, recuperación tras volver a la app.                                       |
-| 5.5 | Tests unitarios de helpers geoespaciales (distancia, formato de coordenadas).                                                        |
-| 5.6 | Si hay mapa: criterios de geocoding alineados a `README_SPANISH.md` / Nominatim (política de uso).                                   |
-| 5.7 | Textos de **limitación** y disclaimer para el usuario final.                                                                         |
-| 5.8 | Si la ubicación **no** entra en MVP: registrar en el mismo `HANDOFF_DEV.md` o backlog las tareas 5.2–5.7 como pospuestas con motivo. |
+**Ventana:** ~26 may – 30 may 2026 · **Enfoque:** ubicación en campo + cerrar problemas de red/reconexión + QA lectura documentos en TMS live.
 
----
-
-## Semana 6 — Notificaciones y realtime (opcional v1)
-
-| #   | Tarea                                                                                                       |
-| --- | ----------------------------------------------------------------------------------------------------------- |
-| 6.1 | Evaluar **Expo Push** y dónde registrar tokens (Supabase u otro) sin duplicar lógica de correo del TMS.     |
-| 6.2 | Probar **Supabase Realtime** en un canal relevante para el conductor (si RLS lo permite).                   |
-| 6.3 | Implementar suscripción con **cleanup** al desmontar pantallas y manejo de reconexión.                      |
-| 6.4 | Pruebas en **staging** con al menos dos dispositivos o sesiones.                                            |
-| 6.5 | Tests de integración ligeros o **E2E** (Maestro/Detox) en flujo mínimo: login + lista de cargas.            |
-| 6.6 | Hardening de **rate limiting** en cliente (evitar refetch en bucle).                                        |
-| 6.7 | Releer `README_STEPS_NEXTS.md` sobre realtime en web solo como **contexto** de producto; sin mezclar repos. |
-| 6.8 | Documentar **EAS Build**: proyecto Expo, credenciales Apple/Google para builds internos.                    |
+| #   | Tarea |
+| --- | ----- |
+| 5.1 | ✅ **Completada (26 may 2026).** Decisión GPS v1: **solo primer plano** (`whenInUse`); sin background. `docs/GPS_V1_DECISION.md`, `lib/location/gps-v1-policy.ts`, `strings.location` (disclaimer + permisos), `app.json` plugin `expo-location` (background deshabilitado). Revisión rutas: `load/[id]` usa `normalizeLoadIdParam`; título stack desde `strings`. |
+| **5.2** | ✅ **Completada (26 may 2026).** `expo-location` en detalle de carga: `LoadLocationSection`, `useLoadLocationShare`, `getForegroundPosition` (solo primer plano), `Share` con coordenadas + referencia de carga, **Open in Maps**, disclaimer; tests `format-coordinates`, `get-foreground-position`, `map-location-error`. |
+| 5.3 | Revisar TMS (`PROYECTO_MUESTRA`) por API/tabla existente para persistir o compartir ubicación; integrar si hay endpoint acordado (sin migraciones inventadas). |
+| 5.4 | Pruebas en **dispositivo real**: permiso denegado, batería, volver a la app tras background; helpers geoespaciales + tests unitarios básicos. |
+| 5.5 | **Hardening desconexión/reconexión:** regresión post-4.5 (Wi‑Fi off/on, spinner pull-to-refresh, perfil “No profile found”, queries colgadas); corregir P0/P1. |
+| 5.6 | **Ejecutar QA** `docs/QA_DRIVER_DOCUMENTS_4_7.md` §A–C + regresión `docs/QA_DRIVER_ACTIONS_3_7.md` contra **TMS producción** (lectura documentos, View, offline). |
+| 5.7 | `npm run ci` + smoke manual login → loads → detail → status → documentos; rate-limit refetch si hace falta. |
 
 ---
 
-## Semana 7 — Calidad, E2E y rendimiento
+## Semana 6 — Evidencia del conductor / subida de archivos *(semana 2 del cierre)*
 
-| #   | Tarea                                                                                                      |
-| --- | ---------------------------------------------------------------------------------------------------------- |
-| 7.1 | Aumentar cobertura de **tests unitarios** en módulos críticos (auth, loads, uploads).                      |
-| 7.2 | Ampliar suite **E2E** al happy path acordado con QA (además del mínimo de la semana 6).                    |
-| 7.3 | Perfilado de **listas** (`FlatList`: windowSize, keys estables, evitar re-renders innecesarios).           |
-| 7.4 | Política de **imagen**: compresión/redimensionado antes de subir POD para memoria y ancho de banda.        |
-| 7.5 | Ejecutar checklist derivado de **`README_PRUEBAS.md`** y del **Testing Plan** (fases aplicables al móvil). |
-| 7.6 | Sesión formal de **QA** con registro de hallazgos (issues o checklist firmado).                            |
-| 7.7 | Cerrar **P0** y **P1** salientes del QA.                                                                   |
-| 7.8 | Generar **build interno** (TestFlight / Play Internal) con notas de versión legibles para el cliente.      |
+**Ventana:** ~2 jun – 6 jun 2026 · **Enfoque:** todo lo de **Driver photo (optional)**, subida POD/Photo y validación. TMS ya desplegado — QA E2E contra producción.
+
+| #   | Tarea |
+| --- | ----- |
+| 6.1 | **Alcance 4.8:** confirmar con cliente casos POD (entrega, sello) y Photo (percances, ponchadura, retrasos, docs extraordinarios); misma pestaña **Documents** del TMS. |
+| 6.2 | **Habilitar subida en app:** sustituir placeholder en `LoadDocumentsSection` por `PodUploadSection` + `useLoadDocumentUpload`; selector **`POD` vs `Photo`** (`assert-driver-document-type.ts`). |
+| 6.3 | **4.3 — Validación cliente:** MIME y tamaño máximo (50 MB) antes de POST; mensajes claros; offline bloquea subida. |
+| 6.4 | **QA E2E subida:** `docs/QA_DRIVER_DOCUMENTS_4_7.md` §D — móvil → TMS + Realtime inverso; cancel/discard; dispatch ve el archivo. |
+| 6.5 | Textos `strings` (entrega, sello, percances, retraso); quitar copy “TMS patch pending” del placeholder. |
+| 6.6 | *(Opcional si hay tiempo)* compresión/redimensionado ligero antes de subir (memoria / ancho de banda). |
 
 ---
 
-## Semana 8 — Cierre de versión y operación
+## Semana 7 — Release, QA final y handoff *(semana 3 del cierre · hasta 8 jun)*
 
-| #   | Tarea                                                                                                                                                                          |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 8.1 | Versión **semver**, **changelog** y **tag** Git de la release.                                                                                                                 |
-| 8.2 | **README** final: instalación, variables, canal de reporte de bugs.                                                                                                            |
-| 8.3 | Plan de **rollback** y relación de **migraciones** Supabase tocadas por la app o el TMS para PP2.                                                                              |
-| 8.4 | Entrega de **keystores / credenciales EAS** al propietario del producto (cliente), con custodia clara. Ver `docs/MOBILE_BUILDS.md` (Android APK; iOS en espera de Mac/iPhone). |
-| 8.5 | Documento corto de **soporte**: escalado para RLS, Storage, Port Houston (solo si la app lo usa).                                                                              |
-| 8.6 | **Post-mortem** breve: horas reales vs plan, deuda técnica aceptada.                                                                                                           |
-| 8.7 | **Backlog v1.1** priorizado (mensajería avanzada, offline-first, geofencing, etc., según `docs/driver_app_roadmap.md`).                                                        |
-| 8.8 | **Handoff** al cliente: enlaces a builds, cuentas y este archivo actualizado con estado por tarea (✅ / ⏳).                                                                   |
+**Ventana:** ~7 – **8 jun 2026** · **Deadline app:** **9 jun 2026** (buffer / build production / sign-off).
+
+| #   | Tarea |
+| --- | ----- |
+| 7.1 | Sesión QA formal: checklist firmado; cerrar **P0** y **P1** de semanas 5–6. |
+| 7.2 | **EAS Build** Android (`preview` / `production`); notas de versión. Ver `docs/MOBILE_BUILDS.md`, `eas.json`. |
+| 7.3 | **semver**, **changelog**, **README** (instalación, env, reporte de bugs). |
+| 7.4 | Plan **rollback** + migraciones Supabase tocadas por PP2. |
+| 7.5 | Entrega **credenciales EAS** / keystores al cliente (custodia clara). |
+| 7.6 | Documento corto de **soporte** (RLS, Storage, escalado). |
+| 7.7 | **Backlog v1.1:** push, mensajes, wait time, geofencing, E2E automatizado (ex semanas 6–8 originales). |
+| 7.8 | **Handoff** al cliente: APK/build, env, este archivo actualizado (✅ / ⏳). **9 jun:** margen imprevistos. |
+
+---
+
+## Referencia — tareas pospuestas (v1.1 / post–9 jun)
+
+No forman parte del cierre de 3 semanas. Conservadas como backlog.
+
+| Origen | Tema | Destino |
+| --- | --- | --- |
+| Ex 6.1–6.4 | Expo Push, Realtime extra | v1.1 (`7.7`) |
+| Ex 6.5–6.7 | E2E Maestro/Detox, rate-limit avanzado | v1.1 |
+| Ex 7.2–7.4 originales | E2E ampliado, perf FlatList | v1.1 salvo P0 en listas |
+| Mensajes / wait time TMS | API existe; móvil placeholder | v1.1 |
+| GPS segundo plano / mapa | No acordado en 5.1 | v1.1 |
 
 ---
 
@@ -140,16 +144,43 @@
 
 | # | Tarea |
 | --- | --- |
-| **OPC.1** | Registrar en `PROXIMOS_PASOS.md` / handoff que la subida de evidencia (POD, percances, recepción) **requiere despliegue TMS (A)**, no basta con políticas RLS en Supabase; la lectura de documentos del TMS en móvil sí usa RLS SELECT ya aplicado. |
-| **OPC.2** | Tras despliegue de (A) en producción: comparar en checklist si (B) aportaría algo (p. ej. subida sin depender de Netlify); si no, cerrar (B) como descartada en backlog v1.1. |
-| **OPC.3** | Solo si el cliente **no puede** desplegar TMS a tiempo: spike acotado de (B) con políticas Storage + INSERT driver (máx. 1–2 días), criterio de aceptación idéntico a 4.7; **no** sustituir (A) en producción sin sign-off explícito. |
+| **OPC.1** | Registrar en handoff que la subida de evidencia usa **TMS POST (A)** en producción; lectura vía Supabase RLS + Realtime. |
+| **OPC.2** | Tras cierre **6.4:** evaluar si ruta Supabase directa (B) aporta algo; si no, descartar en v1.1. |
+| **OPC.3** | Spike (B) solo post–9 jun si negocio lo pide explícitamente. |
 
-**Resumen para negocio:** la mejor opción es **(A)**; Supabase solo complementa (**SELECT** documentos, **Realtime** opcional). Confirmación cliente: tarea **4.8**.
+**Resumen:** opción **(A)** en producción; confirmación alcance en **6.1** (ex 4.8).
+
+---
+
+## Matriz paridad conductor — TMS (`PROYECTO_MUESTRA`) ↔ móvil (deadline 9 jun)
+
+Referencia: `DriverActionPanel`, `DocumentsTab`, `PATCH …/status`, `POST …/documents`, `messages`, `wait-time`. Solo capacidades **relevantes para rol `driver`**.
+
+| Capacidad TMS | Móvil | Tarea(s) | v1 (9 jun) |
+| --- | --- | --- | --- |
+| Login / sesión Supabase | ✅ | 1.x | Sí |
+| Lista cargas asignadas (`driver_id`) | ✅ | 2.x | Sí |
+| Detalle carga (ruta, holds, timeline, flags, notas) | ✅ | 2.3 | Sí |
+| Acciones de campo (`DriverActionPanel` → subset Driver) | ✅ | 3.x | Sí |
+| Ver documentos de la carga (dispatch sube BOL, RC, etc.) | ✅ | 4.2, 4.4, 4.7 | Sí — cerrar QA staging |
+| **Subir evidencia** POD / Photo (misma tabla `load_documents`) | ⏸ UI deshabilitada; código listo | **6.1–6.4** (ex 4.3, 4.8) | **Sí** — semana 2 del cierre |
+| Drawer / navegación mínima conductor | ✅ | 2.5 | Sí — My Loads, Account, Log Out |
+| Cuenta / cerrar sesión | ✅ | Account | Sí |
+| Offline / reconexión | ✅ base; hardening | 4.5, **5.5** | Sí |
+| Mensajes por carga (`load_messages`) | Placeholder | — | **v1.1** (`7.7`) |
+| Wait time (`wait-time` API) | No | — | **v1.1** |
+| Push / notificaciones | No | — | **v1.1** |
+| Ubicación GPS (primer plano) | ✅ share en detalle | **5.1–5.2** ✅ · **5.3–5.4** | **Sí** — share operativo; persist TMS en 5.3 |
+| Asignar conductor, menú dispatch/A/R/settlements | Solo staff TMS | — | **Excluido** (no es rol driver) |
+| Subir BOL / Rate Con / tipos staff en Documents | Solo dispatch en TMS | — | **Excluido** — conductor solo `POD`/`Photo` (4.1) |
+
+**Cobertura v1 (9 jun):** lectura documentos + status + GPS primer plano + reconexión estable + subida evidencia (**Semana 6**). Mensajes, wait time, push y GPS background → v1.1.
 
 ---
 
 ## Notas
 
+- **Plan de ejecución hasta 9 jun 2026:** `PP2_ROADMAP_ENTREGA_JUN9.md`.
 - Los **Word** en la **raíz del repo** — `TigerHawk_TMS_Technical_Handoff.docx` y `TigerHawk_TMS_Testing_Plan.docx` — son fuente de verdad para **paridad funcional** con el TMS; `README_STEPS_NEXTS.md` y `README_PRUEBAS.md` sirven como índice y checklist operativo, no como sustituto del contenido completo de los `.docx`.
 - **Deploy web** del equipo prioriza **Netlify** según reglas del proyecto; la app móvil usa **EAS / tiendas**, independiente del hosting del Next.js.
 - **Mapa código → móvil** (exclusiones, gaps POD, panel conductor): ver **`PP2_DOCUMENTACION.md` §3** tras la revisión del monorepo TigerHawk.

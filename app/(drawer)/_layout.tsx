@@ -43,7 +43,7 @@ export default function DrawerLayout() {
       <Drawer.Screen
         name="loads"
         options={{
-          title: strings.loads.title,
+          title: strings.nav.loads,
           headerTitle: strings.app.name,
         }}
       />

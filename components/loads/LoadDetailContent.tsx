@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { DriverActionBar } from '@/components/loads/DriverActionBar';
 import { LoadDocumentsSection } from '@/components/loads/LoadDocumentsSection';
+import { LoadLocationSection } from '@/components/loads/LoadLocationSection';
 import { LoadDetailMeta, LoadDetailRow } from '@/components/loads/LoadDetailRow';
 import { Card } from '@/components/ui/Card';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
@@ -103,6 +104,10 @@ export function LoadDetailContent({
             last
           />
         ) : null}
+      </Card>
+
+      <Card title={strings.location.sectionTitle}>
+        <LoadLocationSection loadReference={load.reference_number} />
       </Card>
 
       {hasShipmentInfo(load) ? (

@@ -12,6 +12,7 @@ import 'react-native-reanimated';
 import { AuthBootstrapGate } from '@/components/auth/AuthBootstrapGate';
 import { AuthDeepLinkHandler } from '@/components/auth/AuthDeepLinkHandler';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
+import { strings } from '@/constants/strings';
 import { AuthProvider } from '@/context/AuthContext';
 import { LoadsProvider } from '@/context/LoadsContext';
 import { NetworkProvider } from '@/context/NetworkContext';
@@ -83,7 +84,7 @@ export default function RootLayout() {
                 <Stack.Screen
                   name="load/[id]"
                   options={{
-                    title: 'Load details',
+                    title: strings.loadDetail.screenTitle,
                     headerStyle: {
                       backgroundColor: PP2Theme.colors.tms.headerBackground,
                     },

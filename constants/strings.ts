@@ -36,6 +36,33 @@ export const strings = {
     offlineActionBlocked:
       'This action needs internet. Reconnect and try again.',
   },
+  location: {
+    sectionTitle: 'Your location',
+    disclaimer:
+      'Location is used only while this app is open to help dispatch see where you are on an assigned load. Tigerhawk Mobile does not track your location in the background.',
+    permissionWhenInUseTitle: 'Location access',
+    permissionWhenInUseMessage:
+      'Tigerhawk Mobile needs your location while the app is open so you can share your position with dispatch for assigned loads.',
+    permissionDeniedTitle: 'Location unavailable',
+    permissionDeniedMessage:
+      'Location was denied. You can enable it in device Settings, or contact dispatch by phone.',
+    openSettings: 'Open Settings',
+    notAvailableOnWeb: 'Location sharing is available on the mobile app only.',
+    loading: 'Getting location…',
+    shareLocation: 'Share location',
+    shareLocationA11y: 'Share current GPS coordinates for this load',
+    coordinatesLabel: 'Coordinates',
+    accuracyLabel: 'Accuracy',
+    lastUpdatedLabel: 'Updated',
+    shareFailed: 'Could not read location. Try again outdoors with GPS enabled.',
+    servicesDisabledMessage:
+      'Turn on Location Services in your device settings, then try again.',
+    shareDialogTitle: 'Share load location',
+    shareMessageLoadLabel: 'Load',
+    shareMessageFooter: 'Shared via Tigerhawk Mobile',
+    openInMaps: 'Open in Maps',
+    mapsLinkA11y: 'Open coordinates in maps app',
+  },
   tabs: {
     loads: 'Loads',
     account: 'Account',

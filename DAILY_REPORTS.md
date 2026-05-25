@@ -681,4 +681,66 @@ If the change is user-visible or affects QA, **always** document it even for sma
 
 ---
 
+## 26 May 2026
+
+### Task 1 — GPS v1 decision (dev 5.1)
+
+**What was implemented**
+
+- **`docs/GPS_V1_DECISION.md`:** v1 go with **foreground-only** location; background deferred to v1.1.
+- **`lib/location/gps-v1-policy.ts`** + tests: single policy source (`foreground`, no background tracking).
+- **`constants/strings.ts` → `location`:** legal disclaimer, denied-permission copy, share-location strings (for 5.2).
+- **`app.json`:** **`expo-location`** plugin (Android background/foreground service **off**), iOS `NSLocationWhenInUseUsageDescription`, Android coarse/fine permissions.
+- **`expo-location`** dependency (Expo SDK 54).
+- **Route review:** `app/load/[id].tsx` normalizes id via `normalizeLoadIdParam` (same rule as documents); stack title from `strings.loadDetail.screenTitle`; drawer **My Loads** uses `strings.nav.loads`.
+
+**What is available**
+
+- GPS v1 policy documented and native permissions prepared; load-detail location UI follows in **5.2**.
+
+**How to test**
+
+- `npm run ci` — `gps-v1-policy` suite green.
+- Read `docs/GPS_V1_DECISION.md` and `strings.location.disclaimer`.
+- After native rebuild (`eas build` or dev client): iOS/Android prompt should request **While Using the App** / in-use location, not background.
+
+### Task 2 — Share location on load detail (dev 5.2)
+
+**What was implemented**
+
+- **`LoadLocationSection`** on load detail (**Your location** card): disclaimer, current coordinates, **Share location** (native sheet with load reference + lat/lng + accuracy), **Open in Maps**, **Open Settings** when permission denied.
+- **`lib/location/` layer:** `getForegroundPosition`, `format-coordinates`, `share-load-location`, `location-errors`.
+- Hook **`useLoadLocationShare`**; wired in **`LoadDetailContent`** (after Route card).
+- Tests: `format-coordinates`, `get-foreground-position`, `map-location-error`; `map-api-error` handles `LocationError`.
+
+**What is available**
+
+- On **My Loads** → assigned load detail, the driver can share GPS position with dispatch (SMS/email/system apps) with no background tracking.
+
+**How to test**
+
+- `npm run ci` — location suites green.
+- **Physical device (not web):** login → **My Loads** → open load → **Your location** card → **Share location** → grant **While Using** → pick target app; message includes `#reference`, coordinates, and accuracy.
+- **Expected:** coordinates shown on screen after share; **Open in Maps** opens map; if permission denied, banner + **Open Settings** button.
+
+### Task 3 — Product rationale: Share location (GPS 5.2)
+
+**What was documented**
+
+Business rationale for **Share location** on load detail (complements dev **5.2**):
+
+> Sharing from the app does not compete with WhatsApp: it uses WhatsApp (or another app) but pre-fills the message with the load and GPS coordinates so dispatch does not have to guess. Open in Maps is convenience; the product differentiator is load + coordinates in one step, and in the future seeing it in the TMS.
+
+**What is available**
+
+- No code change: clarification for the team, QA, and the client on why the flow uses the native share sheet (WhatsApp, SMS, etc.) and does not replace those apps.
+- **Open in Maps:** shortcut after reading GPS; not the main value.
+- **Future (5.3):** persist or show location in the TMS, not only in chat.
+
+**How to test**
+
+- No build required: read this entry and confirm with the business whether the current flow (message with `#reference` + coordinates) is enough for field ops before investing in **5.3**.
+
+---
+
 *When closing each day, add a `## [date]` section with **Task 1, Task 2, Task 3…** top to bottom (e.g. dev 4.6 → Task 7, dev 4.7 → Task 8). Never Task 8 before Task 7.*

@@ -15,10 +15,14 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.tigerhawk.pp2"
+      "bundleIdentifier": "com.tigerhawk.pp2",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Tigerhawk Mobile uses your location while the app is open so you can share your position with dispatch for assigned loads."
+      }
     },
     "android": {
       "package": "com.tigerhawk.pp2",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#0B1120"
@@ -50,6 +54,14 @@
         {
           "photosPermission": "Tigerhawk Mobile needs access to your photos to upload proof of delivery.",
           "cameraPermission": "Tigerhawk Mobile needs the camera to capture proof of delivery."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Tigerhawk Mobile uses your location while the app is open so you can share your position with dispatch for assigned loads.",
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
         }
       ],
       "expo-secure-store",

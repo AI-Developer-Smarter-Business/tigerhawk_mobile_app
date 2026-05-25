@@ -450,7 +450,7 @@ Si el cambio es visible en UI o afecta QA, **siempre** documentar aunque el diff
 
 **Qué se implementó**
 
-- **`HANDOFF_DEV.md` reescrito:** tabla *maquetado inicial vs estado actual* (auth Supabase, lista/detalle reales, PATCH TMS, Realtime, errores, UI PP2 Driver, tests).
+- **`HANDOFF_DEV.md` reescrito:** tabla _maquetado inicial vs estado actual_ (auth Supabase, lista/detalle reales, PATCH TMS, Realtime, errores, UI PP2 Driver, tests).
 - Rutas, credenciales `driver_test`, variables `.env.local`, mapa de archivos de la capa de acciones (semana 3), limitaciones (POD, mensajes, magic link) y prioridad semana 4+.
 - Checklist de entrega actualizado; enlace desde `README.md` (scope v0.2).
 
@@ -601,7 +601,7 @@ Si el cambio es visible en UI o afecta QA, **siempre** documentar aunque el diff
 **Cómo probar**
 
 - `npm run ci` — tests `document-view-url`, `merge-tms-documents` en verde.
-- **Enlace expirado:** abrir detalle de carga con documento subido hace **más de 1 h** → **View** → si falla, debe mostrarse *“This download link has expired. Pull down…”* (no el error JSON de Supabase). **Pull down** en el detalle → **View** otra vez (con parche Bearer en TMS, debe abrir).
+- **Enlace expirado:** abrir detalle de carga con documento subido hace **más de 1 h** → **View** → si falla, debe mostrarse _“This download link has expired. Pull down…”_ (no el error JSON de Supabase). **Pull down** en el detalle → **View** otra vez (con parche Bearer en TMS, debe abrir).
 - **Borrado:** con la app en **POD / Documents**, borrar el archivo en el TMS → tras unos segundos (Realtime) o **pull down**, la fila **desaparece**.
 - **Ruta:** **My Loads** → carga → tarjeta **POD / Documents** → **View**.
 
@@ -626,8 +626,8 @@ Si el cambio es visible en UI o afecta QA, **siempre** documentar aunque el diff
   1. Abrir la app con red normal → login → **My Loads** (lista visible).
   2. Activar **modo avión** (o apagar Wi‑Fi/datos).
   3. **Resultado esperado:** banner **“No internet connection”** en la parte superior.
-  4. **Pull down** en **My Loads** o abrir otra carga → mensaje tipo *“No internet connection. Connect to load or update data.”* (no crash).
-  5. Abrir un detalle ya cargado (si estaba en caché) → pulsar **In transit** u otro botón de **Field actions** → *“This action needs internet…”*.
+  4. **Pull down** en **My Loads** o abrir otra carga → mensaje tipo _“No internet connection. Connect to load or update data.”_ (no crash).
+  5. Abrir un detalle ya cargado (si estaba en caché) → pulsar **In transit** u otro botón de **Field actions** → _“This action needs internet…”_.
   6. En **POD / Documents**, **View** → mismo mensaje de acción sin red.
   7. Desactivar modo avión → banner desaparece → **pull down** → lista actualiza con normalidad.
 
@@ -647,7 +647,7 @@ Si el cambio es visible en UI o afecta QA, **siempre** documentar aunque el diff
 **Qué se implementó**
 
 - **`ProfileProvider`:** perfil único compartido (antes cada hook tenía estado propio).
-- **`applyProfileFetchResult`:** no borra el perfil del conductor si el refetch falla por red (evita falso *“No profile found”*).
+- **`applyProfileFetchResult`:** no borra el perfil del conductor si el refetch falla por red (evita falso _“No profile found”_).
 - **`QueryNetworkRecovery`:** al volver online, refresca perfil + queries activas; al ir offline, **cancela** peticiones en curso (evita `RefreshControl` infinito).
 - **`onlineManager`** de TanStack Query enlazado a NetInfo + **`refetchOnReconnect`**.
 - `refreshing` en hooks de cargas solo cuando la query está **enabled**.
@@ -659,7 +659,7 @@ Si el cambio es visible en UI o afecta QA, **siempre** documentar aunque el diff
   1. Login → **My Loads** → abrir detalle de carga (datos visibles: ruta, estado).
   2. Activar **modo avión** ~10 s → banner offline; opcional **pull down** (mensaje sin red).
   3. Desactivar modo avión (o cambiar de Wi‑Fi a datos móviles).
-  4. **Resultado esperado:** en **≤5 s** desaparece el banner, **no** queda spinner de recarga arriba, **no** aparece *“No profile found”*, la ruta y documentos se actualizan sin salir de la pantalla.
+  4. **Resultado esperado:** en **≤5 s** desaparece el banner, **no** queda spinner de recarga arriba, **no** aparece _“No profile found”_, la ruta y documentos se actualizan sin salir de la pantalla.
   5. Repetir en **My Loads** (lista): pull down tras reconectar → lista refresca una vez.
 
 ### Tarea 6 — Spinner superior solo en pull manual (4.5)
@@ -719,4 +719,66 @@ Si el cambio es visible en UI o afecta QA, **siempre** documentar aunque el diff
 
 ---
 
-*Al cerrar cada día, añadir sección `## [fecha]` con **Tarea 1, Tarea 2, Tarea 3…** de arriba abajo (ej. dev 4.6 → Tarea 7, dev 4.7 → Tarea 8). Nunca Tarea 8 antes de Tarea 7.*
+## 26 de mayo de 2026
+
+### Tarea 1 — Decisión GPS v1 (dev 5.1)
+
+**Qué se implementó**
+
+- **`docs/GPS_V1_DECISION.md`:** go v1 con ubicación **solo en primer plano**; background pospuesto a v1.1.
+- **`lib/location/gps-v1-policy.ts`** + tests: política única (`foreground`, sin tracking en background).
+- **`constants/strings.ts` → `location`:** disclaimer legal, textos de permiso denegado y acciones (share location — para 5.2).
+- **`app.json`:** plugin **`expo-location`** (Android background/foreground service **off**), `NSLocationWhenInUseUsageDescription` iOS, permisos Android coarse/fine.
+- Dependencia **`expo-location`** (Expo SDK 54).
+- **Revisión rutas:** `app/load/[id].tsx` normaliza id con `normalizeLoadIdParam` (misma regla que documentos); título stack `load/[id]` desde `strings.loadDetail.screenTitle`; drawer **My Loads** usa `strings.nav.loads`.
+
+**Funcionalidad disponible**
+
+- Política GPS v1 documentada y permisos nativos preparados; UI de ubicación en detalle de carga llega en **5.2**.
+
+**Cómo probar**
+
+- `npm run ci` — suite `gps-v1-policy` en verde.
+- Revisar `docs/GPS_V1_DECISION.md` y `strings.location.disclaimer`.
+- Tras rebuild nativo (`eas build` o dev client): diálogo iOS/Android debe pedir **While Using the App** / ubicación en uso, no background.
+
+### Tarea 2 — Share location en detalle de carga (dev 5.2)
+
+**Qué se implementó**
+
+- **`LoadLocationSection`** en detalle de carga (tarjeta **Your location**): disclaimer, coordenadas actuales, **Share location** (sheet nativo con referencia de carga + lat/lng + precisión), **Open in Maps**, **Open Settings** si permiso denegado.
+- Capa **`lib/location/`:** `getForegroundPosition`, `format-coordinates`, `share-load-location`, `location-errors`.
+- Hook **`useLoadLocationShare`**; integración en **`LoadDetailContent`** (tras tarjeta Route).
+- Tests: `format-coordinates`, `get-foreground-position`, `map-location-error`; `map-api-error` reconoce `LocationError`.
+
+**Funcionalidad disponible**
+
+- En **My Loads** → detalle de carga asignada, el conductor puede compartir su posición GPS con dispatch (SMS/email/apps del sistema) sin tracking en background.
+
+**Cómo probar**
+
+- `npm run ci` — suites de ubicación en verde.
+- **Dispositivo físico (no web):** login → **My Loads** → abrir carga → tarjeta **Your location** → **Share location** → aceptar permiso **While Using** → elegir app destino; mensaje incluye `#referencia`, coordenadas y precisión.
+- **Resultado esperado:** coordenadas visibles en pantalla tras compartir; **Open in Maps** abre mapa; si deniegas permiso, banner + botón **Open Settings**.
+
+### Tarea 3 — Criterio de producto: Share location (GPS 5.2)
+
+**Qué se documentó**
+
+Criterio de negocio para **Share location** en detalle de carga (complementa dev **5.2**):
+
+> Compartir desde la app no compite con WhatsApp: usa WhatsApp (u otra app) pero pre-rellena el mensaje con la carga y coordenadas GPS para que dispatch no tenga que adivinar. Open in Maps es comodidad; el diferencial de producto es carga + coordenadas en un solo paso, y verlo en el TMS.
+
+**Funcionalidad disponible**
+
+- Sin cambio de código: aclaración para equipo, QA y cliente sobre por qué el flujo pasa por el sheet nativo de compartir (WhatsApp, SMS, etc.) y no sustituye esas apps.
+- **Open in Maps:** atajo tras leer GPS; no es el valor principal.
+- **Futuro (5.3):** persistir o mostrar ubicación en el TMS, no solo en chat.
+
+**Cómo probar**
+
+- No aplica build: leer esta entrada y validar con negocio si el flujo actual (mensaje con `#referencia` + coordenadas) cubre operación en campo antes de invertir en **5.3**.
+
+---
+
+_Al cerrar cada día, añadir sección `## [fecha]` con **Tarea 1, Tarea 2, Tarea 3…** de arriba abajo (ej. dev 4.6 → Tarea 7, dev 4.7 → Tarea 8). Nunca Tarea 8 antes de Tarea 7._
