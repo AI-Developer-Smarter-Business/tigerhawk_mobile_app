@@ -1,6 +1,9 @@
+import { OfflineError } from '@/lib/network/offline-error';
+import { isNetworkFailure } from '@/lib/network/network-state';
 import { TmsDocumentUploadError } from '@/lib/tms/document-errors';
 import { TmsStatusChangeError } from '@/lib/tms/errors';
 
+import { errorStrings } from './strings';
 import { mapDocumentUploadError } from './map-document-error';
 import { mapSupabaseError } from './map-supabase-error';
 import { mapStatusChangeError } from './map-status-error';
@@ -9,7 +12,27 @@ import type { UserFacingError } from './types';
 /**
  * Single entry point: PostgREST, TMS status PATCH, document POST, or unknown errors.
  */
+function mapNetworkError(error: unknown): UserFacingError {
+  const message =
+    error instanceof OfflineError
+      ? error.message
+      : error instanceof Error && error.message
+        ? error.message
+        : errorStrings.networkMessage;
+  return {
+    kind: 'network',
+    title: errorStrings.networkTitle,
+    message,
+  };
+}
+
 export function mapErrorToUserFacing(error: unknown): UserFacingError {
+  if (error instanceof OfflineError) {
+    return mapNetworkError(error);
+  }
+  if (isNetworkFailure(error)) {
+    return mapNetworkError(error);
+  }
   if (error instanceof TmsDocumentUploadError) {
     return mapDocumentUploadError(error);
   }

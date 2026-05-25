@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { assertOnlineForFetch } from '@/lib/network/assert-online';
 import { LOAD_LIST_PAGE_SIZE } from '@/lib/supabase/schema/driver-loads';
 import type { LoadDetail } from '@/types';
 
@@ -67,6 +68,8 @@ export async function fetchLoadDetailForDriver(
   loadId: string,
   driverUserId: string,
 ): Promise<LoadDetailQueryResult> {
+  await assertOnlineForFetch();
+
   const { data, error } = await supabase
     .from('loads')
     .select(LOAD_DETAIL_SELECT)

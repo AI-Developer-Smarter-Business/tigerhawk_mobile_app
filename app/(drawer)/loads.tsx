@@ -19,6 +19,7 @@ import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { useLoads } from '@/context/LoadsContext';
 import { useAssignedLoadsQuery } from '@/hooks/useAssignedLoadsQuery';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 const LIST_SEPARATOR = PP2Theme.spacing.sm;
 
@@ -28,7 +29,6 @@ export default function LoadsScreen() {
   const {
     loads,
     loading,
-    refreshing,
     loadingMore,
     error,
     hasMore,
@@ -37,6 +37,8 @@ export default function LoadsScreen() {
     loadMore,
     retry,
   } = useAssignedLoadsQuery();
+
+  const { refreshing, onRefresh } = usePullToRefresh(refetch);
 
   const endReachedLock = useRef(false);
 
@@ -49,10 +51,6 @@ export default function LoadsScreen() {
       endReachedLock.current = false;
     }
   }, [loadingMore]);
-
-  const onRefresh = useCallback(() => {
-    void refetch();
-  }, [refetch]);
 
   const onEndReached = useCallback(() => {
     if (endReachedLock.current) return;

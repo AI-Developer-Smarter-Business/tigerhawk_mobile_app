@@ -1,0 +1,25 @@
+---
+description: Obligatorio documentar cada cambio funcional el mismo día en REPORTES_DIARIOS y DAILY_REPORTS
+alwaysApply: true
+---
+
+# Reportes diarios obligatorios (PP2 móvil)
+
+Al terminar **cualquier cambio funcional** (feature, fix, tarea `PP2_TAREAS_DEV.md`, integración, UI nueva):
+
+1. Actualizar **`REPORTES_DIARIOS.md`** (español) y **`DAILY_REPORTS.md`** (inglés) **el mismo día**.
+2. Usar sección `## [fecha]`; crearla si no existe.
+3. **Orden de tareas (crítico — leer de arriba abajo):**
+   - Encabezados: **Tarea 1**, **Tarea 2**, **Tarea 3**, … (español) / **Task 1**, **Task 2**, … (inglés).
+   - Cada nueva entrada: **Tarea N** con **N = última tarea del día + 1**.
+   - Insertar el bloque **inmediatamente debajo** de Tarea N−1 en esa fecha (no al final del archivo si eso invierte el orden).
+   - Referencias `PP2_TAREAS_DEV` en el mismo día deben leerse en orden cronológico en el archivo (ej. **4.6 → Tarea 7**, luego **4.7 → Tarea 8**; si más tarde **4.8 → Tarea 9**).
+   - **Prohibido:** Tarea 8 (dev 4.7) arriba y Tarea 7 (dev 4.6) abajo; **prohibido:** saltar números (1, 2, 4 sin 3).
+   - Misma numeración y mismo orden en español e inglés.
+4. Mapear al ítem de `PP2_TAREAS_DEV.md` cuando aplique (el número del día **no** tiene que ser 4.6 — solo el orden de lectura importa).
+5. Incluir siempre: **Qué se implementó**, **Funcionalidad disponible**, **Cómo probar** (y equivalentes en inglés).
+6. **Cómo probar:** `npm run ci` si aplica; **ruta en la app**; **resultado esperado**.
+7. No citar `PROYECTO_MUESTRA/`; usar «TMS», `/api/…` o `docs/`.
+8. Marcar fila en `PP2_TAREAS_DEV.md` (✅ / ⏸) si corresponde.
+
+**Comprobación antes de cerrar:** en `## [fecha]`, listar solo los números de `### Tarea N` / `### Task N` de arriba abajo — deben ser 1, 2, 3, … sin inversiones (mal: 1,2,3,4,5,6,8,7 — bien: 1,2,3,4,5,6,7,8).

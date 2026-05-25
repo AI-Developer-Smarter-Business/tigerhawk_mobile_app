@@ -1,6 +1,7 @@
 import * as Linking from 'expo-linking';
 
 import { strings } from '@/constants/strings';
+import { assertOnlineForDriverAction } from '@/lib/network/assert-online';
 
 import { probeDocumentUrl } from './document-view-url';
 import type { LoadDocument } from '@/types/load-document';
@@ -43,6 +44,9 @@ export async function openLoadDocument(
   params: OpenLoadDocumentParams,
 ): Promise<OpenLoadDocumentResult> {
   const { doc, refreshDocuments } = params;
+
+  await assertOnlineForDriverAction();
+
   let url = doc.url?.trim();
 
   if (!url) {

@@ -1,3 +1,5 @@
+import { assertUploadResponseMatchesLoad } from '@/lib/loads/document-load-association';
+
 import type { DriverUploadDocumentType } from './assert-driver-document-type';
 import { assertDriverUploadDocumentType } from './assert-driver-document-type';
 import { assertTmsUrlReachableFromDevice } from './assert-tms-device-url';
@@ -91,5 +93,7 @@ export async function uploadLoadDocument(
     );
   }
 
-  return body as LoadDocumentRecord;
+  const record = body as LoadDocumentRecord;
+  assertUploadResponseMatchesLoad(record, loadId);
+  return record;
 }

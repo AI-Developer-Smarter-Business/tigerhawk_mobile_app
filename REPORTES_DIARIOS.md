@@ -8,32 +8,28 @@ Registro de avances **relevantes para el producto**: nuevas funcionalidades, int
 
 **No mencionar `PROYECTO_MUESTRA/`** en este archivo (ni rutas bajo esa carpeta). Referir el TMS web como **«TMS»**, **«API TMS»** o rutas HTTP (`/api/dispatcher/…`); detalle técnico en `docs/` (`MOBILE_API.md`, parches `TMS_PATCH_*.md`).
 
-**Formato:** una fecha por día; bajo ella **Tarea 1**, **Tarea 2**, … en **orden numérico ascendente** (sin repetir la fecha).
+**Formato:** una fecha por día; bajo ella **Tarea 1**, **Tarea 2**, **Tarea 3**, … en **orden numérico ascendente estricto** (1 antes que 2, 2 antes que 3; **nunca** insertar Tarea 7 antes de Tarea 4). La nueva entrada del día es siempre la **siguiente** número libre e va **después** de la última tarea ya numerada, no al final del archivo si eso rompe el orden dentro de la fecha.
 
 ---
 
-## Directiva de documentación (obligatoria)
+## Directiva de documentación (obligatoria — no omitir)
 
-**Para agentes de IA y desarrolladores:** cada cambio **funcional** en la app debe registrarse **el mismo día** en este archivo:
+**Para agentes de IA y desarrolladores:** **nunca** cerrar una tarea funcional sin actualizar **el mismo día** `REPORTES_DIARIOS.md` y `DAILY_REPORTS.md`. Regla reforzada en `.cursor/rules/daily-reports-documentation.mdc`.
 
-1. Usar la sección `## [fecha actual]` (crearla si no existe).
-2. Añadir o actualizar la **Tarea N** que corresponda al ítem de `PP2_TAREAS_DEV.md` (p. ej. 1.4 → Tarea de ese día sobre login).
-3. Incluir: **qué se implementó**, **funcionalidad disponible**, y enlaces a archivos clave si ayuda.
-4. Añadir **Cómo probar** (obligatorio): pasos breves para validar lo nuevo en la app o en tests; lenguaje claro, sin párrafos largos.
-5. No duplicar la fecha en cada párrafo; numerar tareas dentro del día en orden ascendente (1, 2, 3, …).
-6. No citar la carpeta `PROYECTO_MUESTRA/` ni rutas bajo ella; usar «TMS», rutas `/api/…` o `docs/`.
+Checklist antes de dar por terminado el trabajo:
 
-Si un día abarca varias tareas dev, usar **Tarea 7**, **Tarea 8**, etc. en orden cronológico.
+1. Sección `## [fecha actual]` (crearla si no existe).
+2. **Tarea N** del día: **N = última del día + 1**; insertarla **justo debajo** de Tarea N−1 (orden de lectura: 1, 2, 3 … de arriba abajo). Si documentas dev **4.6** y luego **4.7**, deben quedar **Tarea 7 (4.6)** y después **Tarea 8 (4.7)** — nunca al revés. Alineada a `PP2_TAREAS_DEV.md` cuando aplique.
+3. **Qué se implementó** y **funcionalidad disponible** (usuario / conductor).
+4. **Cómo probar** (obligatorio), con:
+   - Comando (`npm run ci`, tests concretos) si aplica.
+   - **Ruta en la app móvil:** login → menú → pantalla → botón (ej. **My Loads** → detalle de carga → **POD / Documents** → **View**).
+   - **Resultado esperado** (qué debe verse; qué error es aceptable).
+5. Misma entrada en inglés en `DAILY_REPORTS.md`.
+6. No citar `PROYECTO_MUESTRA/`; usar «TMS», `/api/…` o `docs/`.
+7. Marcar la fila en `PP2_TAREAS_DEV.md` (✅ / ⏸) si corresponde.
 
-### Plantilla «Cómo probar»
-
-Usar viñetas cortas. Ejemplos:
-
-- **Solo tests:** `npm test` (o `npm run ci`) — debe pasar en verde.
-- **Pantalla:** login → ruta → acción esperada (1–3 pasos).
-- **Si no hay UI nueva:** indicar qué comando o archivo verificar.
-
-No repetir la guía completa de QA; solo lo necesario para repetir la prueba ese día.
+Si el cambio es visible en UI o afecta QA, **siempre** documentar aunque el diff sea pequeño.
 
 ---
 
@@ -609,6 +605,118 @@ No repetir la guía completa de QA; solo lo necesario para repetir la prueba ese
 - **Borrado:** con la app en **POD / Documents**, borrar el archivo en el TMS → tras unos segundos (Realtime) o **pull down**, la fila **desaparece**.
 - **Ruta:** **My Loads** → carga → tarjeta **POD / Documents** → **View**.
 
+### Tarea 3 — Sin conexión básico (dev 4.5)
+
+**Qué se implementó**
+
+- **`@react-native-community/netinfo`**, `NetworkProvider`, banner global **`OfflineBanner`** (mensaje en inglés en `strings.network`).
+- **`assertOnlineForFetch` / `assertOnlineForDriverAction`:** bloquean refrescos y acciones de campo sin red; mensajes claros vía `OfflineError` + `mapErrorToUserFacing`.
+- Integrado en listado/detalle/documentos Supabase, cambio de estado TMS y **View** de documentos.
+- **Sin cola offline** en v1 (documentado en `docs/OFFLINE_V1.md`).
+- Regla Cursor **`.cursor/rules/daily-reports-documentation.mdc`** para no olvidar reportes diarios.
+
+**Funcionalidad disponible**
+
+- Con avión/modo sin datos: banner amarillo arriba; al intentar refrescar o cambiar estado, mensaje de que hace falta internet; pantallas ya cargadas pueden seguir visibles hasta pull-to-refresh.
+
+**Cómo probar**
+
+- `npm run ci` — incluye `lib/network/__tests__/network-state.test.ts`.
+- **En dispositivo o emulador:**
+  1. Abrir la app con red normal → login → **My Loads** (lista visible).
+  2. Activar **modo avión** (o apagar Wi‑Fi/datos).
+  3. **Resultado esperado:** banner **“No internet connection”** en la parte superior.
+  4. **Pull down** en **My Loads** o abrir otra carga → mensaje tipo *“No internet connection. Connect to load or update data.”* (no crash).
+  5. Abrir un detalle ya cargado (si estaba en caché) → pulsar **In transit** u otro botón de **Field actions** → *“This action needs internet…”*.
+  6. En **POD / Documents**, **View** → mismo mensaje de acción sin red.
+  7. Desactivar modo avión → banner desaparece → **pull down** → lista actualiza con normalidad.
+
+### Tarea 4 — Corrección CI banner offline (cierre 4.5)
+
+**Qué se implementó**
+
+- `OfflineBanner` usa tokens existentes de `PP2Theme`: `hotSurface`, `hotBorder`, `hotText` (antes referenciaba `warningSurface` / `warningBorder`, inexistentes en `theme.ts`).
+
+**Cómo probar**
+
+- `npm run ci` — lint + 161 tests en verde.
+- Visual: mismo flujo de **Tarea 3** paso 2–3; banner amarillo sin error de compilación.
+
+### Tarea 5 — Reconexión Wi‑Fi/datos sin spinner colgado (4.5)
+
+**Qué se implementó**
+
+- **`ProfileProvider`:** perfil único compartido (antes cada hook tenía estado propio).
+- **`applyProfileFetchResult`:** no borra el perfil del conductor si el refetch falla por red (evita falso *“No profile found”*).
+- **`QueryNetworkRecovery`:** al volver online, refresca perfil + queries activas; al ir offline, **cancela** peticiones en curso (evita `RefreshControl` infinito).
+- **`onlineManager`** de TanStack Query enlazado a NetInfo + **`refetchOnReconnect`**.
+- `refreshing` en hooks de cargas solo cuando la query está **enabled**.
+
+**Cómo probar**
+
+- `npm run ci` — incluye `lib/profile/__tests__/apply-profile-fetch-result.test.ts`.
+- **En dispositivo/emulador:**
+  1. Login → **My Loads** → abrir detalle de carga (datos visibles: ruta, estado).
+  2. Activar **modo avión** ~10 s → banner offline; opcional **pull down** (mensaje sin red).
+  3. Desactivar modo avión (o cambiar de Wi‑Fi a datos móviles).
+  4. **Resultado esperado:** en **≤5 s** desaparece el banner, **no** queda spinner de recarga arriba, **no** aparece *“No profile found”*, la ruta y documentos se actualizan sin salir de la pantalla.
+  5. Repetir en **My Loads** (lista): pull down tras reconectar → lista refresca una vez.
+
+### Tarea 6 — Spinner superior solo en pull manual (4.5)
+
+**Qué se implementó**
+
+- **`usePullToRefresh`:** el `RefreshControl` de **My Loads** y detalle de carga ya no usa `isRefetching` / `isFetching` de React Query (eso encendía el spinner al reconectar Wi‑Fi en segundo plano).
+- Cancelación offline con **`cancelQueries()`** al perder red.
+
+**Cómo probar**
+
+- `npm run ci`.
+- Detalle de carga → quitar Wi‑Fi → volver Wi‑Fi **sin hacer pull down**.
+- **Resultado esperado:** banner offline desaparece, datos se actualizan, **sin** spinner blanco arriba del scroll.
+- Pull down manual → spinner solo mientras dura el gesto y termina al acabar.
+
+### Tarea 7 — Tests FormData y metadatos de subida (dev 4.6)
+
+**Qué se implementó**
+
+- **`lib/tms/testing/form-data-test-utils.ts`:** captura de `FormData.append` y helpers `getCapturedFilePart` / `getCapturedDocumentType`.
+- Tests ampliados en **`document-upload-request.test.ts`:** parte `file` (uri, name, type), campo `document_type` (POD/Photo), MIME por defecto `application/octet-stream`, validación antes de append.
+- **`upload-load-document.test.ts`:** verifica que `fetch` recibe multipart con metadatos correctos (mock).
+- **`resolve-upload-file-size.test.ts`:** mock de `expo-file-system` cuando el picker no envía `fileSize`.
+- **`map-picker-asset.test.ts`:** nombre `pod_<timestamp>.png` si falta `fileName`.
+
+**Funcionalidad disponible**
+
+- Sin cambio de UI; cobertura automatizada del contrato TMS `POST /api/dispatcher/loads/[id]/documents` (multipart `file` + `document_type`).
+
+**Cómo probar**
+
+- `npm run ci` — **183 tests**; suites: `document-upload-request`, `upload-load-document`, `resolve-upload-file-size`, `map-picker-asset`.
+- **Ruta en app (cuando subida esté habilitada):** login → **My Loads** → carga → **POD / Documents** → subir foto (requiere parche TMS 4.1); hoy la subida puede seguir deshabilitada en UI — la tarea 4.6 es solo tests.
+
+### Tarea 8 — QA manual documentos (dev 4.7)
+
+**Qué se implementó**
+
+- **`docs/QA_DRIVER_DOCUMENTS_4_7.md`:** matriz manual TMS → móvil (Realtime, pull-to-refresh, View, enlaces caducados, offline, subida POD cuando UI activa), prerequisitos, rutas en app y tabla de sign-off.
+- **Consistencia código 4.4:** restaurado **`lib/loads/document-load-association.ts`** (filtro `load_id` / `storage_path`, `normalizeLoadIdParam`, validación respuesta upload); cableado en `fetch-load-documents`, `upload-load-document`, `useLoadDocumentsQuery`.
+- **Tests:** `document-load-association.test.ts`, `fetch-load-documents.test.ts`, ampliación `upload-load-document` (respuesta `load_id` incorrecta).
+
+**Funcionalidad disponible**
+
+- QA/PM pueden ejecutar el checklist en staging sin adivinar rutas; desarrollo mantiene paridad documentada con `QA_DRIVER_ACTIONS_3_7.md`.
+
+**Cómo probar**
+
+- `npm run ci` — suites de asociación y documentos en verde.
+- **QA manual (obligatorio para sign-off 4.7):** seguir **`docs/QA_DRIVER_DOCUMENTS_4_7.md`** sección **A** (mínimo A1–A5):
+  1. `npx expo start` → login conductor → **My Loads** → carga asignada con documentos en TMS.
+  2. Subir archivo en TMS **Documents** para esa carga.
+  3. **Resultado esperado:** en móvil, tarjeta **POD / Documents** muestra el archivo en ~15 s o tras **pull down**; **View** abre el archivo.
+  4. Borrar en TMS → fila desaparece en móvil (Realtime o pull down).
+- Subida conductor (sección **D** del doc): solo cuando TMS 4.1 y tarea dev **4.8** (UI) estén activos.
+
 ---
 
-*Al cerrar cada día, añadir sección `## [fecha]` con tareas numeradas en orden ascendente.*
+*Al cerrar cada día, añadir sección `## [fecha]` con **Tarea 1, Tarea 2, Tarea 3…** de arriba abajo (ej. dev 4.6 → Tarea 7, dev 4.7 → Tarea 8). Nunca Tarea 8 antes de Tarea 7.*

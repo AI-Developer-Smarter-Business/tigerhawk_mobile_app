@@ -27,6 +27,15 @@ export const strings = {
     devMockHint: 'Dev demo (mock only):',
     notDriverRole: 'This account is not a driver. Use a driver profile to access loads.',
   },
+  network: {
+    offlineTitle: 'No internet connection',
+    offlineMessage:
+      'You can still view cached screens. Pull to refresh or try again when you are back online.',
+    offlineFetchBlocked:
+      'No internet connection. Connect to load or update data.',
+    offlineActionBlocked:
+      'This action needs internet. Reconnect and try again.',
+  },
   tabs: {
     loads: 'Loads',
     account: 'Account',

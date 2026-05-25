@@ -102,7 +102,7 @@ export function useAssignedLoadsQuery(): UseAssignedLoadsQueryResult {
     profileLoading ||
     (enabled && query.isPending && loads.length === 0);
 
-  const refreshing = query.isRefetching && !query.isFetchingNextPage;
+  const refreshing = enabled && query.isRefetching && !query.isFetchingNextPage;
 
   const error =
     gateError ?? (query.error ? getUserFacingMessage(query.error) : null);

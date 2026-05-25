@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { assertOnlineForFetch } from '@/lib/network/assert-online';
 import { LOAD_LIST_PAGE_SIZE } from '@/lib/supabase/schema/driver-loads';
 
 import {
@@ -35,6 +36,8 @@ export async function fetchDriverLoadsPageImpl(
   driverUserId: string,
   options: FetchDriverLoadsPageOptions = {},
 ): Promise<DriverLoadsPageResult> {
+  await assertOnlineForFetch();
+
   const page = Math.max(0, options.page ?? 0);
   const pageSize = options.pageSize ?? LOAD_LIST_PAGE_SIZE;
   const from = page * pageSize;

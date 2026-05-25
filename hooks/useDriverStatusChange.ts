@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { useLoads } from '@/context/LoadsContext';
 import { useAuth } from '@/hooks/useAuth';
 import { runDriverStatusChange } from '@/lib/driver-status';
+import { assertOnlineForDriverAction } from '@/lib/network/assert-online';
 import { rethrowIfTmsApiUnauthorized, resolveSupabaseAccessToken } from '@/lib/tms';
 import type { LoadDetail, LoadStatus } from '@/types';
 
@@ -18,6 +19,8 @@ export function useDriverStatusChange(load: LoadDetail | null) {
   return useCallback(
     async (status: LoadStatus) => {
       if (!load || !user?.id) return;
+
+      await assertOnlineForDriverAction();
 
       const accessToken = await resolveSupabaseAccessToken();
 

@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { getUserFacingMessage } from '@/lib/errors';
+import { normalizeLoadIdParam } from '@/lib/loads/document-load-association';
 import {
     getDriverQueryGateError,
     isDriverLoadsQueryEnabled,
@@ -28,6 +29,7 @@ export function useLoadDocumentsQuery(
   const { user, isSupabaseAuthenticated, isInitialized } = useAuth();
   const { profile, isDriver, loading: profileLoading } = useProfile();
   const userId = user?.id ?? '';
+  const effectiveLoadId = normalizeLoadIdParam(loadId) ?? undefined;
 
   const gateError = getDriverQueryGateError({
     isSupabaseAuthenticated,
@@ -37,7 +39,7 @@ export function useLoadDocumentsQuery(
   });
 
   const enabled =
-    Boolean(loadId) &&
+    Boolean(effectiveLoadId) &&
     isDriverLoadsQueryEnabled({
       isSupabaseAuthenticated,
       profileLoading,
@@ -47,11 +49,13 @@ export function useLoadDocumentsQuery(
     });
 
   const query = useQuery({
-    queryKey: loadId ? queryKeys.loads.documents(userId, loadId) : ['disabled'],
-    enabled: enabled && Boolean(loadId),
+    queryKey: effectiveLoadId
+      ? queryKeys.loads.documents(userId, effectiveLoadId)
+      : ['disabled'],
+    enabled: enabled && Boolean(effectiveLoadId),
     queryFn: async () => {
       const supabase = getSupabase();
-      const result = await fetchDriverLoadDocuments(supabase, loadId!);
+      const result = await fetchDriverLoadDocuments(supabase, effectiveLoadId!);
       if (result.errorMessage) {
         throw new Error(result.errorMessage);
       }
@@ -70,7 +74,7 @@ export function useLoadDocumentsQuery(
   return {
     documents: query.data ?? [],
     loading: query.isLoading && !query.data,
-    refreshing: query.isFetching && !query.isLoading,
+    refreshing: enabled && query.isRefetching,
     error,
     refetch,
     retry: refetch,

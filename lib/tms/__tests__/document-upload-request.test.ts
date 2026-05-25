@@ -2,11 +2,17 @@ import { assertDriverUploadDocumentType } from '../assert-driver-document-type';
 import { TmsDocumentUploadError } from '../document-errors';
 import { TMS_DOCUMENT_MAX_BYTES, TMS_DOCUMENT_MAX_FILENAME_LENGTH } from '../document-upload-limits';
 import {
+  buildDocumentUploadFormData,
   buildDocumentUploadHeaders,
   buildDocumentUploadPath,
   buildDocumentUploadRequestInit,
   validateDocumentUploadFile,
 } from '../document-upload-request';
+import {
+  captureFormDataAppends,
+  getCapturedDocumentType,
+  getCapturedFilePart,
+} from '../testing/form-data-test-utils';
 
 const sampleFile = {
   uri: 'file:///photo.jpg',
@@ -78,6 +84,52 @@ describe('assertDriverUploadDocumentType', () => {
   });
 });
 
+describe('buildDocumentUploadFormData', () => {
+  it('appends React Native file part and document_type metadata', () => {
+    const { entries } = captureFormDataAppends(() =>
+      buildDocumentUploadFormData({ file: sampleFile, documentType: 'POD' }),
+    );
+
+    expect(entries).toHaveLength(2);
+    expect(getCapturedFilePart(entries)).toEqual({
+      uri: 'file:///photo.jpg',
+      name: 'photo.jpg',
+      type: 'image/jpeg',
+    });
+    expect(getCapturedDocumentType(entries)).toBe('POD');
+  });
+
+  it('supports Photo document type metadata', () => {
+    const { entries } = captureFormDataAppends(() =>
+      buildDocumentUploadFormData({ file: sampleFile, documentType: 'Photo' }),
+    );
+
+    expect(getCapturedDocumentType(entries)).toBe('Photo');
+  });
+
+  it('defaults file MIME to application/octet-stream when type is empty', () => {
+    const { entries } = captureFormDataAppends(() =>
+      buildDocumentUploadFormData({
+        file: { ...sampleFile, type: '' },
+        documentType: 'POD',
+      }),
+    );
+
+    expect(getCapturedFilePart(entries)?.type).toBe('application/octet-stream');
+  });
+
+  it('does not append when validation fails', () => {
+    expect(() =>
+      captureFormDataAppends(() =>
+        buildDocumentUploadFormData({
+          file: { ...sampleFile, size: 0 },
+          documentType: 'POD',
+        }),
+      ),
+    ).toThrow(TmsDocumentUploadError);
+  });
+});
+
 describe('buildDocumentUploadRequestInit', () => {
   it('builds POST multipart init aligned to uploadLoadDocument', () => {
     const init = buildDocumentUploadRequestInit('jwt', {
@@ -90,5 +142,18 @@ describe('buildDocumentUploadRequestInit', () => {
       Accept: 'application/json',
     });
     expect(init.body).toBeInstanceOf(FormData);
+  });
+
+  it('wires bearer headers and FormData metadata for fetch', () => {
+    const { entries } = captureFormDataAppends(() => {
+      const init = buildDocumentUploadRequestInit('driver-jwt', {
+        file: sampleFile,
+        documentType: 'POD',
+      });
+      return init.body;
+    });
+
+    expect(getCapturedFilePart(entries)?.uri).toBe(sampleFile.uri);
+    expect(getCapturedDocumentType(entries)).toBe('POD');
   });
 });

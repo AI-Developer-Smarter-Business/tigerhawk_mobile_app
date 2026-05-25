@@ -6,34 +6,30 @@ Log of **product-relevant** progress: new features, integrations (login, Supabas
 
 **Do not mention `PROYECTO_MUESTRA/`** in this file (or paths under that folder). Refer to the web TMS as **“TMS”**, **“TMS API”**, or HTTP routes (`/api/dispatcher/…`); technical detail lives in `docs/` (`MOBILE_API.md`, `TMS_PATCH_*.md`).
 
-**Format:** one date section per day; under it **Task 1**, **Task 2**, … in **ascending numeric order** (do not repeat the date on each line).
+**Format:** one date section per day; under it **Task 1**, **Task 2**, **Task 3**, … in **strict ascending numeric order** (1 before 2, 2 before 3; **never** place Task 7 before Task 4). The new entry for the day is always the **next** free number and goes **right after** the last numbered task for that date—not at the end of the file if that breaks order within the date.
 
 **Spanish version:** [`REPORTES_DIARIOS.md`](REPORTES_DIARIOS.md) (same content, maintained in parallel).
 
 ---
 
-## Documentation directive (required)
+## Documentation directive (required — do not skip)
 
-**For AI agents and developers:** every **functional** app change must be recorded **the same day** in this file (and in `REPORTES_DIARIOS.md` when the team uses Spanish):
+**For AI agents and developers:** **never** finish functional work without updating **the same day** `DAILY_REPORTS.md` and `REPORTES_DIARIOS.md`. Reinforced in `.cursor/rules/daily-reports-documentation.mdc`.
 
-1. Use a `## [current date]` section (create it if missing).
-2. Add or update **Task N** matching the item in `PP2_TAREAS_DEV.md` (e.g. 1.4 → that day’s login task).
-3. Include: **what was implemented**, **what is available to users**, and links to key files when helpful.
-4. Add **How to test** (required): short steps to validate the change in the app or in tests; plain language, not long paragraphs.
-5. Do not repeat the date in every paragraph; number tasks within the day in ascending order (1, 2, 3, …).
-6. Do not cite the `PROYECTO_MUESTRA/` folder or paths under it; use “TMS”, `/api/…` routes, or `docs/`.
+Checklist before marking work done:
 
-If one day covers several dev tasks, use **Task 7**, **Task 8**, etc. in chronological order.
+1. `## [current date]` section (create if missing).
+2. **Task N** for that day: **N = last task that day + 1**; insert it **directly below** Task N−1 (read top to bottom: 1, 2, 3 …). If you document dev **4.6** then **4.7**, use **Task 7 (4.6)** then **Task 8 (4.7)** — never reversed. Align with `PP2_TAREAS_DEV.md` when applicable.
+3. **What was implemented** and **what is available** (driver-facing).
+4. **How to test** (required), including:
+   - Command (`npm run ci`, specific tests) when applicable.
+   - **Mobile path:** login → menu → screen → control (e.g. **My Loads** → load detail → **POD / Documents** → **View**).
+   - **Expected result** (what the driver should see).
+5. Mirror the entry in Spanish in `REPORTES_DIARIOS.md`.
+6. Do not cite `PROYECTO_MUESTRA/`; use “TMS”, `/api/…`, or `docs/`.
+7. Update the row in `PP2_TAREAS_DEV.md` (✅ / ⏸) when applicable.
 
-### “How to test” template
-
-Use short bullets. Examples:
-
-- **Tests only:** `npm test` (or `npm run ci`) — must pass (green).
-- **Screen:** login → route → expected action (1–3 steps).
-- **No new UI:** state which command or file to verify.
-
-Do not paste a full QA guide; only what is needed to repeat that day’s check.
+If the change is user-visible or affects QA, **always** document it even for small diffs.
 
 ---
 
@@ -571,6 +567,118 @@ Do not paste a full QA guide; only what is needed to repeat that day’s check.
 - **Delete:** on **POD / Documents**, delete the file in TMS → after a few seconds (Realtime) or **pull down**, the row **is gone**.
 - **Path:** **My Loads** → load → **POD / Documents** card → **View**.
 
+### Task 3 — Basic offline handling (dev 4.5)
+
+**What was implemented**
+
+- **`@react-native-community/netinfo`**, `NetworkProvider`, global **`OfflineBanner`** (`strings.network`).
+- **`assertOnlineForFetch` / `assertOnlineForDriverAction`:** block refresh and field actions offline; clear copy via `OfflineError` + `mapErrorToUserFacing`.
+- Wired into loads list/detail/documents queries, TMS status change, and document **View**.
+- **No offline upload queue** in v1 (`docs/OFFLINE_V1.md`).
+- Cursor rule **`.cursor/rules/daily-reports-documentation.mdc`** for mandatory daily reports.
+
+**What is available**
+
+- Airplane mode / no data: top banner; refresh and field actions show internet-required messages; cached screens may remain until pull-to-refresh.
+
+**How to test**
+
+- `npm run ci` — includes `lib/network/__tests__/network-state.test.ts`.
+- **On device or emulator:**
+  1. App online → login → **My Loads**.
+  2. Enable **airplane mode** (or disable Wi‑Fi/mobile data).
+  3. **Expected:** **“No internet connection”** banner at the top.
+  4. **Pull down** on **My Loads** or open another load → message like *“No internet connection. Connect to load or update data.”* (no crash).
+  5. On a cached load detail, tap **In transit** (or any **Field actions** button) → *“This action needs internet…”*.
+  6. **POD / Documents** → **View** → same action-blocked message.
+  7. Disable airplane mode → banner clears → **pull down** → list refreshes normally.
+
+### Task 4 — Offline banner CI fix (4.5 closure)
+
+**What was implemented**
+
+- `OfflineBanner` uses existing `PP2Theme` tokens: `hotSurface`, `hotBorder`, `hotText` (replaced non-existent `warningSurface` / `warningBorder`).
+
+**How to test**
+
+- `npm run ci` — lint + 161 tests green.
+- Visual: same steps as **Task 3** (2–3); yellow banner renders without TypeScript errors.
+
+### Task 5 — Wi‑Fi/mobile data reconnect without stuck spinner (4.5)
+
+**What was implemented**
+
+- **`ProfileProvider`:** single shared profile state (was duplicated per hook).
+- **`applyProfileFetchResult`:** keeps driver profile on transient network fetch failures (avoids false *“No profile found”*).
+- **`QueryNetworkRecovery`:** on reconnect, refetches profile + active queries; on offline, **cancels** in-flight requests (fixes infinite pull-to-refresh).
+- TanStack Query **`onlineManager`** + NetInfo; **`refetchOnReconnect`** enabled.
+- Load hooks only show `refreshing` when the query is **enabled**.
+
+**How to test**
+
+- `npm run ci` — includes `apply-profile-fetch-result.test.ts`.
+- **On device/emulator:**
+  1. Login → **My Loads** → open a load detail (route/status visible).
+  2. **Airplane mode** ~10s → offline banner; optional pull-to-refresh (offline message).
+  3. Disable airplane mode (or switch Wi‑Fi ↔ mobile data).
+  4. **Expected:** within **~5s** banner clears, **no** stuck refresh spinner, **no** *“No profile found”*, route/documents refresh **without leaving** the screen.
+  5. Repeat on **My Loads** list: pull down after reconnect → single refresh.
+
+### Task 6 — Top spinner only on manual pull (4.5)
+
+**What was implemented**
+
+- **`usePullToRefresh`:** **My Loads** and load detail `RefreshControl` no longer bind to React Query `isRefetching` / `isFetching` (background reconnect refetches were keeping the spinner on).
+- Offline **`cancelQueries()`** when connectivity is lost.
+
+**How to test**
+
+- `npm run ci`.
+- Load detail → disable Wi‑Fi → re-enable **without** pulling down.
+- **Expected:** offline banner clears, data updates, **no** stuck white spinner above the scroll content.
+- Manual pull down → spinner only for the gesture duration.
+
+### Task 7 — FormData and upload metadata unit tests (dev 4.6)
+
+**What was implemented**
+
+- **`lib/tms/testing/form-data-test-utils.ts`:** captures `FormData.append` calls; helpers for file part and `document_type`.
+- Expanded **`document-upload-request.test.ts`:** RN file part (`uri`, `name`, `type`), `document_type` (POD/Photo), default MIME, validation before append.
+- **`upload-load-document.test.ts`:** asserts `fetch` sends correct multipart metadata (mocked).
+- **`resolve-upload-file-size.test.ts`:** mocks `expo-file-system` when picker omits `fileSize`.
+- **`map-picker-asset.test.ts`:** generated `pod_<timestamp>.png` when `fileName` is missing.
+
+**What is available**
+
+- No UI change; automated coverage for TMS `POST /api/dispatcher/loads/[id]/documents`.
+
+**How to test**
+
+- `npm run ci` — **183 tests**; see suites above.
+- **App path (when upload is enabled):** login → **My Loads** → load → **POD / Documents** → upload (needs TMS patch 4.1); upload UI may still be disabled — task 4.6 is tests only.
+
+### Task 8 — Manual documents QA (dev 4.7)
+
+**What was implemented**
+
+- **`docs/QA_DRIVER_DOCUMENTS_4_7.md`:** manual matrix TMS → mobile (Realtime, pull-to-refresh, View, expired links, offline, POD upload when UI enabled), prerequisites, app paths, sign-off table.
+- **Code consistency (4.4):** restored **`lib/loads/document-load-association.ts`**; wired into `fetch-load-documents`, `upload-load-document`, `useLoadDocumentsQuery`.
+- **Tests:** `document-load-association.test.ts`, `fetch-load-documents.test.ts`, extended `upload-load-document` (wrong `load_id` in response).
+
+**What is available**
+
+- QA/PM can run staging checklist with explicit mobile paths.
+
+**How to test**
+
+- `npm run ci` — association and document suites green.
+- **Manual QA (required for 4.7 sign-off):** follow **`docs/QA_DRIVER_DOCUMENTS_4_7.md`** section **A** (at least A1–A5):
+  1. `npx expo start` → driver login → **My Loads** → assigned load with TMS documents.
+  2. Upload a file in TMS **Documents** for that load.
+  3. **Expected:** mobile **POD / Documents** shows the row within ~15s or after **pull down**; **View** opens the file.
+  4. Delete in TMS → row disappears on mobile (Realtime or pull down).
+- Driver upload (section **D**): only when TMS 4.1 and dev task **4.8** (UI) are enabled.
+
 ---
 
-*When closing each day, add a `## [date]` section with tasks numbered in ascending order.*
+*When closing each day, add a `## [date]` section with **Task 1, Task 2, Task 3…** top to bottom (e.g. dev 4.6 → Task 7, dev 4.7 → Task 8). Never Task 8 before Task 7.*

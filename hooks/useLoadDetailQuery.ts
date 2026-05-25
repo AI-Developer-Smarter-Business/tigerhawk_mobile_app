@@ -83,7 +83,7 @@ export function useLoadDetailQuery(loadId: string | undefined): UseLoadDetailQue
     profileLoading ||
     (enabled && query.isPending && query.data === undefined);
 
-  const refreshing = query.isRefetching;
+  const refreshing = enabled && query.isRefetching;
   const fetchedLoad = query.data ?? null;
   const displayLoad = fetchedLoad ?? cachedLoad ?? null;
 

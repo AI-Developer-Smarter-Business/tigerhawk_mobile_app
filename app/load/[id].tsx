@@ -1,5 +1,5 @@
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { RefreshControl, ScrollView, StyleSheet } from 'react-native';
 
 import { LoadDetailContent } from '@/components/loads/LoadDetailContent';
@@ -10,6 +10,7 @@ import { useLoads } from '@/context/LoadsContext';
 import { useDriverStatusChange } from '@/hooks/useDriverStatusChange';
 import { useLoadDetailQuery } from '@/hooks/useLoadDetailQuery';
 import { useLoadDocumentsQuery } from '@/hooks/useLoadDocumentsQuery';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { formatReference } from '@/lib/loads';
 import { resolveRouteParam } from '@/lib/router/route-params';
 
@@ -17,10 +18,9 @@ export default function LoadDetailScreen() {
   const { id: rawId } = useLocalSearchParams<{ id: string | string[] }>();
   const loadId = resolveRouteParam(rawId);
   const { upsertLoad } = useLoads();
-  const { load, loading, refreshing, error, notFound, retry, refetch } =
+  const { load, loading, error, notFound, retry, refetch } =
     useLoadDetailQuery(loadId);
-  const { refreshing: documentsRefreshing, ...documentsQuery } =
-    useLoadDocumentsQuery(loadId);
+  const documentsQuery = useLoadDocumentsQuery(loadId);
   const {
     documents,
     loading: documentsLoading,
@@ -33,6 +33,13 @@ export default function LoadDetailScreen() {
     () => refetchDocuments(),
     [refetchDocuments],
   );
+
+  const pullRefresh = useMemo(
+    () => () => Promise.all([refetch(), refetchDocuments()]),
+    [refetch, refetchDocuments],
+  );
+  const { refreshing: pullRefreshing, onRefresh: onPullRefresh } =
+    usePullToRefresh(pullRefresh);
 
   useFocusEffect(
     useCallback(() => {
@@ -80,8 +87,8 @@ export default function LoadDetailScreen() {
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing || documentsRefreshing}
-            onRefresh={() => void Promise.all([refetch(), refetchDocuments()])}
+            refreshing={pullRefreshing}
+            onRefresh={onPullRefresh}
             tintColor={PP2Theme.colors.tms.navActive}
           />
         }

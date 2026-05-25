@@ -1,2 +1,1 @@
-/** @deprecated Import from `@/lib/supabase/hooks/useProfile` or `@/lib/supabase`. */
-export { useProfile, type UseProfileResult } from '@/lib/supabase/hooks/useProfile';
+export { useProfile, type ProfileContextValue as UseProfileResult } from '@/context/ProfileContext';

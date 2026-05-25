@@ -4,6 +4,7 @@ import {
   mergeFreshUrlsFromTms,
   reconcileLoadDocumentsWithTms,
 } from '@/lib/loads/merge-tms-documents';
+import { assertOnlineForFetch } from '@/lib/network/assert-online';
 import { fetchTmsLoadDocuments } from '@/lib/tms/fetch-load-documents';
 import { resolveSupabaseAccessToken } from '@/lib/tms/resolve-access-token';
 
@@ -24,6 +25,8 @@ export async function fetchDriverLoadDocuments(
   if (!expectedLoadId) {
     return { documents: [], errorMessage: 'Invalid load id' };
   }
+
+  await assertOnlineForFetch();
 
   const base = await fetchLoadDocumentsForDriver(supabase, expectedLoadId);
   if (base.errorMessage) {

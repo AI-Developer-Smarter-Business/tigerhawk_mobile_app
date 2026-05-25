@@ -34,6 +34,24 @@ describe('mapPickerAssetToUploadFile', () => {
     });
   });
 
+  it('generates pod_ timestamp filename when picker omits fileName', () => {
+    const now = 1_748_174_400_000;
+    jest.spyOn(Date, 'now').mockReturnValue(now);
+
+    const mapped = mapPickerAssetToUploadFile({
+      uri: 'file:///photo.jpg',
+      width: 100,
+      height: 100,
+      mimeType: 'image/png',
+      fileSize: 2000,
+    });
+
+    expect(mapped.name).toBe(`pod_${now}.png`);
+    expect(mapped.type).toBe('image/png');
+
+    jest.restoreAllMocks();
+  });
+
   it('rejects disallowed mime before upload', () => {
     expect(() =>
       mapPickerAssetToUploadFile({

@@ -8,6 +8,7 @@ export function createAppQueryClient(): QueryClient {
         gcTime: 5 * 60_000,
         retry: 1,
         refetchOnWindowFocus: false,
+        refetchOnReconnect: true,
       },
     },
   });

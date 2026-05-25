@@ -6,12 +6,16 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { View } from 'react-native';
 import 'react-native-reanimated';
 
 import { AuthBootstrapGate } from '@/components/auth/AuthBootstrapGate';
 import { AuthDeepLinkHandler } from '@/components/auth/AuthDeepLinkHandler';
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { AuthProvider } from '@/context/AuthContext';
 import { LoadsProvider } from '@/context/LoadsContext';
+import { NetworkProvider } from '@/context/NetworkContext';
+import { ProfileProvider } from '@/context/ProfileContext';
 import { PP2Theme } from '@/constants/theme';
 import { QueryProvider } from '@/lib/query/QueryProvider';
 
@@ -59,12 +63,16 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <QueryProvider>
-        <LoadsProvider>
-          <AuthBootstrapGate>
-            <AuthDeepLinkHandler />
-            <ThemeProvider value={PP2NavigationTheme}>
-              <Stack>
+      <ProfileProvider>
+        <NetworkProvider>
+          <QueryProvider>
+            <LoadsProvider>
+            <AuthBootstrapGate>
+              <AuthDeepLinkHandler />
+              <ThemeProvider value={PP2NavigationTheme}>
+                <View style={{ flex: 1 }}>
+                  <OfflineBanner />
+                  <Stack>
                 <Stack.Screen name="index" options={{ headerShown: false }} />
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />
                 <Stack.Screen
@@ -82,11 +90,14 @@ export default function RootLayout() {
                     headerTintColor: PP2Theme.colors.tms.navActiveText,
                   }}
                 />
-              </Stack>
-            </ThemeProvider>
-          </AuthBootstrapGate>
-        </LoadsProvider>
-      </QueryProvider>
+                  </Stack>
+                </View>
+              </ThemeProvider>
+            </AuthBootstrapGate>
+            </LoadsProvider>
+          </QueryProvider>
+        </NetworkProvider>
+      </ProfileProvider>
     </AuthProvider>
   );
 }
