@@ -1,5 +1,5 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
+import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect } from 'react';
 import { RefreshControl, ScrollView, StyleSheet } from 'react-native';
 
 import { LoadDetailContent } from '@/components/loads/LoadDetailContent';
@@ -8,8 +8,8 @@ import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { useLoads } from '@/context/LoadsContext';
 import { useDriverStatusChange } from '@/hooks/useDriverStatusChange';
-import { useLoadDocumentsQuery } from '@/hooks/useLoadDocumentsQuery';
 import { useLoadDetailQuery } from '@/hooks/useLoadDetailQuery';
+import { useLoadDocumentsQuery } from '@/hooks/useLoadDocumentsQuery';
 import { formatReference } from '@/lib/loads';
 import { resolveRouteParam } from '@/lib/router/route-params';
 
@@ -29,6 +29,19 @@ export default function LoadDetailScreen() {
     retry: retryDocuments,
   } = documentsQuery;
   const handleStatusChange = useDriverStatusChange(load);
+  const refreshDocumentsList = useCallback(
+    () => refetchDocuments(),
+    [refetchDocuments],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (loadId) {
+        void refetchDocuments();
+      }
+    }, [loadId, refetchDocuments]),
+  );
+
   useEffect(() => {
     if (load) {
       upsertLoad(load);
@@ -59,7 +72,9 @@ export default function LoadDetailScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: formatReference(load.reference_number) }} />
+      <Stack.Screen
+        options={{ title: formatReference(load.reference_number) }}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
@@ -69,7 +84,8 @@ export default function LoadDetailScreen() {
             onRefresh={() => void Promise.all([refetch(), refetchDocuments()])}
             tintColor={PP2Theme.colors.tms.navActive}
           />
-        }>
+        }
+      >
         <LoadDetailContent
           load={load}
           error={error}
@@ -79,6 +95,7 @@ export default function LoadDetailScreen() {
           documentsLoading={documentsLoading}
           documentsError={documentsError}
           onDocumentsRetry={() => void retryDocuments()}
+          onRefreshDocuments={refreshDocumentsList}
         />
       </ScrollView>
     </>

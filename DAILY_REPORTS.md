@@ -528,4 +528,49 @@ Do not paste a full QA guide; only what is needed to repeat that day’s check.
 
 ---
 
+## May 25, 2026
+
+### Task 1 — Document ↔ load association (dev 4.4)
+
+**What was implemented**
+
+- **`lib/loads/document-load-association.ts`:** ensures each `load_documents` row belongs to the open load `load_id`; checks `storage_path` prefix (`{load_id}/…`, same as TMS); defensive filter after query; validates TMS upload response `load_id`.
+- **`fetchLoadDocumentsForDriver`:** `.eq('load_id', …)` plus client filter for inconsistent rows.
+- **`uploadLoadDocument`:** rejects response when JSON `load_id` does not match the request load.
+- **`/load/[id]`** and **`useLoadDocumentsQuery`:** `normalizeLoadIdParam` for empty/broken deep links.
+- **Tests:** `document-load-association.test.ts`, `fetch-load-documents.test.ts`, extended `upload-load-document.test.ts`.
+
+**What is available**
+
+- On load detail, **POD / Documents** lists only files for **that** load (`load_documents` + RLS + client filter). Prevents showing a document tied to another load or another Storage prefix.
+
+**How to test**
+
+- `npm run ci` — must pass (includes association tests).
+- **In the app (UI):**
+  1. `npx expo start` → driver login (e.g. `driver_test@test.com`).
+  2. **My Loads** → open a load that has at least one file in TMS **Documents** (e.g. `#TH-MPEIQ624-8THS`).
+  3. Scroll to the **POD / Documents** card.
+  4. **Expected:** only file(s) for **this** load (name, type, size, date); **View** opens the file. Files from other loads must **not** appear here.
+  5. In TMS, upload a file to a **different** load: it must **not** show on the first load’s detail screen (only when opening that other load).
+  6. **Pull-to-refresh** on detail: list still scoped to the same load.
+- **Invalid route:** `/load/` with empty id → “Load not found” or no document list (no crash).
+
+### Task 2 — Expired document links and TMS deletes (4.4 / UX)
+
+**What was implemented**
+
+- **Signed URLs:** on list/refresh, the app tries **TMS GET documents** (fresh ~1h links); falls back to Supabase if TMS is unavailable.
+- **View:** probes the link before opening; on expiry (`InvalidJWT` / `exp`), **refreshes the list** and retries; otherwise shows a clear “link expired” message (not raw JSON).
+- **TMS delete:** when TMS GET works, the mobile list matches TMS (deleted file disappears); **pull-to-refresh** and **screen focus** also refresh documents; Realtime on `load_documents` still applies.
+
+**How to test**
+
+- `npm run ci` — `document-view-url`, `merge-tms-documents` tests green.
+- **Expired link:** open a load whose document was uploaded **over 1h ago** → **View** → expect *“This download link has expired. Pull down…”* (not Supabase JSON). **Pull down** on detail → **View** again (with TMS Bearer patch deployed, file should open).
+- **Delete:** on **POD / Documents**, delete the file in TMS → after a few seconds (Realtime) or **pull down**, the row **is gone**.
+- **Path:** **My Loads** → load → **POD / Documents** card → **View**.
+
+---
+
 *When closing each day, add a `## [date]` section with tasks numbered in ascending order.*

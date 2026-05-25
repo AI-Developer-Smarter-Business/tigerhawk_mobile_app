@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>0/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/20</span>
+                <span class='fraction'>0/22</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>0/16</span>
             </div>
         
             
@@ -139,7 +139,9 @@
 <a name='L74'></a><a href='#L74'>74</a>
 <a name='L75'></a><a href='#L75'>75</a>
 <a name='L76'></a><a href='#L76'>76</a>
-<a name='L77'></a><a href='#L77'>77</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -159,16 +161,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -177,7 +169,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -189,6 +184,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -200,11 +204,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -222,12 +226,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { getUserFacingMessage } from '@/lib/errors';
 import {
-  getDriverQueryGateError,
-  isDriverLoadsQueryEnabled,
+    getDriverQueryGateError,
+    isDriverLoadsQueryEnabled,
 } from '@/lib/query/driver-query-gate';
 import { queryKeys } from '@/lib/query/query-keys';
-import { fetchLoadDocumentsForDriver } from '@/lib/supabase/queries/fetch-load-documents';
 import { getSupabase } from '@/lib/supabase/client';
+import { fetchDriverLoadDocuments } from '@/lib/supabase/queries/fetch-driver-load-documents';
 import type { LoadDocument } from '@/types/load-document';
 &nbsp;
 export type UseLoadDocumentsQueryResult = {
@@ -235,11 +239,13 @@ export type UseLoadDocumentsQueryResult = {
   loading: boolean;
   refreshing: boolean;
   error: string | null;
-  refetch: () =&gt; Promise&lt;void&gt;;
-  retry: () =&gt; Promise&lt;void&gt;;
+  refetch: () =&gt; Promise&lt;LoadDocument[]&gt;;
+  retry: () =&gt; Promise&lt;LoadDocument[]&gt;;
 };
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >useLoadDocumentsQuery(</span>loadId: string | undefined): UseLoadDocumentsQueryResult {
+export function <span class="fstat-no" title="function not covered" >useLoadDocumentsQuery(</span>
+  loadId: string | undefined,
+): UseLoadDocumentsQueryResult {
   const { user, isSupabaseAuthenticated, isInitialized } = <span class="cstat-no" title="statement not covered" >useAuth();</span>
   const { profile, isDriver, loading: profileLoading } = <span class="cstat-no" title="statement not covered" >useProfile();</span>
   const userId = <span class="cstat-no" title="statement not covered" >user?.id ?? '';</span>
@@ -266,7 +272,7 @@ export function <span class="fstat-no" title="function not covered" >useLoadDocu
     enabled: enabled &amp;&amp; Boolean(loadId),
     queryFn: <span class="fstat-no" title="function not covered" >as</span>ync () =&gt; {
       const supabase = <span class="cstat-no" title="statement not covered" >getSupabase();</span>
-      const result = <span class="cstat-no" title="statement not covered" >await fetchLoadDocumentsForDriver(supabase, loadId!);</span>
+      const result = <span class="cstat-no" title="statement not covered" >await fetchDriverLoadDocuments(supabase, loadId!);</span>
 <span class="cstat-no" title="statement not covered" >      if (result.errorMessage) {</span>
 <span class="cstat-no" title="statement not covered" >        throw new Error(result.errorMessage);</span>
       }
@@ -274,13 +280,13 @@ export function <span class="fstat-no" title="function not covered" >useLoadDocu
     },
   });
 &nbsp;
-  const refetch = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >as</span>ync () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    await query.refetch();</span>
+  const refetch = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >as</span>ync (): Promise&lt;LoadDocument[]&gt; =&gt; {</span>
+    const result = <span class="cstat-no" title="statement not covered" >await query.refetch();</span>
+<span class="cstat-no" title="statement not covered" >    return result.data ?? [];</span>
   }, [query]);
 &nbsp;
   const error =
-<span class="cstat-no" title="statement not covered" >    gateError ??</span>
-    (query.error ? getUserFacingMessage(query.error) : null);
+<span class="cstat-no" title="statement not covered" >    gateError ?? (query.error ? getUserFacingMessage(query.error) : null);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return {</span>
     documents: query.data ?? [],
@@ -298,7 +304,7 @@ export function <span class="fstat-no" title="function not covered" >useLoadDocu
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-22T19:37:00.099Z
+                at 2026-05-25T17:28:19.794Z
             </div>
         <script src="../prettify.js"></script>
         <script>

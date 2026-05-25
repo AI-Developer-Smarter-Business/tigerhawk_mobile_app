@@ -32,6 +32,7 @@ type LoadDetailContentProps = {
   documentsLoading: boolean;
   documentsError: string | null;
   onDocumentsRetry: () => void;
+  onRefreshDocuments: () => Promise<LoadDocument[]>;
 };
 
 export function LoadDetailContent({
@@ -43,6 +44,7 @@ export function LoadDetailContent({
   documentsLoading,
   documentsError,
   onDocumentsRetry,
+  onRefreshDocuments,
 }: LoadDetailContentProps) {
   return (
     <>
@@ -206,6 +208,7 @@ export function LoadDetailContent({
           loading={documentsLoading}
           error={documentsError}
           onRetry={onDocumentsRetry}
+          onRefreshDocuments={onRefreshDocuments}
         />
       </Card>
 

@@ -121,8 +121,15 @@ export const strings = {
     noDocuments: 'No documents on this load yet.',
     documentView: 'View',
     documentOpenFailed: 'Could not open document',
+    documentLinkExpired:
+      'This download link has expired. Pull down on this screen to refresh the list, then tap View again.',
+    documentRemoved:
+      'This file is no longer on the load. Pull down to refresh the document list.',
+    documentUnavailable:
+      'This file could not be opened. Pull down to refresh, or ask dispatch if the problem continues.',
     documentNoUrl:
       'This file has no download link yet. Pull to refresh or ask dispatch to re-upload.',
+    documentOpening: 'Opening document…',
     driverEvidenceTitle: 'Driver photo (optional)',
     driverEvidenceHint:
       'Add a photo for delivery proof, damage, or other evidence for this load.',

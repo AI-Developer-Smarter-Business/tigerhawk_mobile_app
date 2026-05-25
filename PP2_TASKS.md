@@ -136,8 +136,8 @@ If the client needs legal/brand alignment (“PP2” vs internal TigerHawk namin
 | 4.4 | Verify each file is **linked** to the correct `load_id` and the agreed documents table/view. |
 | 4.5 | Basic **offline** handling: “no connection” message or a simple queue (do not promise full offline v1). |
 | 4.6 | Unit tests for **FormData** / metadata preparation (with mocks). |
-| 4.7 | **Manual QA** for documents: successful upload, cancel, network error, oversized file. |
-| 4.8 | Review Storage **costs** / Supabase quotas and document policies in `docs/STORAGE_RLS.md`. |
+| 4.7 | **Manual QA:** TMS → mobile **realtime** on assigned load; when upload enabled: driver evidence (POD/photo), cancel, network, oversized file. |
+| 4.8 | **Client scope:** confirm driver **evidence photos** (incidents, damage, reception issues, POD); enable upload UI after TMS patches; update copy and `PROXIMOS_PASOS.md`. *(Storage costs: client-owned in Supabase, out of mobile dev scope.)* |
 
 ---
 

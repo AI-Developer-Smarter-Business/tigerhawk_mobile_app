@@ -2,7 +2,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { LoadDocument } from '@/types/load-document';
 
-import { mapLoadDocumentRow, type LoadDocumentRow } from './map-load-document-row';
+import {
+    mapLoadDocumentRow,
+    type LoadDocumentRow,
+} from './map-load-document-row';
 
 const LOAD_DOCUMENTS_SELECT =
   'id, load_id, filename, document_type, file_size, url, storage_path, uploaded_at';
@@ -30,6 +33,7 @@ export async function fetchLoadDocumentsForDriver(
     return { documents: [], errorMessage: error.message };
   }
 
-  const documents = (data as LoadDocumentRow[] | null)?.map(mapLoadDocumentRow) ?? [];
+  const documents =
+    (data as LoadDocumentRow[] | null)?.map(mapLoadDocumentRow) ?? [];
   return { documents, errorMessage: null };
 }

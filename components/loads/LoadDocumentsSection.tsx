@@ -1,6 +1,10 @@
-import * as Linking from 'expo-linking';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+
+import {
+  documentOpenFailureMessage,
+  openLoadDocument,
+} from '@/lib/loads/open-load-document';
 
 import { Button } from '@/components/ui/Button';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
@@ -15,6 +19,7 @@ type LoadDocumentsSectionProps = {
   loading: boolean;
   error: string | null;
   onRetry: () => void;
+  onRefreshDocuments: () => Promise<LoadDocument[]>;
 };
 
 export function LoadDocumentsSection({
@@ -22,23 +27,28 @@ export function LoadDocumentsSection({
   loading,
   error,
   onRetry,
+  onRefreshDocuments,
 }: LoadDocumentsSectionProps) {
-  const handleOpen = useCallback(async (doc: LoadDocument) => {
-    if (!doc.url?.trim()) {
-      Alert.alert(strings.loadDetail.documentOpenFailed, strings.loadDetail.documentNoUrl);
-      return;
-    }
-    try {
-      const canOpen = await Linking.canOpenURL(doc.url);
-      if (!canOpen) {
-        Alert.alert(strings.loadDetail.documentOpenFailed, strings.loadDetail.documentNoUrl);
-        return;
+  const [openingId, setOpeningId] = useState<string | null>(null);
+
+  const handleOpen = useCallback(
+    async (doc: LoadDocument) => {
+      setOpeningId(doc.id);
+      try {
+        const result = await openLoadDocument({
+          doc,
+          refreshDocuments: onRefreshDocuments,
+        });
+        if (!result.opened) {
+          const { title, message } = documentOpenFailureMessage(result.reason);
+          Alert.alert(title, message);
+        }
+      } finally {
+        setOpeningId(null);
       }
-      await Linking.openURL(doc.url);
-    } catch {
-      Alert.alert(strings.loadDetail.documentOpenFailed, strings.loadDetail.documentNoUrl);
-    }
-  }, []);
+    },
+    [onRefreshDocuments],
+  );
 
   return (
     <View accessibilityLabel={strings.loadDetail.pod}>
@@ -80,6 +90,8 @@ export function LoadDocumentsSection({
           <Button
             title={strings.loadDetail.documentView}
             variant="outline"
+            loading={openingId === doc.id}
+            disabled={openingId !== null}
             onPress={() => void handleOpen(doc)}
             style={styles.viewBtn}
             accessibilityLabel={`${strings.loadDetail.documentView} ${doc.filename}`}

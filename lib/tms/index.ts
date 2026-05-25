@@ -25,6 +25,10 @@ export {
 } from './document-upload-request';
 export { parseDocumentUploadError } from './parse-document-error';
 export {
+  fetchTmsLoadDocuments,
+  type FetchTmsLoadDocumentsResult,
+} from './fetch-load-documents';
+export {
   uploadLoadDocument,
   type LoadDocumentRecord,
   type UploadLoadDocumentParams,

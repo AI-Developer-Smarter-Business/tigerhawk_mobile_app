@@ -5,12 +5,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { getUserFacingMessage } from '@/lib/errors';
 import {
-  getDriverQueryGateError,
-  isDriverLoadsQueryEnabled,
+    getDriverQueryGateError,
+    isDriverLoadsQueryEnabled,
 } from '@/lib/query/driver-query-gate';
 import { queryKeys } from '@/lib/query/query-keys';
-import { fetchLoadDocumentsForDriver } from '@/lib/supabase/queries/fetch-load-documents';
 import { getSupabase } from '@/lib/supabase/client';
+import { fetchDriverLoadDocuments } from '@/lib/supabase/queries/fetch-driver-load-documents';
 import type { LoadDocument } from '@/types/load-document';
 
 export type UseLoadDocumentsQueryResult = {
@@ -18,11 +18,13 @@ export type UseLoadDocumentsQueryResult = {
   loading: boolean;
   refreshing: boolean;
   error: string | null;
-  refetch: () => Promise<void>;
-  retry: () => Promise<void>;
+  refetch: () => Promise<LoadDocument[]>;
+  retry: () => Promise<LoadDocument[]>;
 };
 
-export function useLoadDocumentsQuery(loadId: string | undefined): UseLoadDocumentsQueryResult {
+export function useLoadDocumentsQuery(
+  loadId: string | undefined,
+): UseLoadDocumentsQueryResult {
   const { user, isSupabaseAuthenticated, isInitialized } = useAuth();
   const { profile, isDriver, loading: profileLoading } = useProfile();
   const userId = user?.id ?? '';
@@ -49,7 +51,7 @@ export function useLoadDocumentsQuery(loadId: string | undefined): UseLoadDocume
     enabled: enabled && Boolean(loadId),
     queryFn: async () => {
       const supabase = getSupabase();
-      const result = await fetchLoadDocumentsForDriver(supabase, loadId!);
+      const result = await fetchDriverLoadDocuments(supabase, loadId!);
       if (result.errorMessage) {
         throw new Error(result.errorMessage);
       }
@@ -57,13 +59,13 @@ export function useLoadDocumentsQuery(loadId: string | undefined): UseLoadDocume
     },
   });
 
-  const refetch = useCallback(async () => {
-    await query.refetch();
+  const refetch = useCallback(async (): Promise<LoadDocument[]> => {
+    const result = await query.refetch();
+    return result.data ?? [];
   }, [query]);
 
   const error =
-    gateError ??
-    (query.error ? getUserFacingMessage(query.error) : null);
+    gateError ?? (query.error ? getUserFacingMessage(query.error) : null);
 
   return {
     documents: query.data ?? [],

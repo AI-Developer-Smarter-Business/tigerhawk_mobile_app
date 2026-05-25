@@ -1,12 +1,12 @@
-import { assertTmsUrlReachableFromDevice } from './assert-tms-device-url';
-import { assertDriverUploadDocumentType } from './assert-driver-document-type';
 import type { DriverUploadDocumentType } from './assert-driver-document-type';
+import { assertDriverUploadDocumentType } from './assert-driver-document-type';
+import { assertTmsUrlReachableFromDevice } from './assert-tms-device-url';
 import { tmsDocumentApiPath } from './client';
 import { TmsDocumentUploadError } from './document-errors';
 import {
-  buildDocumentUploadPath,
-  buildDocumentUploadRequestInit,
-  type TmsUploadFileDescriptor,
+    buildDocumentUploadPath,
+    buildDocumentUploadRequestInit,
+    type TmsUploadFileDescriptor,
 } from './document-upload-request';
 import { parseDocumentUploadError } from './parse-document-error';
 
@@ -55,7 +55,10 @@ export async function uploadLoadDocument(
   assertTmsUrlReachableFromDevice();
 
   const url = tmsDocumentApiPath(buildDocumentUploadPath(loadId));
-  const init = buildDocumentUploadRequestInit(accessToken, { file, documentType });
+  const init = buildDocumentUploadRequestInit(accessToken, {
+    file,
+    documentType,
+  });
 
   let response: Response;
   try {
@@ -82,7 +85,10 @@ export async function uploadLoadDocument(
   }
 
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    throw new TmsDocumentUploadError('Invalid response from document upload.', 'UNKNOWN');
+    throw new TmsDocumentUploadError(
+      'Invalid response from document upload.',
+      'UNKNOWN',
+    );
   }
 
   return body as LoadDocumentRecord;

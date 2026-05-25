@@ -58,11 +58,11 @@
 | 4.1 | ✅ **Completada (22 may 2026).** Opción **(A):** parche TMS `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md` (POST asignado + tipos `POD`/`Photo` para driver); capa móvil `lib/tms/upload-load-document.ts`, límites 50 MB/255, tests `document-upload-request`, `parse-document-error`, `upload-load-document`. Aplicar parche en repo TMS Netlify antes de QA E2E POD (4.2). |
 | 4.2 | ✅ **Completada (22 may 2026, reorientada).** **Ver** documentos de la carga subidos en TMS: `fetchLoadDocumentsForDriver` (Supabase RLS), `useLoadDocumentsQuery`, `LoadDocumentsSection` (lista + **View** con `Linking`); Realtime `load_documents` + `enable_realtime_load_documents.sql`; pull-to-refresh. **Opcional:** `PodUploadSection` como evidencia del conductor (POD/foto) vía TMS 4.1.                                                                                                                                                                                                                                   |
 | 4.3 | ⏸ **En espera.** Validar **tamaño máximo** y tipos MIME en cliente antes de subir (coherente con bucket/TMS). Lógica base en `lib/tms/document-upload-limits.ts`, `lib/media/allowed-image-mime.ts`; **QA E2E y habilitación en UI** pendientes de validación con cliente y despliegue parches TMS (subida conductor deshabilitada en app).                                                                                                                                                                                                                                                    |
-| 4.4 | Verificar que cada archivo quede **asociado** al `load_id` correcto y a la tabla/vista de documentos acordada.                                                                                                                                                                                                                                                     |
+| 4.4 | ✅ **Completada (25 may 2026).** Asociación `load_id` / `load_documents`: `lib/loads/document-load-association.ts` (filtro post-query, prefijo `storage_path`, validación respuesta TMS); `fetchLoadDocumentsForDriver`, `uploadLoadDocument`, `normalizeLoadIdParam` en `/load/[id]` y `useLoadDocumentsQuery`; tests `document-load-association`, `fetch-load-documents`, `upload-load-document`.                                                                                                                                                                                                                                                     |
 | 4.5 | Manejo **offline** básico: mensaje “sin conexión” o cola simple (sin prometer offline completo en v1).                                                                                                                                                                                                                                                             |
 | 4.6 | Tests unitarios de preparación de **FormData** / metadatos (con mocks).                                                                                                                                                                                                                                                                                            |
-| 4.7 | **QA manual** de documentos: subida OK, cancelación, error de red, archivo demasiado grande.                                                                                                                                                                                                                                                                       |
-| 4.8 | Revisión de **costos** Storage / cuotas Supabase y documentación en `docs/STORAGE_RLS.md` (políticas y rutas).                                                                                                                                                                                                                                                     |
+| 4.7 | **QA manual** documentos: **TMS → móvil en tiempo real** en carga asignada (y pull-to-refresh); cuando subida esté activa: evidencia conductor (POD/foto), cancelación, red, archivo grande.                                                                                                                                                                        |
+| 4.8 | **Alcance con cliente:** confirmar que el conductor pueda subir **fotos de evidencia** (percances, daño, problemas de recepción, POD); habilitar UI de subida tras parches TMS; alinear textos (`strings`) y `PROXIMOS_PASOS.md`. *(Costos Storage/cuotas: responsabilidad del cliente en su panel Supabase, fuera del alcance dev móvil.)*                                                                                      |
 
 ---
 
@@ -123,6 +123,28 @@
 | 8.6 | **Post-mortem** breve: horas reales vs plan, deuda técnica aceptada.                                                                                                           |
 | 8.7 | **Backlog v1.1** priorizado (mensajería avanzada, offline-first, geofencing, etc., según `docs/driver_app_roadmap.md`).                                                        |
 | 8.8 | **Handoff** al cliente: enlaces a builds, cuentas y este archivo actualizado con estado por tarea (✅ / ⏳).                                                                   |
+
+---
+
+## Tarea opcional — ¿TMS o solo Supabase para subida de evidencia del conductor?
+
+**No cuenta como semana 9.** Referencia para el cliente y para un posible **v1.1** si cambia la estrategia de despliegue.
+
+| Opción | Qué implica | Veredicto PP2 |
+| --- | --- | --- |
+| **(A) Ampliar TMS** `POST /api/dispatcher/loads/[id]/documents` | Cambios en **repo TMS** (permiso conductor asignado, JWT Bearer, mismos límites 50 MB, Storage vía admin + fila `load_documents`). Móvil ya preparado (`lib/tms/upload-load-document.ts`). | **Recomendada para v1** — misma vía que dispatch; `activity_log`, validación y URLs firmadas centralizadas. Parches: `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md`, `docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`. |
+| **(B) Supabase Storage + RLS INSERT desde móvil** | Políticas en bucket `load-documents` + INSERT en `load_documents` para rol `driver`; subida con `supabase.storage` desde la app (sin pasar por Next.js). | **No recomendada en v1** — duplica reglas del TMS, refresco de URLs, riesgo de desalinear tipos MIME/tamaño y de acercar secretos o atajos con `service_role` en cliente. |
+| **(C) Ruta API móvil nueva en TMS** | Duplica `documents/route.ts` (validación, logging, límites). | **Rechazada** — más superficie sin beneficio frente a (A). |
+
+### Opcional — documentar decisión y revisión (post–semana 8)
+
+| # | Tarea |
+| --- | --- |
+| **OPC.1** | Registrar en `PROXIMOS_PASOS.md` / handoff que la subida de evidencia (POD, percances, recepción) **requiere despliegue TMS (A)**, no basta con políticas RLS en Supabase; la lectura de documentos del TMS en móvil sí usa RLS SELECT ya aplicado. |
+| **OPC.2** | Tras despliegue de (A) en producción: comparar en checklist si (B) aportaría algo (p. ej. subida sin depender de Netlify); si no, cerrar (B) como descartada en backlog v1.1. |
+| **OPC.3** | Solo si el cliente **no puede** desplegar TMS a tiempo: spike acotado de (B) con políticas Storage + INSERT driver (máx. 1–2 días), criterio de aceptación idéntico a 4.7; **no** sustituir (A) en producción sin sign-off explícito. |
+
+**Resumen para negocio:** la mejor opción es **(A)**; Supabase solo complementa (**SELECT** documentos, **Realtime** opcional). Confirmación cliente: tarea **4.8**.
 
 ---
 

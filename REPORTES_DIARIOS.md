@@ -566,4 +566,49 @@ No repetir la guía completa de QA; solo lo necesario para repetir la prueba ese
 
 ---
 
+## 25 de mayo de 2026
+
+### Tarea 1 — Asociación documento ↔ carga (dev 4.4)
+
+**Qué se implementó**
+
+- **`lib/loads/document-load-association.ts`:** validación de que cada fila de `load_documents` pertenece al `load_id` de la pantalla abierta; comprobación de prefijo `storage_path` (`{load_id}/…`, igual que el TMS); filtro defensivo tras la query; validación de la respuesta de subida TMS.
+- **`fetchLoadDocumentsForDriver`:** `.eq('load_id', …)` + filtro de filas inconsistentes (no se muestran al conductor).
+- **`uploadLoadDocument`:** rechaza respuesta si `load_id` del JSON no coincide con la carga.
+- **Ruta `/load/[id]`** y **`useLoadDocumentsQuery`:** `normalizeLoadIdParam` para ignorar ids vacíos en deep links rotos.
+- **Tests:** `document-load-association.test.ts`, `fetch-load-documents.test.ts`, ampliación `upload-load-document.test.ts`.
+
+**Funcionalidad disponible**
+
+- En detalle de carga, la lista **POD / Documents** solo muestra archivos de **esa** carga (tabla `load_documents` + RLS + filtro cliente). Evita mostrar un documento ligado por error a otra carga o con ruta Storage de otro `load_id`.
+
+**Cómo probar**
+
+- `npm run ci` — debe pasar en verde (incluye tests de asociación).
+- **En la app (visual):**
+  1. `npx expo start` → login conductor (`driver_test@test.com` o usuario con cargas asignadas).
+  2. Menú **My Loads** → abrir una carga que en el TMS tenga al menos un documento en **Documents** (ej. `#TH-MPEIQ624-8THS`).
+  3. Bajar hasta la tarjeta **POD / Documents**.
+  4. **Resultado esperado:** aparece(n) solo archivo(s) de **esa** carga (nombre, tipo, tamaño, fecha); botón **View** abre el archivo. No deben aparecer documentos de otras cargas del mismo usuario.
+  5. En el TMS, subir un PDF/imagen a **otra** carga distinta: en el detalle de la primera carga **no** debe listarse ese archivo nuevo (solo tras abrir la otra carga).
+  6. **Pull-to-refresh** en el detalle: la lista se mantiene acotada a la misma carga.
+- **Regresión ruta inválida:** abrir `/load/` con id vacío o inválido → pantalla “Load not found” o sin lista de documentos (no crash).
+
+### Tarea 2 — Enlaces de documentos expirados y borrados en TMS (4.4 / UX)
+
+**Qué se implementó**
+
+- **URLs firmadas:** al listar/refrescar, la app intenta **GET documentos en el TMS** (enlaces nuevos ~1 h); si el TMS no responde, sigue usando Supabase.
+- **View:** antes de abrir, comprueba el enlace; si expiró (`InvalidJWT` / `exp`), **refresca la lista** y reintenta; si falla, mensaje claro de enlace caducado (no JSON crudo).
+- **Borrado en TMS:** con GET TMS activo, la lista en móvil coincide con TMS (el archivo borrado desaparece); **pull-to-refresh** y al **volver a la pantalla** también refrescan documentos; Realtime en `load_documents` sigue aplicando.
+
+**Cómo probar**
+
+- `npm run ci` — tests `document-view-url`, `merge-tms-documents` en verde.
+- **Enlace expirado:** abrir detalle de carga con documento subido hace **más de 1 h** → **View** → si falla, debe mostrarse *“This download link has expired. Pull down…”* (no el error JSON de Supabase). **Pull down** en el detalle → **View** otra vez (con parche Bearer en TMS, debe abrir).
+- **Borrado:** con la app en **POD / Documents**, borrar el archivo en el TMS → tras unos segundos (Realtime) o **pull down**, la fila **desaparece**.
+- **Ruta:** **My Loads** → carga → tarjeta **POD / Documents** → **View**.
+
+---
+
 *Al cerrar cada día, añadir sección `## [fecha]` con tareas numeradas en orden ascendente.*

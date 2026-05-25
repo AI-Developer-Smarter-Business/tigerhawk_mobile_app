@@ -14,4 +14,5 @@ export {
   fetchLoadDocumentsForDriver,
   type LoadDocumentsQueryResult,
 } from './fetch-load-documents';
+export { fetchDriverLoadDocuments } from './fetch-driver-load-documents';
 export { mapLoadDocumentRow, type LoadDocumentRow } from './map-load-document-row';
