@@ -8,7 +8,7 @@
 |-------|----------|-------|
 | Location access | **Foreground only** (`whenInUse`) while Tigerhawk Mobile is open | Background / geofencing |
 | Use case | Show or share current coordinates on **load detail** for dispatch | Continuous tracking, auto check-in |
-| TMS persistence | **TBD** in task 5.3 (only if existing API/table) | Full tracking pipeline |
+| TMS persistence | **Share only** (no TMS GPS API — task 5.3 audit) | `POST …/driver-location` when TMS adds route |
 | Battery / legal | No background service; disclaimer in app (`strings.location`) | Revisit with legal if background added |
 
 ## Rationale
@@ -23,8 +23,8 @@
 |------|-------------|
 | **5.1** ✅ | This doc, `lib/location/gps-v1-policy.ts`, `strings.location`, `app.json` plugin (no background) |
 | **5.2** ✅ | `expo-location` on load detail, share location |
-| **5.3** | TMS API/table review for persist |
-| **5.4** | Device QA (denied permission, resume app) |
+| **5.3** ✅ | TMS audit — no GPS persist API; share_only + `docs/GPS_TMS_INTEGRATION_5_3.md` |
+| **5.4** ✅ | `docs/QA_DRIVER_LOCATION_5_4.md`, geo helpers, permission sync on resume |
 
 ## Code references
 

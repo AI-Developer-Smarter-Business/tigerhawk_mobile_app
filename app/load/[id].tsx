@@ -13,6 +13,10 @@ import { useLoadDocumentsQuery } from '@/hooks/useLoadDocumentsQuery';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { formatReference } from '@/lib/loads';
 import { normalizeLoadIdParam } from '@/lib/loads/document-load-association';
+import {
+  FOCUS_DOCUMENTS_REFETCH_MIN_MS,
+  shouldRunThrottledRefetch,
+} from '@/lib/query/foreground-refetch-throttle';
 import { resolveRouteParam } from '@/lib/router/route-params';
 
 export default function LoadDetailScreen() {
@@ -44,9 +48,14 @@ export default function LoadDetailScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (loadId) {
-        void refetchDocuments();
+      if (!loadId) {
+        return;
       }
+      const throttleKey = `documents-focus:${loadId}`;
+      if (!shouldRunThrottledRefetch(throttleKey, FOCUS_DOCUMENTS_REFETCH_MIN_MS)) {
+        return;
+      }
+      void refetchDocuments();
     }, [loadId, refetchDocuments]),
   );
 

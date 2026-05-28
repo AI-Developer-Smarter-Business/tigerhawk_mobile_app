@@ -1,4 +1,4 @@
-# Offline handling (task 4.5)
+# Offline handling (tasks 4.5, 5.5)
 
 PP2 v1 does **not** offer full offline mode or an upload queue.
 
@@ -8,8 +8,14 @@ When connectivity returns:
 
 - In-flight React Query requests are **cancelled** while offline (avoids stuck pull-to-refresh spinners).
 - TanStack Query **`onlineManager`** is wired to NetInfo; active queries use **`refetchOnReconnect`**.
-- **`QueryNetworkRecovery`** refetches the driver profile (keeps the last profile on transient network errors) and refetches active load queries once.
-- **Pull-to-refresh** uses `usePullToRefresh` (local state) so the top spinner only runs when the driver pulls down — not during background reconnect refetches.
+- **`QueryNetworkRecovery`** refetches the driver profile (keeps the last profile on transient network errors) and refetches active load queries once, **debounced** (~400 ms) after NetInfo reports online.
+- **Profile refetch** after reconnect is **silent** when a profile is already cached (`isProfileGateLoading`) so loads/detail do not flash “No profile found”.
+- Cancelled queries and **AbortError** are treated as transient network (profile preserved).
+- **Pull-to-refresh** uses `usePullToRefresh` (local state + 45 s watchdog) so the top spinner only runs when the driver pulls down — not during background reconnect refetches.
+
+Manual QA: **`docs/QA_NETWORK_RECONNECT_5_5.md`**.
+
+**Foreground resume:** `useDriverLoadsRealtime` invalidates loads at most every **30 s** when the app becomes active (`lib/query/foreground-refetch-throttle.ts`), in addition to Realtime debouncing.
 
 ## Behavior
 

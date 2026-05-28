@@ -4,6 +4,8 @@ Cross-check **PP2 mobile** (`DriverActionBar`) against **TMS** `DriverActionPane
 
 Automated guard: `lib/loads/__tests__/web-driver-panel-parity.test.ts`.
 
+**Production execution (task 5.6):** use **`docs/QA_PRODUCTION_SIGNOFF_5_6.md`** §F. Rows **1–2** require TMS **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`** on live server; without it, mobile PATCH returns **401** (not a single-load bug).
+
 ## Prerequisites
 
 | Item | Value |

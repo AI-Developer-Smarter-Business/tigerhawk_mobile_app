@@ -10,17 +10,15 @@ import {
   formatAccuracyMeters,
   formatCoordinates,
 } from '@/lib/location/format-coordinates';
+import { buildGoogleMapsUrl } from '@/lib/location/maps-url';
+import { canPersistLocationToTms } from '@/lib/location/tms-location-integration';
 
 type LoadLocationSectionProps = {
   loadReference: string;
 };
 
-function buildMapsUrl(latitude: number, longitude: number): string {
-  return `https://maps.google.com/?q=${latitude},${longitude}`;
-}
-
 export function LoadLocationSection({ loadReference }: LoadLocationSectionProps) {
-  const { position, loading, error, permissionDenied, shareLocation } =
+  const { position, loading, error, needsLocationSettings, lowPowerHint, shareLocation } =
     useLoadLocationShare({ loadReference });
 
   if (Platform.OS === 'web') {
@@ -37,8 +35,16 @@ export function LoadLocationSection({ loadReference }: LoadLocationSectionProps)
     <View accessibilityLabel={strings.location.sectionTitle}>
       <Text style={styles.disclaimer}>{strings.location.disclaimer}</Text>
 
+      {!canPersistLocationToTms() ? (
+        <Text style={styles.tmsHint}>{strings.location.tmsShareOnlyHint}</Text>
+      ) : null}
+
       {error ? (
         <ErrorBanner title={error.title} message={error.message} />
+      ) : null}
+
+      {lowPowerHint ? (
+        <Text style={styles.tmsHint}>{strings.location.lowPowerHint}</Text>
       ) : null}
 
       {position ? (
@@ -59,7 +65,9 @@ export function LoadLocationSection({ loadReference }: LoadLocationSectionProps)
           <Button
             title={strings.location.openInMaps}
             variant="outline"
-            onPress={() => void Linking.openURL(buildMapsUrl(position.latitude, position.longitude))}
+            onPress={() =>
+              void Linking.openURL(buildGoogleMapsUrl(position.latitude, position.longitude))
+            }
             style={styles.secondaryBtn}
             accessibilityLabel={strings.location.mapsLinkA11y}
           />
@@ -76,7 +84,7 @@ export function LoadLocationSection({ loadReference }: LoadLocationSectionProps)
         accessibilityLabel={strings.location.shareLocationA11y}
       />
 
-      {permissionDenied ? (
+      {needsLocationSettings ? (
         <Button
           title={strings.location.openSettings}
           variant="outline"
@@ -94,7 +102,14 @@ const styles = StyleSheet.create({
     fontSize: PP2Theme.typography.sizes.caption,
     color: PP2Theme.colors.textMuted,
     lineHeight: 18,
+    marginBottom: PP2Theme.spacing.sm,
+  },
+  tmsHint: {
+    fontSize: PP2Theme.typography.sizes.caption,
+    color: PP2Theme.colors.textMuted,
+    lineHeight: 18,
     marginBottom: PP2Theme.spacing.md,
+    fontStyle: 'italic',
   },
   coordsBlock: {
     marginBottom: PP2Theme.spacing.md,

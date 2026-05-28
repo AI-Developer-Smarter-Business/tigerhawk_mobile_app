@@ -4,6 +4,10 @@ import { AppState, type AppStateStatus } from 'react-native';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import {
+  FOREGROUND_LOADS_REFETCH_MIN_MS,
+  shouldRunThrottledRefetch,
+} from '@/lib/query/foreground-refetch-throttle';
 import { invalidateDriverLoads } from '@/lib/query/invalidate-loads';
 import { subscribeDriverLoadsRealtime } from '@/lib/supabase/realtime/driver-loads-subscription';
 import { getSupabase } from '@/lib/supabase/client';
@@ -41,9 +45,14 @@ export function useDriverLoadsRealtime(): void {
     if (!userId || !isDriver) return;
 
     const onAppState = (nextState: AppStateStatus) => {
-      if (nextState === 'active') {
-        void invalidateDriverLoads(queryClient, userId);
+      if (nextState !== 'active') {
+        return;
       }
+      const throttleKey = `loads-foreground:${userId}`;
+      if (!shouldRunThrottledRefetch(throttleKey, FOREGROUND_LOADS_REFETCH_MIN_MS)) {
+        return;
+      }
+      void invalidateDriverLoads(queryClient, userId);
     };
 
     const subscription = AppState.addEventListener('change', onAppState);

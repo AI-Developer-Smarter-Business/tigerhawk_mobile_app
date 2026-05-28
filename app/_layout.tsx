@@ -64,8 +64,8 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <ProfileProvider>
-        <NetworkProvider>
+      <NetworkProvider>
+        <ProfileProvider>
           <QueryProvider>
             <LoadsProvider>
             <AuthBootstrapGate>
@@ -97,8 +97,8 @@ export default function RootLayout() {
             </AuthBootstrapGate>
             </LoadsProvider>
           </QueryProvider>
-        </NetworkProvider>
-      </ProfileProvider>
+        </ProfileProvider>
+      </NetworkProvider>
     </AuthProvider>
   );
 }

@@ -76,11 +76,11 @@
 | --- | ----- |
 | 5.1 | ✅ **Completada (26 may 2026).** Decisión GPS v1: **solo primer plano** (`whenInUse`); sin background. `docs/GPS_V1_DECISION.md`, `lib/location/gps-v1-policy.ts`, `strings.location` (disclaimer + permisos), `app.json` plugin `expo-location` (background deshabilitado). Revisión rutas: `load/[id]` usa `normalizeLoadIdParam`; título stack desde `strings`. |
 | **5.2** | ✅ **Completada (26 may 2026).** `expo-location` en detalle de carga: `LoadLocationSection`, `useLoadLocationShare`, `getForegroundPosition` (solo primer plano), `Share` con coordenadas + referencia de carga, **Open in Maps**, disclaimer; tests `format-coordinates`, `get-foreground-position`, `map-location-error`. |
-| 5.3 | Revisar TMS (`PROYECTO_MUESTRA`) por API/tabla existente para persistir o compartir ubicación; integrar si hay endpoint acordado (sin migraciones inventadas). |
-| 5.4 | Pruebas en **dispositivo real**: permiso denegado, batería, volver a la app tras background; helpers geoespaciales + tests unitarios básicos. |
-| 5.5 | **Hardening desconexión/reconexión:** regresión post-4.5 (Wi‑Fi off/on, spinner pull-to-refresh, perfil “No profile found”, queries colgadas); corregir P0/P1. |
-| 5.6 | **Ejecutar QA** `docs/QA_DRIVER_DOCUMENTS_4_7.md` §A–C + regresión `docs/QA_DRIVER_ACTIONS_3_7.md` contra **TMS producción** (lectura documentos, View, offline). |
-| 5.7 | `npm run ci` + smoke manual login → loads → detail → status → documentos; rate-limit refetch si hace falta. |
+| **5.3** | ✅ **Completada (26 may 2026).** Auditoría TMS: **no** existe `POST /tracking/loads/…/locations` ni tabla GPS por carga. v1 = **share_only** (`lib/location/tms-location-integration.ts`, `docs/GPS_TMS_INTEGRATION_5_3.md`). Stub `postDriverLocationToTms` para cuando exista ruta TMS; hint UI `tmsShareOnlyHint`. Sin migraciones inventadas. |
+| **5.4** | ✅ **Completada (28 may 2026).** `docs/QA_DRIVER_LOCATION_5_4.md` (matriz dispositivo: permiso, Settings, background, batería). Helpers `lib/location/geo.ts`, `maps-url.ts`, `location-permission.ts`; validación coords en `getForegroundPosition`; `useLoadLocationShare` sincroniza permiso al volver (focus + `AppState`); tests `geo`, `maps-url`, `location-permission`, ampliación `get-foreground-position`. |
+| **5.5** | ✅ **Completada (28 may 2026).** Hardening post-4.5: refetch perfil **silencioso** (`profile-gate-loading`, `applyProfileFetchResult` sin error en red); `QueryNetworkRecovery` debounced + reset offline; `isQueryCancellation`; `usePullToRefresh` watchdog 45s; orden providers `Network` → `Profile` → `Query`. GPS L5/L6: sync servicios GPS al volver de Ajustes, **Open Settings** si GPS apagado, hint `lowPowerHint` (`expo-battery`). `docs/QA_NETWORK_RECONNECT_5_5.md`. |
+| **5.6** | ✅ **Completada (28 may 2026).** Runbook producción `docs/QA_PRODUCTION_SIGNOFF_5_6.md` (§A–C documentos + §E asociación + §F acciones 3.7); `npm run qa:5.6` preflight; test rutas `lib/qa/__tests__/load-detail-routes.test.ts`. Acciones 1–2 en producción **bloqueadas** sin parche Bearer TMS (documentado). Sign-off manual QA/PM pendiente filas A–C. |
+| **5.7** | ✅ **Completada (28 may 2026).** `npm run smoke:5.7` (CI completo); `docs/QA_SMOKE_E2E_5_7.md` (smoke S1–S10); `docs/DRIVER_TMS_CAPABILITIES_5_7.md` (auditoría TMS vs móvil + backlog P0–v1.1). Rate-limit refetch: `foreground-refetch-throttle` (30s loads / 15s docs focus); tests `app-routes-smoke`, `foreground-refetch-throttle`. |
 
 ---
 
@@ -169,10 +169,10 @@ Referencia: `DriverActionPanel`, `DocumentsTab`, `PATCH …/status`, `POST …/d
 | Offline / reconexión | ✅ base; hardening | 4.5, **5.5** | Sí |
 | Mensajes por carga (`load_messages`) | Placeholder | — | **v1.1** (`7.7`) |
 | Wait time (`wait-time` API) | No | — | **v1.1** |
+| Ubicación GPS (primer plano) | ✅ share en detalle | **5.1–5.3** ✅ | **Sí** — share; persist TMS cuando exista API |
 | Push / notificaciones | No | — | **v1.1** |
-| Ubicación GPS (primer plano) | ✅ share en detalle | **5.1–5.2** ✅ · **5.3–5.4** | **Sí** — share operativo; persist TMS en 5.3 |
-| Asignar conductor, menú dispatch/A/R/settlements | Solo staff TMS | — | **Excluido** (no es rol driver) |
 | Subir BOL / Rate Con / tipos staff en Documents | Solo dispatch en TMS | — | **Excluido** — conductor solo `POD`/`Photo` (4.1) |
+| Asignar conductor, menú dispatch/A/R/settlements | Solo staff TMS | — | **Excluido** (no es rol driver) |
 
 **Cobertura v1 (9 jun):** lectura documentos + status + GPS primer plano + reconexión estable + subida evidencia (**Semana 6**). Mensajes, wait time, push y GPS background → v1.1.
 

@@ -111,4 +111,23 @@ describe('getForegroundPosition', () => {
       code: 'SERVICES_DISABLED',
     });
   });
+
+  it('throws POSITION_UNAVAILABLE when coordinates are out of range', async () => {
+    mockLocation.getCurrentPositionAsync.mockResolvedValue({
+      coords: {
+        latitude: 999,
+        longitude: 0,
+        accuracy: 5,
+        altitude: null,
+        altitudeAccuracy: null,
+        heading: null,
+        speed: null,
+      },
+      timestamp: 1,
+    });
+
+    await expect(getForegroundPosition()).rejects.toMatchObject({
+      code: 'POSITION_UNAVAILABLE',
+    });
+  });
 });

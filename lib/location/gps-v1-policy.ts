@@ -2,13 +2,15 @@
  * GPS scope for PP2 v1 (deadline 9 Jun 2026).
  * Single source of truth for tasks 5.1–5.4 and permission copy in app.json / strings.
  */
+import { canPersistLocationToTms } from './tms-location-integration';
+
 export const GPS_V1_POLICY = {
   /** v1 uses foreground location only while the app is open. */
   mode: 'foreground' as const,
   /** No background tracking or geofencing in v1. */
   backgroundTrackingEnabled: false,
-  /** No persistent location stream to TMS until API is confirmed (task 5.3). */
-  persistToTms: false,
+  /** TMS POST for GPS — false until dedicated route is deployed (task 5.3 audit). */
+  persistToTms: canPersistLocationToTms(),
   /** Planned surfaces (task 5.2+). */
   surfaces: ['load_detail'] as const,
 } as const;

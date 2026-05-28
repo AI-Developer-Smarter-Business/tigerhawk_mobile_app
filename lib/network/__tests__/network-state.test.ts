@@ -1,4 +1,8 @@
-import { isNetworkFailure, isOfflineFromNetInfo } from '../network-state';
+import {
+  isNetworkFailure,
+  isOfflineFromNetInfo,
+  isQueryCancellation,
+} from '../network-state';
 
 describe('isOfflineFromNetInfo', () => {
   it('is offline when not connected', () => {
@@ -36,5 +40,11 @@ describe('isNetworkFailure', () => {
 
   it('ignores unrelated errors', () => {
     expect(isNetworkFailure(new Error('permission denied'))).toBe(false);
+  });
+
+  it('treats query cancellation as transient network', () => {
+    const err = new Error('Query was cancelled');
+    expect(isQueryCancellation(err)).toBe(true);
+    expect(isNetworkFailure(err)).toBe(true);
   });
 });

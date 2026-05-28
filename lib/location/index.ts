@@ -1,4 +1,11 @@
 export {
+  canPersistLocationToTms,
+  getTmsLocationPersistenceMode,
+  TMS_LOCATION_INTEGRATION,
+  type TmsLocationPersistenceMode,
+  type TmsLocationRouteAudit,
+} from './tms-location-integration';
+export {
   GPS_V1_EXPO_PERMISSION,
   GPS_V1_POLICY,
   isForegroundGpsV1,
@@ -16,4 +23,5 @@ export {
   type ForegroundPosition,
 } from './get-foreground-position';
 export { LocationError, type LocationErrorCode } from './location-errors';
+export { postDriverLocationToTms, type PostDriverLocationParams } from './post-driver-location';
 export { shareLoadLocation } from './share-load-location';

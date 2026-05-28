@@ -310,6 +310,18 @@ Legacy drivers without auth may have `drivers.id` ≠ any `auth.users.id`; those
 | 6 | POD upload path after TMS/backend decision | ✅ 4.1 (patch + `lib/tms`); UI 4.2 |
 | 7 | Messages: Supabase read and/or TMS POST with assignment checks | 2.x / 3.x |
 | 8 | Document `EXPO_PUBLIC_TMS_API_URL` for staging/production Netlify URL | ✅ `docs/MOBILE_API.md` §4.2, `.env.example` |
+| 9 | Driver GPS: Share sheet v1; TMS persist when dedicated route exists | ✅ 5.2–5.3 · `docs/GPS_TMS_INTEGRATION_5_3.md` |
+
+---
+
+## 10. Driver GPS / location (task 5.3)
+
+| Topic | Finding |
+|-------|---------|
+| TMS tracking API | **Not deployed** — `/api/tracking/loads/[id]/locations` appears only in roadmap doc, not in `app/api/`. |
+| v1 mobile | **Share location** on load detail (`LoadLocationSection`) — native sheet with load ref + coordinates. |
+| Persist to TMS | **Deferred** — `canPersistLocationToTms()` is `false` in `lib/location/tms-location-integration.ts`. |
+| Detail | `docs/GPS_TMS_INTEGRATION_5_3.md`, `docs/GPS_V1_DECISION.md` |
 
 ---
 

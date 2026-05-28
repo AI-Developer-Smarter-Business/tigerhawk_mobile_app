@@ -739,7 +739,159 @@ Business rationale for **Share location** on load detail (complements dev **5.2*
 
 **How to test**
 
-- No build required: read this entry and confirm with the business whether the current flow (message with `#reference` + coordinates) is enough for field ops before investing in **5.3**.
+- No build required: read this entry and confirm with the business whether the current flow (message with `#reference` + coordinates) is enough for field ops before investing in a TMS API.
+
+### Task 4 — TMS GPS location audit (dev 5.3)
+
+**What was implemented**
+
+- **`docs/GPS_TMS_INTEGRATION_5_3.md`:** TMS read-only review — **no** `POST /tracking/loads/…/locations` or per-load GPS table.
+- **`lib/location/tms-location-integration.ts`:** `hasTrackingApi: false`, **`share_only`** mode; matrix of rejected routes (messages, wait-time, PATCH load notes, etc.).
+- **`postDriverLocationToTms`:** stub that rejects until a TMS API exists; no invented Supabase migrations.
+- **UI:** `strings.location.tmsShareOnlyHint` on **`LoadLocationSection`** (dispatch is not auto-notified in TMS; use Share).
+
+**What is available**
+
+- Drivers still share location with load context via **Share location** (5.2). TMS panel persistence waits for a dedicated route (proposal in the audit doc).
+
+**How to test**
+
+- `npm run ci` — `tms-location-integration`, `post-driver-location` suites.
+- **App:** login → **My Loads** → load → **Your location** → share-only hint + **Share location** button.
+- Read **`docs/GPS_TMS_INTEGRATION_5_3.md`** to align with TMS/client on a new API before 9 Jun.
+
+---
+
+## 28 May 2026
+
+### Task 1 — Device QA and geo helpers (dev 5.4)
+
+**What was implemented**
+
+- **`docs/QA_DRIVER_LOCATION_5_4.md`:** manual matrix on a **physical device** (denied permission, Settings recovery, background resume, system GPS off, battery saver, Open in Maps).
+- **`lib/location/geo.ts`:** lat/lng validation, `assertValidCoordinates`, `distanceMeters` (Haversine).
+- **`lib/location/maps-url.ts`:** centralized `buildGoogleMapsUrl` (used by **`LoadLocationSection`**).
+- **`lib/location/location-permission.ts`:** permission snapshot without re-prompt.
+- **`getForegroundPosition`:** rejects out-of-range GPS readings.
+- **`useLoadLocationShare`:** on screen focus and app `active`, clears denied state if permission was granted in Settings.
+- Tests: `geo`, `maps-url`, `location-permission`; invalid-coordinates case in `get-foreground-position`.
+
+**What is available**
+
+- Same **Share location** UX (5.2) with stronger validation and recovery after Settings/background; checklist ready for field sign-off.
+
+**How to test**
+
+- `npm run ci` — location suites green.
+- **Physical device:** follow **`docs/QA_DRIVER_LOCATION_5_4.md`** rows L1–L8 (minimum L1–L4 and L7).
+- **Expected:** after enabling permission in Settings, **Open Settings** hides without restarting the app; invalid coordinates are not shown or shared.
+- **Field sign-off (28 May):** Android + Expo Go — core flow OK (share, coordinates, Open in Maps).
+
+### Task 2 — Reconnect hardening + GPS L5/L6 (dev 5.5)
+
+**What was implemented**
+
+- **Network (post-4.5):** silent profile refetch when cached (`isProfileGateLoading`); no Account error flash on transient network; debounced `QueryNetworkRecovery` (400 ms) with offline reset; query cancellation treated as network; `usePullToRefresh` 45 s watchdog; provider order `Network` → `Profile` → `Query`.
+- **GPS L5:** system location off → banner + **Open Settings**; re-enable GPS and return → error clears without app restart.
+- **GPS L6:** `expo-battery` + `lowPowerHint` when battery saver is on.
+- **`docs/QA_NETWORK_RECONNECT_5_5.md`** (airplane mode matrix R1–R6).
+
+**What is available**
+
+- Wi‑Fi/mobile reconnect should not leave a stuck spinner or “No profile found”; location handles disabled GPS and battery saver with clear copy.
+
+**How to test**
+
+- `npm run ci`.
+- **Network:** `docs/QA_NETWORK_RECONNECT_5_5.md`.
+- **GPS L5:** Android Settings → turn off system **Location** → **Share location** → turn on → return to app.
+- **GPS L6:** enable battery saver → **Share location** → italic hint visible; no crash.
+
+### Task 3 — Client / TMS suggestion: Field actions (Bearer JWT)
+
+**Context (device QA, 28 May)**
+
+- On load detail (**Field actions**: _In transit_, _At pickup_, _Arrived To Hook Container_, etc.) buttons look **enabled**, but tapping shows **Session expired** with a message that TMS did not accept the session.
+- Reproduced on multiple loads (e.g. `#TH-MPD2UMPC-K00H`, **Dispatched**); **not a single-load bug**.
+- **My Loads**, login, and data reads **work** (direct to Supabase). Only actions that call the **TMS API** fail (`PATCH` status, and future POD upload).
+
+**Technical cause (not fixed on mobile alone)**
+
+- The mobile app already sends `Authorization: Bearer <access_token>` from Supabase on each `PATCH /api/dispatcher/loads/[id]/status`.
+- TMS on the server (e.g. `tms.tigerhawklogistics.com`) often builds the Supabase client **from browser cookies only**. Expo does **not** share cookies with the TMS host → the API route returns **401** → no driver can change status from the app until the patch is deployed on the **TMS repo**.
+
+**What must be done on TMS (live server deploy)**
+
+Follow **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`** (TMS-ready copy):
+
+1. **`lib/supabase/server.ts` — `createClient(request?)`**  
+   When the `Authorization: Bearer …` header is present, forward it to Supabase in `global.headers` (in addition to cookies for the web).
+
+2. **API routes used by mobile** — pass `request` to `createClient(request)`:
+   - **`PATCH /api/dispatcher/loads/[id]/status`** (driver field actions) — **blocking today**.
+   - **`POST /api/dispatcher/loads/[id]/documents`** (POD / Photo) — same prerequisite; see also `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md`.
+
+3. **Post-deploy verification** (curl or app):
+   - Mobile login as a driver on the same Supabase project as TMS.
+   - Tap **In transit** (or another valid action) → status must update (**200**), not **401**.
+   - Optional: `curl` with Bearer against `…/loads/{LOAD_ID}/status` (steps in the doc).
+
+**Until the patch is in production**
+
+- No driver can change status from Tigerhawk Mobile on **any** load.
+- **Add driver photo** upload stays disabled in the UI until TMS **4.1** + Bearer (message already visible in the app).
+
+**Client feedback requested**
+
+> Please confirm whether to **prioritize** deploying the Bearer patch on TMS to enable **Field actions** (and later evidence upload) before close-out, or to **defer** mobile status changes and keep load viewing + Share location only for now.
+
+**How to test (after TMS deploy)**
+
+- Mobile: login → **My Loads** → **Dispatched** load → **Field actions** → **In transit** → no red banner; badge shows _In transit_; same status on TMS web panel.
+- If still **401**: check that the build’s `EXPO_PUBLIC_TMS_API_URL` points to the host where the patch was applied.
+
+### Task 4 — Production QA documents + actions (dev 5.6)
+
+**What was implemented**
+
+- **`docs/QA_PRODUCTION_SIGNOFF_5_6.md`:** single runbook for **production** TMS — documents §A–C + §E (association) + driver actions 3.7 §F; sign-off tables; Bearer patch notes (action rows 1–2 blocked until TMS deploy).
+- **`npm run qa:5.6`:** preflight (`scripts/qa-preflight-5-6.mjs`) — lint, secret guard, focused Jest (documents, actions, network, routes).
+- **`lib/qa/__tests__/load-detail-routes.test.ts`:** guards `app/load/[id].tsx` ↔ `useLoadDocumentsQuery` ↔ `LoadDocumentsSection` / `openLoadDocument`.
+- Cross-links from `docs/QA_DRIVER_DOCUMENTS_4_7.md` and `docs/QA_DRIVER_ACTIONS_3_7.md`.
+
+**What is available**
+
+- QA/PM can run production sign-off without rebuilding checklists; dev automated preflight and documented the known **Field actions** Bearer blocker.
+
+**How to test**
+
+- `npm run qa:5.6` — 49 focused tests green.
+- **Manual (QA/PM):** follow **`docs/QA_PRODUCTION_SIGNOFF_5_6.md`** on device + live TMS:
+  1. Login → **My Loads** → assigned load → **POD / Documents**.
+  2. TMS: upload PDF → row on mobile (A1); **View** opens file (A5).
+  3. Airplane mode → banner + pull without infinite spinner (C1–C3).
+  4. **Field actions:** rows 1–2 = **N/A** until Bearer patch; row 3 (holds) if a held load exists.
+- **Expected:** documents rows Pass in doc tables; action rows 1–2 Fail/N/A until TMS.
+
+### Task 5 — E2E smoke + TMS driver audit (dev 5.7)
+
+**What was implemented**
+
+- **`npm run smoke:5.7`:** full CI gate before release.
+- **`docs/QA_SMOKE_E2E_5_7.md`:** manual smoke S1–S10 (login → loads → detail → documents → GPS → field actions → account → logout).
+- **`docs/DRIVER_TMS_CAPABILITIES_5_7.md`:** TMS read-only audit: driver permissions, mobile v1 coverage, prioritized backlog (Bearer P0, upload P1, tap-to-call P2, itinerary/messages v1.1).
+- **Refetch rate limits:** `foreground-refetch-throttle.ts` — foreground invalidate max every **30 s**; document refetch on focus max every **15 s** per load.
+- Tests: `app-routes-smoke`, `foreground-refetch-throttle`.
+
+**What is available**
+
+- Week 5 code complete: automated smoke + driver capability guide for client prioritization before 9 Jun.
+
+**How to test**
+
+- `npm run smoke:5.7` — full CI green.
+- **Manual (~10 min):** `docs/QA_SMOKE_E2E_5_7.md` on device + production TMS.
+- Review **`docs/DRIVER_TMS_CAPABILITIES_5_7.md`** with client for Bearer + Week 6 upload vs P2 enhancements.
 
 ---
 

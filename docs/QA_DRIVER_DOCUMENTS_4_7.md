@@ -5,8 +5,10 @@ Manual checklist for **POD / Documents** on PP2 mobile: TMS → app sync, **View
 **Automated guards (run before manual QA):**
 
 ```bash
-npm run ci
+npm run qa:5.6
 ```
+
+(Full CI: `npm run ci`. Production execution checklist: **`docs/QA_PRODUCTION_SIGNOFF_5_6.md`**.)
 
 Relevant suites: `document-load-association`, `fetch-load-documents`, `document-upload-request`, `upload-load-document`, `merge-tms-documents`, `document-view-url`, `network-state`.
 

@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
 
+import { assertValidCoordinates } from './geo';
 import { isForegroundGpsV1 } from './gps-v1-policy';
 import { LocationError } from './location-errors';
 
@@ -54,7 +55,9 @@ export async function getForegroundPosition(): Promise<ForegroundPosition> {
     const location = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
     });
-    return mapPosition(location);
+    const position = mapPosition(location);
+    assertValidCoordinates(position.latitude, position.longitude);
+    return position;
   } catch {
     throw new LocationError(
       'Could not determine your current position.',

@@ -19,13 +19,13 @@ describe('applyProfileFetchResult', () => {
     expect(applied.error).toBeNull();
   });
 
-  it('keeps previous profile on network failure', () => {
+  it('keeps previous profile on network failure without surfacing error', () => {
     const applied = applyProfileFetchResult(driverProfile, {
       profile: null,
       errorMessage: 'Network request failed',
     });
     expect(applied.profile).toEqual(driverProfile);
-    expect(applied.error).toContain('Network');
+    expect(applied.error).toBeNull();
   });
 
   it('clears profile on non-network errors', () => {

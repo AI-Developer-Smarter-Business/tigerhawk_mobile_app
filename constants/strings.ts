@@ -57,11 +57,15 @@ export const strings = {
     shareFailed: 'Could not read location. Try again outdoors with GPS enabled.',
     servicesDisabledMessage:
       'Turn on Location Services in your device settings, then try again.',
+    lowPowerHint:
+      'Battery saver is on — GPS may take longer or show lower accuracy. Move outdoors if needed.',
     shareDialogTitle: 'Share load location',
     shareMessageLoadLabel: 'Load',
     shareMessageFooter: 'Shared via Tigerhawk Mobile',
     openInMaps: 'Open in Maps',
     mapsLinkA11y: 'Open coordinates in maps app',
+    tmsShareOnlyHint:
+      'Dispatch is not notified automatically in TMS yet. Use Share location to send your position with this load reference (e.g. WhatsApp).',
   },
   tabs: {
     loads: 'Loads',

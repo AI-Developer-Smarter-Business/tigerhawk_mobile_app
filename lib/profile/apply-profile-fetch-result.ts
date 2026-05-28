@@ -15,7 +15,7 @@ export function applyProfileFetchResult(
   }
 
   if (result.errorMessage && isNetworkFailure(result.errorMessage) && previous) {
-    return { profile: previous, error: result.errorMessage };
+    return { profile: previous, error: null };
   }
 
   return { profile: null, error: result.errorMessage };

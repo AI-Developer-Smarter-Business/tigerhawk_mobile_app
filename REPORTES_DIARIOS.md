@@ -779,6 +779,158 @@ Criterio de negocio para **Share location** en detalle de carga (complementa dev
 
 - No aplica build: leer esta entrada y validar con negocio si el flujo actual (mensaje con `#referencia` + coordenadas) cubre operación en campo antes de invertir en **5.3**.
 
+### Tarea 4 — Auditoría TMS ubicación GPS (dev 5.3)
+
+**Qué se implementó**
+
+- **`docs/GPS_TMS_INTEGRATION_5_3.md`:** revisión TMS (solo lectura) — **no** hay `POST /tracking/loads/…/locations` ni tabla de pings GPS por carga.
+- **`lib/location/tms-location-integration.ts`:** `hasTrackingApi: false`, modo **`share_only`**; matriz de rutas descartadas (messages, wait-time, PATCH load notes, etc.).
+- **`postDriverLocationToTms`:** stub que rechaza hasta que exista API TMS; sin migraciones Supabase inventadas.
+- **UI:** `strings.location.tmsShareOnlyHint` en **`LoadLocationSection`** (dispatch no ve GPS automático en TMS; usar Share).
+
+**Funcionalidad disponible**
+
+- El conductor sigue compartiendo ubicación con contexto de carga vía **Share location** (5.2). Persistencia en panel TMS queda para cuando el cliente despliegue una ruta dedicada (propuesta documentada en el audit).
+
+**Cómo probar**
+
+- `npm run ci` — suites `tms-location-integration`, `post-driver-location`.
+- **App:** login → **My Loads** → carga → **Your location** → debe verse el hint de share-only + botón **Share location**.
+- Leer **`docs/GPS_TMS_INTEGRATION_5_3.md`** para validar con TMS/cliente si priorizan nueva API antes del 9 jun.
+
+---
+
+## 28 de mayo de 2026
+
+### Tarea 1 — QA dispositivo y helpers GPS (dev 5.4)
+
+**Qué se implementó**
+
+- **`docs/QA_DRIVER_LOCATION_5_4.md`:** matriz manual en dispositivo real (permiso denegado, Settings, background, GPS del sistema apagado, batería, Open in Maps).
+- **`lib/location/geo.ts`:** validación lat/lng, `assertValidCoordinates`, `distanceMeters` (Haversine).
+- **`lib/location/maps-url.ts`:** `buildGoogleMapsUrl` centralizado (usado en **`LoadLocationSection`**).
+- **`lib/location/location-permission.ts`:** snapshot de permiso sin re-prompt.
+- **`getForegroundPosition`:** rechaza lecturas GPS fuera de rango.
+- **`useLoadLocationShare`:** al volver a la pantalla o a la app (`useFocusEffect` + `AppState`), limpia estado de permiso denegado si el usuario ya concedió en Ajustes.
+- Tests: `geo`, `maps-url`, `location-permission`; caso coords inválidas en `get-foreground-position`.
+
+**Funcionalidad disponible**
+
+- Misma UX de **Share location** (5.2) con validación y recuperación más robusta tras Ajustes/background; checklist listo para sign-off en campo.
+
+**Cómo probar**
+
+- `npm run ci` — suites de ubicación en verde.
+- **Dispositivo físico:** seguir **`docs/QA_DRIVER_LOCATION_5_4.md`** filas L1–L8 (mínimo L1–L4 y L7).
+- **Resultado esperado:** tras habilitar permiso en Ajustes, desaparece **Open Settings** sin reiniciar la app; coordenadas inválidas no se muestran ni comparten.
+- **Sign-off campo (28 may):** Android + Expo Go — flujo principal OK (share, coordenadas, Open in Maps).
+
+### Tarea 2 — Hardening desconexión/reconexión + GPS L5/L6 (dev 5.5)
+
+**Qué se implementó**
+
+- **Red (post-4.5):** refetch de perfil en segundo plano sin bloquear cargas (`isProfileGateLoading`); sin error visible en Account tras fallo de red; `QueryNetworkRecovery` con debounce 400 ms y reset al ir offline; cancelación de queries = red transitoria; `usePullToRefresh` con tope 45 s; providers `Network` → `Profile` → `Query`.
+- **GPS L5:** si el GPS del sistema está apagado → banner + **Open Settings**; al reactivar GPS y volver a la app, el error se limpia sin reiniciar.
+- **GPS L6:** `expo-battery` + hint `lowPowerHint` cuando el ahorro de batería está activo.
+- **`docs/QA_NETWORK_RECONNECT_5_5.md`** (matriz modo avión R1–R6).
+
+**Funcionalidad disponible**
+
+- Reconectar Wi‑Fi/datos no debe dejar spinner colgado ni “No profile found” en Account; ubicación tolera GPS apagado y modo ahorro de batería con mensajes claros.
+
+**Cómo probar**
+
+- `npm run ci`.
+- **Red:** `docs/QA_NETWORK_RECONNECT_5_5.md` (modo avión en detalle de carga, reconectar sin pull).
+- **GPS L5:** Ajustes Android → desactivar **Ubicación** del sistema → **Share location** → reactivar → volver a la app.
+- **GPS L6:** activar ahorro de batería → **Share location** → debe verse hint en cursiva; la app no crashea.
+
+### Tarea 3 — Sugerencia al cliente / equipo TMS: Field actions (Bearer JWT)
+
+**Contexto (QA en dispositivo, 28 may)**
+
+- En detalle de carga (**Field actions**: _In transit_, _At pickup_, _Arrived To Hook Container_, etc.) los botones **sí aparecen activos**, pero al pulsarlos la app muestra **Session expired** con mensaje de que el TMS no aceptó la sesión.
+- Reproducido en varias cargas (ej. `#TH-MPD2UMPC-K00H`, estado **Dispatched**); **no es un bug de una carga concreta**.
+- **My Loads**, login y lectura de datos **sí funcionan** (van directo a Supabase). Solo fallan las acciones que llaman al **API del TMS** (`PATCH` estado, y en el futuro subida POD).
+
+**Causa técnica (no se arregla solo en el móvil)**
+
+- La app móvil ya envía `Authorization: Bearer <access_token>` de Supabase en cada `PATCH /api/dispatcher/loads/[id]/status`.
+- El TMS en servidor (p. ej. `tms.tigerhawklogistics.com`) suele crear el cliente Supabase **solo con cookies** del navegador. Expo **no** comparte cookies con el host del TMS → la ruta API devuelve **401** → ningún conductor puede cambiar estado desde la app hasta desplegar el parche en el **repo TMS**.
+
+**Qué debe hacerse en el TMS (despliegue en servidor live)**
+
+Seguir **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`** (copia lista TMS):
+
+1. **`lib/supabase/server.ts` — `createClient(request?)`**  
+   Si llega el header `Authorization: Bearer …`, reenviarlo a Supabase en `global.headers` (además de cookies para la web).
+
+2. **Rutas API usadas por el móvil** — pasar `request` a `createClient(request)`:
+   - **`PATCH /api/dispatcher/loads/[id]/status`** (Field actions del conductor) — **bloqueante hoy**.
+   - **`POST /api/dispatcher/loads/[id]/documents`** (POD / Photo) — mismo prerequisito; ver también `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md`.
+
+3. **Verificación post-despliegue** (curl o app):
+   - Login móvil como conductor del mismo proyecto Supabase que el TMS.
+   - Pulsar **In transit** (u otra acción válida) → debe actualizar estado (**200**), no **401**.
+   - Opcional: `curl` con Bearer contra `…/loads/{LOAD_ID}/status` (pasos en el doc).
+
+**Hasta que el parche esté en producción**
+
+- Ningún conductor podrá cambiar estado desde Tigerhawk Mobile en **ninguna** carga.
+- La subida **Add driver photo** seguirá deshabilitada en UI hasta TMS **4.1** + Bearer (mensaje ya visible en app).
+
+**Solicitud de feedback al cliente**
+
+> Confirmar si desean **priorizar el despliegue** del parche Bearer en el TMS para habilitar **Field actions** (y luego subida de evidencia) antes del cierre, o si prefieren **posponer** cambios de estado desde móvil y mantener solo consulta de cargas + Share location por ahora.
+
+**Cómo probar (después del deploy TMS)**
+
+- Móvil: login → **My Loads** → carga **Dispatched** → **Field actions** → **In transit** → sin banner rojo; badge pasa a _In transit_; mismo estado en panel TMS web.
+- Si sigue **401**: revisar que `EXPO_PUBLIC_TMS_API_URL` del build apunte al host donde se aplicó el parche.
+
+### Tarea 4 — QA producción documentos + acciones (dev 5.6)
+
+**Qué se implementó**
+
+- **`docs/QA_PRODUCTION_SIGNOFF_5_6.md`:** runbook único para TMS **producción** — documentos §A–C + §E (asociación) + regresión acciones 3.7 §F; tablas de sign-off; notas sobre parche Bearer (acciones 1–2 bloqueadas hasta deploy TMS).
+- **`npm run qa:5.6`:** preflight (`scripts/qa-preflight-5-6.mjs`) — lint, secret guard, Jest focalizado (documentos, acciones, red, rutas).
+- **`lib/qa/__tests__/load-detail-routes.test.ts`:** coherencia `app/load/[id].tsx` ↔ `useLoadDocumentsQuery` ↔ `LoadDocumentsSection` / `openLoadDocument`.
+- Enlaces desde `docs/QA_DRIVER_DOCUMENTS_4_7.md` y `docs/QA_DRIVER_ACTIONS_3_7.md`.
+
+**Funcionalidad disponible**
+
+- Equipo QA/PM puede ejecutar sign-off en producción sin rearmar checklists; desarrollo dejó automatizado el preflight y documentado el bloqueo conocido de **Field actions** (Bearer).
+
+**Cómo probar**
+
+- `npm run qa:5.6` — 49 tests focalizados en verde.
+- **Manual (QA/PM):** seguir **`docs/QA_PRODUCTION_SIGNOFF_5_6.md`** en dispositivo + TMS live:
+  1. Login → **My Loads** → carga asignada → **POD / Documents**.
+  2. TMS: subir PDF → fila en móvil (A1); **View** abre archivo (A5).
+  3. Modo avión → banner + pull sin spinner infinito (C1–C3).
+  4. **Field actions:** filas 1–2 = **N/A** hasta parche Bearer; fila 3 (holds) si hay carga con hold.
+- **Resultado esperado documentos:** A1–A5, B1–B4, C1–C3, E1–E2 en Pass en tabla del doc; acciones 1–2 Fail/N/A hasta TMS.
+
+### Tarea 5 — Smoke E2E + auditoría TMS conductor (dev 5.7)
+
+**Qué se implementó**
+
+- **`npm run smoke:5.7`:** CI completo (lint + secret guard + Jest) antes de release.
+- **`docs/QA_SMOKE_E2E_5_7.md`:** recorrido manual S1–S10 (login → loads → detalle → documentos → GPS → field actions → account → logout).
+- **`docs/DRIVER_TMS_CAPABILITIES_5_7.md`:** auditoría TMS (solo lectura): permisos conductor, qué está en móvil v1, backlog priorizado (Bearer P0, upload P1, llamada al cliente P2, itinerario/mensajes v1.1).
+- **Rate-limit refetch:** `lib/query/foreground-refetch-throttle.ts` — invalidación al volver a la app máx. cada **30 s**; refetch documentos al enfocar detalle máx. cada **15 s** por carga.
+- Tests: `app-routes-smoke`, `foreground-refetch-throttle`.
+
+**Funcionalidad disponible**
+
+- Semana 5 cerrada en código: smoke automatizado + guía de capacidades del conductor para decidir qué activar antes del 9 jun.
+
+**Cómo probar**
+
+- `npm run smoke:5.7` — todo el CI en verde.
+- **Manual (~10 min):** `docs/QA_SMOKE_E2E_5_7.md` en dispositivo + TMS producción.
+- Leer **`docs/DRIVER_TMS_CAPABILITIES_5_7.md`** con cliente para priorizar Bearer + subida Semana 6 vs mejoras P2 (llamar cliente, filtros).
+
 ---
 
 _Al cerrar cada día, añadir sección `## [fecha]` con **Tarea 1, Tarea 2, Tarea 3…** de arriba abajo (ej. dev 4.6 → Tarea 7, dev 4.7 → Tarea 8). Nunca Tarea 8 antes de Tarea 7._
