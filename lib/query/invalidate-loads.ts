@@ -10,9 +10,10 @@ export async function invalidateDriverLoads(
   queryClient: QueryClient,
   userId: string,
 ): Promise<void> {
-  await queryClient.resetQueries({
-    queryKey: queryKeys.loads.list(userId),
-  });
+  const queryKey = queryKeys.loads.list(userId);
+  // Reset infinite list to page 0, then refetch active observers (reset alone can leave stale UI).
+  await queryClient.resetQueries({ queryKey });
+  await queryClient.refetchQueries({ queryKey, type: 'active' });
 }
 
 export async function invalidateLoadDocuments(
@@ -20,9 +21,12 @@ export async function invalidateLoadDocuments(
   userId: string,
   loadId: string,
 ): Promise<void> {
+  const documentsKey = queryKeys.loads.documents(userId, loadId);
   await queryClient.invalidateQueries({
-    queryKey: queryKeys.loads.documents(userId, loadId),
+    queryKey: documentsKey,
+    refetchType: 'active',
   });
+  await queryClient.refetchQueries({ queryKey: documentsKey, type: 'active' });
 }
 
 export async function invalidateLoadDetail(
@@ -30,10 +34,13 @@ export async function invalidateLoadDetail(
   userId: string,
   loadId: string,
 ): Promise<void> {
+  const detailKey = queryKeys.loads.detail(userId, loadId);
   await Promise.all([
     queryClient.invalidateQueries({
-      queryKey: queryKeys.loads.detail(userId, loadId),
+      queryKey: detailKey,
+      refetchType: 'active',
     }),
     invalidateLoadDocuments(queryClient, userId, loadId),
   ]);
+  await queryClient.refetchQueries({ queryKey: detailKey, type: 'active' });
 }

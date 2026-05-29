@@ -51,12 +51,15 @@ export default function LoadDetailScreen() {
       if (!loadId) {
         return;
       }
-      const throttleKey = `documents-focus:${loadId}`;
-      if (!shouldRunThrottledRefetch(throttleKey, FOCUS_DOCUMENTS_REFETCH_MIN_MS)) {
-        return;
+      const loadThrottleKey = `load-focus:${loadId}`;
+      if (shouldRunThrottledRefetch(loadThrottleKey, FOCUS_DOCUMENTS_REFETCH_MIN_MS)) {
+        void refetch();
       }
-      void refetchDocuments();
-    }, [loadId, refetchDocuments]),
+      const documentsThrottleKey = `documents-focus:${loadId}`;
+      if (shouldRunThrottledRefetch(documentsThrottleKey, FOCUS_DOCUMENTS_REFETCH_MIN_MS)) {
+        void refetchDocuments();
+      }
+    }, [loadId, refetch, refetchDocuments]),
   );
 
   useEffect(() => {

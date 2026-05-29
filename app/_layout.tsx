@@ -18,6 +18,7 @@ import { LoadsProvider } from '@/context/LoadsContext';
 import { NetworkProvider } from '@/context/NetworkContext';
 import { ProfileProvider } from '@/context/ProfileContext';
 import { PP2Theme } from '@/constants/theme';
+import { DriverLoadsRealtimeBridge } from '@/components/query/DriverLoadsRealtimeBridge';
 import { QueryProvider } from '@/lib/query/QueryProvider';
 
 export { ErrorBoundary } from 'expo-router';
@@ -69,6 +70,7 @@ export default function RootLayout() {
           <QueryProvider>
             <LoadsProvider>
             <AuthBootstrapGate>
+              <DriverLoadsRealtimeBridge />
               <AuthDeepLinkHandler />
               <ThemeProvider value={PP2NavigationTheme}>
                 <View style={{ flex: 1 }}>

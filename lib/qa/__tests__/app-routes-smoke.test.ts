@@ -20,15 +20,20 @@ describe('app routes smoke (5.7)', () => {
     expect(fs.existsSync(path.join(ROOT, routePath))).toBe(true);
   });
 
-  it('drawer layout wires realtime and auth redirect', () => {
+  it('drawer layout wires auth redirect and screens', () => {
     const source = fs.readFileSync(
       path.join(ROOT, 'app', '(drawer)', '_layout.tsx'),
       'utf8',
     );
-    expect(source).toContain('useDriverLoadsRealtime');
     expect(source).toContain('Redirect');
     expect(source).toContain('loads');
     expect(source).toContain('account');
+  });
+
+  it('root layout wires driver loads realtime bridge after auth bootstrap', () => {
+    const source = fs.readFileSync(path.join(ROOT, 'app', '_layout.tsx'), 'utf8');
+    expect(source).toContain('DriverLoadsRealtimeBridge');
+    expect(source).toContain('AuthBootstrapGate');
   });
 
   it('root index redirects authenticated users to loads', () => {

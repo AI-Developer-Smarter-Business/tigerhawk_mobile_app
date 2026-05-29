@@ -6,7 +6,6 @@ import { AppDrawerContent } from '@/components/navigation/AppDrawerContent';
 import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
-import { useDriverLoadsRealtime } from '@/hooks/useDriverLoadsRealtime';
 
 const tms = PP2Theme.colors.tms;
 const drawerWidth = Math.min(
@@ -16,7 +15,6 @@ const drawerWidth = Math.min(
 
 export default function DrawerLayout() {
   const { isSupabaseAuthenticated } = useAuth();
-  useDriverLoadsRealtime();
 
   if (!isSupabaseAuthenticated) {
     return <Redirect href="/(auth)/login" />;

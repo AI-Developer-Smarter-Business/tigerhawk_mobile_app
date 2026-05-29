@@ -53,6 +53,7 @@ export function useLoadDocumentsQuery(
       ? queryKeys.loads.documents(userId, effectiveLoadId)
       : ['disabled'],
     enabled: enabled && Boolean(effectiveLoadId),
+    staleTime: 0,
     queryFn: async () => {
       const supabase = getSupabase();
       const result = await fetchDriverLoadDocuments(supabase, effectiveLoadId!);

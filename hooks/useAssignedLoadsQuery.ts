@@ -53,6 +53,7 @@ export function useAssignedLoadsQuery(): UseAssignedLoadsQueryResult {
   const query = useInfiniteQuery({
     queryKey: queryKeys.loads.list(userId),
     enabled,
+    staleTime: 0,
     placeholderData: keepPreviousData,
     initialPageParam: 0,
     queryFn: async ({ pageParam }): Promise<DriverLoadsPageResult> => {

@@ -16,6 +16,7 @@ import {
   subscribeToAuthChanges,
 } from '@/lib/supabase/auth-session';
 import { getSupabase } from '@/lib/supabase/client';
+import { syncSupabaseRealtimeAuth } from '@/lib/supabase/realtime/sync-realtime-auth';
 
 export type AuthContextValue = {
   /** Terminó getSession inicial + suscripción al listener. */
@@ -113,6 +114,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!session?.access_token) {
+      return;
+    }
+    void syncSupabaseRealtimeAuth(getSupabase());
+  }, [session?.access_token]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

@@ -53,7 +53,7 @@ export function useLoadDetailQuery(loadId: string | undefined): UseLoadDetailQue
   const query = useQuery({
     queryKey: queryKeys.loads.detail(userId, loadId ?? ''),
     enabled,
-    placeholderData: cachedLoad,
+    staleTime: 0,
     queryFn: async (): Promise<LoadDetail | null> => {
       const result = await fetchLoadDetailForDriver(
         getSupabase(),
@@ -85,7 +85,9 @@ export function useLoadDetailQuery(loadId: string | undefined): UseLoadDetailQue
 
   const refreshing = enabled && query.isRefetching;
   const fetchedLoad = query.data ?? null;
-  const displayLoad = fetchedLoad ?? cachedLoad ?? null;
+  const displayLoad =
+    fetchedLoad ??
+    ((!query.isSuccess || query.isPending) && cachedLoad ? cachedLoad : null);
 
   const error = gateError ?? (query.error ? getUserFacingMessage(query.error) : null);
 

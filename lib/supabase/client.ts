@@ -12,6 +12,28 @@ const ExpoSecureStoreAdapter = {
 };
 
 let client: SupabaseClient | null = null;
+let realtimeAuthBound = false;
+
+function bindSupabaseRealtimeAuth(supabase: SupabaseClient): void {
+  if (realtimeAuthBound) {
+    return;
+  }
+  realtimeAuthBound = true;
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    const token = session?.access_token;
+    if (token) {
+      void supabase.realtime.setAuth(token);
+    }
+  });
+
+  void supabase.auth.getSession().then(({ data }) => {
+    const token = data.session?.access_token;
+    if (token) {
+      void supabase.realtime.setAuth(token);
+    }
+  });
+}
 
 /**
  * Browser/mobile Supabase client (TMS: `createBrowserClient` in `lib/supabase/client.ts`).
@@ -31,6 +53,7 @@ export function getSupabase(): SupabaseClient {
         detectSessionInUrl: false,
       },
     });
+    bindSupabaseRealtimeAuth(client);
   }
   return client;
 }
@@ -38,4 +61,5 @@ export function getSupabase(): SupabaseClient {
 /** @internal Resets singleton (unit tests only). */
 export function resetSupabaseClientForTests(): void {
   client = null;
+  realtimeAuthBound = false;
 }

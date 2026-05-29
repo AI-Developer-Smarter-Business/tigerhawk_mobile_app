@@ -3,6 +3,10 @@ import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
 import { subscribeDriverLoadsRealtime } from '../driver-loads-subscription';
 
+jest.mock('../sync-realtime-auth', () => ({
+  syncSupabaseRealtimeAuth: jest.fn(() => Promise.resolve(true)),
+}));
+
 function createMockChannel() {
   let statusHandler: ((status: string) => void) | undefined;
   const channel = {
@@ -23,7 +27,7 @@ function createMockChannel() {
 }
 
 describe('subscribeDriverLoadsRealtime', () => {
-  it('does not call removeChannel from subscribe callback on CLOSED (stack overflow guard)', () => {
+  it('does not call removeChannel from subscribe callback on CLOSED (stack overflow guard)', async () => {
     const mockChannel = createMockChannel();
     const removeChannel = jest.fn(() => Promise.resolve('ok'));
     const supabase = {
@@ -32,12 +36,14 @@ describe('subscribeDriverLoadsRealtime', () => {
     } as unknown as SupabaseClient;
 
     subscribeDriverLoadsRealtime(supabase, {} as QueryClient, 'driver-uuid');
+    await Promise.resolve();
+    await Promise.resolve();
 
     mockChannel._emit('CLOSED');
     expect(removeChannel).not.toHaveBeenCalled();
   });
 
-  it('calls removeChannel once on unsubscribe while channel is active', () => {
+  it('calls removeChannel once on unsubscribe while channel is active', async () => {
     const mockChannel = createMockChannel();
     const removeChannel = jest.fn(() => Promise.resolve('ok'));
     const supabase = {
@@ -50,6 +56,8 @@ describe('subscribeDriverLoadsRealtime', () => {
       {} as QueryClient,
       'driver-uuid',
     );
+    await Promise.resolve();
+    await Promise.resolve();
 
     unsubscribe();
     expect(removeChannel).toHaveBeenCalledTimes(1);
