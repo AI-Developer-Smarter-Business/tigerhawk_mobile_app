@@ -111,8 +111,90 @@
 | 7.4 | Plan **rollback** + migraciones Supabase tocadas por PP2. |
 | 7.5 | Entrega **credenciales EAS** / keystores al cliente (custodia clara). |
 | 7.6 | Documento corto de **soporte** (RLS, Storage, escalado). |
-| 7.7 | **Backlog v1.1:** push, mensajes, wait time, geofencing, E2E automatizado (ex semanas 6–8 originales). |
+| 7.7 | **Backlog v1.1:** push, mensajes, wait time, geofencing, E2E automatizado; **rastreo en vivo** → **Semana 8** (8.0–8.16). |
 | 7.8 | **Handoff** al cliente: APK/build, env, este archivo actualizado (✅ / ⏳). **9 jun:** margen imprevistos. |
+
+---
+
+## Semana 8 — Rastreo en vivo conductor / carga (TMS + móvil) *(post–9 jun / v1.1)*
+
+**Ventana:** tras cierre **9 jun 2026** · **Enfoque:** ubicación periódica en Supabase + mapa TMS en tiempo real (sin API de rastreo de terceros). Mismo proyecto Supabase que PP2 y Netlify.
+
+**Contexto v1 ya entregado:** Semana 5 = GPS **solo primer plano** y **Share location** manual (`docs/GPS_V1_DECISION.md`, `docs/GPS_TMS_INTEGRATION_5_3.md` — sin persistencia ni mapa en vivo). Esta semana **sustituye/complementa** ese alcance cuando el cliente confirme reglas de negocio.
+
+### Pregunta bloqueante al cliente (incluir en kickoff de 8.1)
+
+> **¿Necesitan ubicación en tiempo real únicamente durante un viaje/carga activa, o desean rastrear a los conductores durante toda su jornada laboral (incluso con la app en segundo plano o cerrada)?**
+
+| Respuesta cliente | Impacto técnico | Impacto producto |
+| --- | --- | --- |
+| **Solo durante viaje/carga activa** | `expo-location` en **primer plano** (o foreground service mínimo mientras la app está abierta en detalle/viaje); intervalos 15–30 s; sin background iOS/Android agresivo. | Solución **simple y barata**; alineada al TMS típico (tracking ligado a `loads` en curso). |
+| **Toda la jornada / app cerrada** | **Background location** (permisos `always`, tareas en segundo plano, políticas Play/App Store, más QA batería). | Más desarrollo, más consumo batería, más filas o más frecuencia de `UPDATE`; requiere copy legal y política de privacidad explícita. |
+
+**Recomendación PP2 (pendiente confirmación):** rastrear **solo cuando el load asignado al conductor está en estados “en curso”** (p. ej. *In Transit*, *At Pickup*, *At Delivery* — lista exacta en 8.2). Fuera de ese estado: **no enviar** o enviar cada 1–5 min solo si el cliente exige jornada completa.
+
+### Análisis — mejor opción para mapa TMS (sin contratar API externa)
+
+Flujo acordado con el ecosistema actual (móvil → Supabase → TMS Next.js con Realtime):
+
+| Paso | Qué | Notas |
+| --- | --- | --- |
+| 1 | App obtiene `{ latitude, longitude }` | **Expo Location** (ya en proyecto) o `react-native-geolocation-service` si se sale de Expo managed. |
+| 2 | Persistir en Supabase | Ver tabla siguiente — **no** hace falta Mapbox/Google Routes solo para **mostrar punto en mapa** (Leaflet/OSM en TMS si ya hay mapa). |
+| 3 | TMS escucha Realtime | `postgres_changes` sobre la tabla elegida → refrescar marcador sin F5 (mismo patrón que `useRealtimeRefresh` + `loads` / `load_documents`). |
+| 4 | Producción — ubicación **actual** vs historial | Ver comparativa abajo. |
+
+**Comparativa de modelo de datos (elegir en 8.2, documentar en `docs/GPS_LIVE_TRACKING_ARCHITECTURE.md`):**
+
+| Modelo | Esquema | Pros | Contras | Cuándo elegir |
+| --- | --- | --- | --- | --- |
+| **A — Solo historial** | `driver_locations` (INSERT cada tick: `driver_id`, `load_id?`, `lat`, `lng`, `created_at`) | Auditoría completa; mapa TMS puede animar ruta | Miles de filas/día; coste storage; mapa debe leer “último punto” con query | Cliente pide **historial de ruta** obligatorio |
+| **B — Solo ubicación actual** | Columnas en `drivers` o en `loads`: `current_latitude`, `current_longitude`, `last_seen_at` + `UPDATE` por tick | Pocas filas; mapa TMS trivial (una marca por conductor/carga) | Sin trazado histórico salvo ampliar después | **Recomendado para v1.1** si el mapa solo debe ver “dónde está ahora” |
+| **C — Híbrido (recomendado PP2)** | **`loads` o `drivers`:** `current_*` + `last_seen_at` (UPDATE); **`driver_location_history`:** INSERT cada N minutos o cada X metros | Mapa en vivo barato + historial para disputas/QA sin INSERT cada 30 s | Dos escrituras; definir retención (p. ej. 30 días) en 8.3 | Balance **producción** entre mapa live y auditoría |
+
+**Decisión de enlace conductor ↔ carga:**
+
+| Opción | Descripción |
+| --- | --- |
+| **Por carga** | `load_id` en cada punto (o columnas `current_*` en `loads`) — el dispatcher ve el camión **de esa carga** en el detalle/mapa del load. |
+| **Por conductor** | `driver_id` en `drivers.current_*` — mapa “flota” de conductores activos; el panel dispatcher filtra por asignación. |
+
+**TMS Realtime (paso 3):** suscribir canal a la tabla que cambie en cada tick (`UPDATE` en `loads`/`drivers` dispara evento; `INSERT` en historial si se usa A o C). Añadir tabla a publicación **`supabase_realtime`** (mismo procedimiento que `enable_realtime_pp2_driver_sync.sql`). RLS: conductor solo escribe su `driver_id` / loads asignados; dispatch lee según rol staff.
+
+**Batería y frecuencia (definir con cliente en 8.1 / 8.5):**
+
+| Regla | Valor propuesto (ajustable) | Motivo |
+| --- | --- | --- |
+| Intervalo con **viaje activo** | 15–30 s | Balance frescura mapa / batería |
+| Intervalo **inactivo** (si aplica jornada) | 1–5 min | Menos ticks cuando no hay carga en curso |
+| **Umbral de distancia** | 20–200 m (preguntar al cliente; opción 1 km para máximo ahorro) | No enviar si el GPS no se movió → menos red y batería |
+| App cerrada / background | Solo si cliente elige jornada completa | Ver pregunta bloqueante |
+
+### Tareas
+
+| #   | Tarea |
+| --- | ----- |
+| **8.0** | **Bloqueante negocio:** enviar al cliente la pregunta de **viaje activo vs jornada completa** (tabla arriba); registrar respuesta por escrito en `docs/GPS_LIVE_TRACKING_ARCHITECTURE.md` y en acta de reunión. Sin respuesta → no implementar background ni fijar intervalos finales. |
+| **8.1** | **Alcance funcional:** estados de `loads` que cuentan como “viaje activo”; si el mapa vive en **Load detail**, **Dispatcher board** o ambos; si el dispatcher ve **todos** los conductores o solo los de cargas del día. |
+| **8.2** | **Arquitectura (documento):** redactar `docs/GPS_LIVE_TRACKING_ARCHITECTURE.md` — modelo **B o C** (tabla comparativa arriba), enlace `driver_id` / `load_id`, diagrama móvil → Supabase → TMS Realtime, y explícitamente **“sin API de rastreo de terceros”**. |
+| **8.3** | **Supabase — esquema:** migración SQL Editor (raíz móvil `supabase/sql-editor/`): columnas `current_latitude`, `current_longitude`, `last_seen_at` en `loads` y/o `drivers`, y opcional `driver_location_history`; índices por `load_id`, `driver_id`, `created_at`. |
+| **8.4** | **Supabase — RLS:** políticas `authenticated` — conductor `UPDATE`/`INSERT` solo en filas propias (`driver_id = auth.uid()` o loads asignados); staff/dispatcher `SELECT`; sin exponer ubicación de otros conductores al rol driver. |
+| **8.5** | **Supabase — Realtime:** script idempotente `enable_realtime_driver_tracking.sql` — añadir tablas acordadas en 8.2 a `supabase_realtime`; verificación `SELECT` en `pg_publication_tables`. |
+| **8.6** | **Móvil — política de envío:** módulo `lib/location/tracking-policy.ts` — intervalos, umbral de metros (constante hasta respuesta cliente), estados de carga que habilitan tracking; **no** enviar cada 1 s. |
+| **8.7** | **Móvil — captura y envío:** hook `useDriverLocationTracking` (o ampliar `useLoadLocationShare`) — `expo-location`, primer plano obligatorio en v1.1; `UPDATE` Supabase vía cliente anon + RLS; manejo permisos denegados y offline (pausar cola, reintentar al reconectar). |
+| **8.8** | **Móvil — UI:** indicador en detalle de carga (“Sharing location with dispatch” / pausado); disclaimer batería y privacidad en `strings`; solo visible cuando tracking activo según 8.1. |
+| **8.9** | **Móvil — background (condicional):** **solo si cliente elige jornada completa** — `expo-location` background / task manager, `app.json` permisos `always`, matriz QA Android+iOS (`docs/QA_DRIVER_TRACKING_BACKGROUND.md`). Si solo viaje activo → marcar **N/A**. |
+| **8.10** | **TMS — API (opcional):** si se prefiere centralizar validación en Next.js: `POST /api/mobile/drivers/location` o `PATCH /api/dispatcher/loads/[id]/location` con JWT Bearer (mismo patrón que documentos); si RLS directo basta → documentar “Supabase-only” y omitir ruta. |
+| **8.11** | **TMS — mapa en vivo:** componente mapa (p. ej. extender `LoadSidebarMap` / vista dispatcher) — suscripción Realtime + `fetch` con `cache: 'no-store'`; marcador conductor/carga; leyenda `last_seen_at`. |
+| **8.12** | **TMS — panel dispatcher:** en [dashboard dispatcher](https://tigerhawk.netlify.app/dashboard/dispatcher) — lista o mapa de cargas activas con última posición; click abre detalle de carga. |
+| **8.13** | **TMS — historial (si modelo C):** pestaña o modal “Route history” — query `driver_location_history` con límite temporal; no bloquear v1.1 del mapa live. |
+| **8.14** | **Retención y costes:** política de borrado/archivo de historial (p. ej. > 30 días); estimación filas/día según intervalo elegido; comunicar al cliente. |
+| **8.15** | **QA E2E:** `docs/QA_DRIVER_LIVE_TRACKING.md` — conductor con carga *In Transit* → punto aparece en TMS < 60 s; conductor sin carga activa → no escribe (o intervalo largo); borrado de sesión detiene envío; prueba batería 30 min. |
+| **8.16** | **Reportes:** actualizar `REPORTES_DIARIOS.md` / `DAILY_REPORTS.md` el día que se aplique SQL Realtime o se entregue mapa TMS. |
+
+**Dependencias:** 8.0 → 8.1 → 8.2 → (8.3, 8.4, 8.5 en paralelo) → 8.6–8.9 móvil → 8.10–8.13 TMS → 8.15 QA.
+
+**Relación con tareas anteriores:** sustituye el stub `postDriverLocationToTms` (5.3) cuando exista decisión 8.10; amplía GPS v1 (5.1–5.4) sin romper **Share location** manual.
 
 ---
 
@@ -126,7 +208,9 @@ No forman parte del cierre de 3 semanas. Conservadas como backlog.
 | Ex 6.5–6.7 | E2E Maestro/Detox, rate-limit avanzado | v1.1 |
 | Ex 7.2–7.4 originales | E2E ampliado, perf FlatList | v1.1 salvo P0 en listas |
 | Mensajes / wait time TMS | API existe; móvil placeholder | v1.1 |
-| GPS segundo plano / mapa | No acordado en 5.1 | v1.1 |
+| GPS primer plano (share manual) | ✅ Semana 5 | v1 |
+| **GPS en vivo + mapa TMS** | **Semana 8** (8.0–8.16) | **v1.1** — tras respuesta cliente 8.0 |
+| GPS segundo plano todo el día | Solo si cliente elige jornada completa | 8.9 |
 
 ---
 
@@ -170,11 +254,12 @@ Referencia: `DriverActionPanel`, `DocumentsTab`, `PATCH …/status`, `POST …/d
 | Mensajes por carga (`load_messages`) | Placeholder | — | **v1.1** (`7.7`) |
 | Wait time (`wait-time` API) | No | — | **v1.1** |
 | Ubicación GPS (primer plano) | ✅ share en detalle | **5.1–5.3** ✅ | **Sí** — share; persist TMS cuando exista API |
+| **Rastreo GPS en vivo (mapa TMS)** | No | **8.0–8.16** | **v1.1** — bloqueado respuesta cliente 8.0 |
 | Push / notificaciones | No | — | **v1.1** |
 | Subir BOL / Rate Con / tipos staff en Documents | Solo dispatch en TMS | — | **Excluido** — conductor solo `POD`/`Photo` (4.1) |
 | Asignar conductor, menú dispatch/A/R/settlements | Solo staff TMS | — | **Excluido** (no es rol driver) |
 
-**Cobertura v1 (9 jun):** lectura documentos + status + GPS primer plano + reconexión estable + subida evidencia (**Semana 6**). Mensajes, wait time, push y GPS background → v1.1.
+**Cobertura v1 (9 jun):** lectura documentos + status + GPS primer plano + reconexión estable + subida evidencia (**Semana 6**). Mensajes, wait time, push y **rastreo en vivo (Semana 8)** → v1.1.
 
 ---
 
