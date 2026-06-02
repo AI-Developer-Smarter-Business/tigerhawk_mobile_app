@@ -3,20 +3,20 @@ import { TmsStatusChangeError } from '../errors';
 import { rethrowIfTmsApiUnauthorized } from '../tms-unauthorized-helpers';
 
 describe('rethrowIfTmsApiUnauthorized', () => {
-  it('replaces generic TMS 401 with Bearer patch hint', () => {
+  it('replaces generic TMS 401 with mobile TMS patch hint', () => {
     expect(() =>
       rethrowIfTmsApiUnauthorized(
         new TmsDocumentUploadError('Unauthorized', 'UNAUTHORIZED'),
       ),
-    ).toThrow(/Bearer/);
+    ).toThrow(/TMS upload was rejected|TMS_PATCH_MOBILE_BEARER_AUTH/);
   });
 
-  it('rethrows status 401 as Bearer hint', () => {
+  it('rethrows status 401 as mobile TMS patch hint', () => {
     expect(() =>
       rethrowIfTmsApiUnauthorized(
         new TmsStatusChangeError('Unauthorized', 'UNAUTHORIZED'),
       ),
-    ).toThrow(/Bearer/);
+    ).toThrow(/TMS upload was rejected|TMS_PATCH_MOBILE_BEARER_AUTH/);
   });
 
   it('preserves session expired from client', () => {

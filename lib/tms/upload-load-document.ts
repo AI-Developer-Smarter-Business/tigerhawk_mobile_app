@@ -29,7 +29,9 @@ async function fetchTmsUpload(
       return await fetch(url, init);
     } catch (err) {
       lastError = err;
-      safeLog.warn('upload-load-document', `fetch attempt ${attempt}/${attempts} failed`, {
+      safeLog.event('upload-load-document', 'fetch_attempt_failed', {
+        attempt,
+        attempts,
         host: (() => {
           try {
             return new URL(url).host;

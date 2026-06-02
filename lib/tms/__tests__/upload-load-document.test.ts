@@ -10,6 +10,8 @@ jest.mock('@/lib/config/env', () => ({
 
 const originalFetch = global.fetch;
 
+const mobileDocumentsUrl = 'https://tms.example.com/api/mobile/loads/load-1/documents';
+
 describe('uploadLoadDocument', () => {
   beforeEach(() => {
     global.fetch = jest.fn();
@@ -36,35 +38,35 @@ describe('uploadLoadDocument', () => {
         JSON.stringify({
           id: 'doc-1',
           load_id: 'load-1',
-          filename: 'pod.jpg',
-          url: 'https://signed.example/pod.jpg',
-          document_type: 'POD',
+          filename: 'driver.jpg',
+          url: 'https://signed.example/driver.jpg',
+          document_type: 'Driver',
         }),
     });
 
     await uploadLoadDocument({
       loadId: 'load-1',
       accessToken: 'jwt',
-      documentType: 'POD',
+      documentType: 'Driver',
       file: {
-        uri: 'file:///pod.jpg',
-        name: 'pod.jpg',
+        uri: 'file:///driver.jpg',
+        name: 'driver.jpg',
         type: 'image/jpeg',
         size: 5000,
       },
     });
 
     expect(getCapturedFilePart(appendEntries)).toEqual({
-      uri: 'file:///pod.jpg',
-      name: 'pod.jpg',
+      uri: 'file:///driver.jpg',
+      name: 'driver.jpg',
       type: 'image/jpeg',
     });
-    expect(getCapturedDocumentType(appendEntries)).toBe('POD');
+    expect(getCapturedDocumentType(appendEntries)).toBe('Driver');
 
     jest.restoreAllMocks();
   });
 
-  it('POSTs to documents route and returns parsed record on 201', async () => {
+  it('POSTs to mobile documents route and returns parsed record on 201', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 201,
@@ -72,19 +74,19 @@ describe('uploadLoadDocument', () => {
         JSON.stringify({
           id: 'doc-1',
           load_id: 'load-1',
-          filename: 'pod.jpg',
-          url: 'https://signed.example/pod.jpg',
-          document_type: 'POD',
+          filename: 'driver.jpg',
+          url: 'https://signed.example/driver.jpg',
+          document_type: 'Driver',
         }),
     });
 
     const result = await uploadLoadDocument({
       loadId: 'load-1',
       accessToken: 'jwt',
-      documentType: 'POD',
+      documentType: 'Driver',
       file: {
-        uri: 'file:///pod.jpg',
-        name: 'pod.jpg',
+        uri: 'file:///driver.jpg',
+        name: 'driver.jpg',
         type: 'image/jpeg',
         size: 5000,
       },
@@ -92,7 +94,7 @@ describe('uploadLoadDocument', () => {
 
     expect(result.id).toBe('doc-1');
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://tms.example.com/api/dispatcher/loads/load-1/documents',
+      mobileDocumentsUrl,
       expect.objectContaining({ method: 'POST' }),
     );
   });
@@ -105,9 +107,9 @@ describe('uploadLoadDocument', () => {
         JSON.stringify({
           id: 'doc-1',
           load_id: 'other-load',
-          filename: 'pod.jpg',
-          url: 'https://signed.example/pod.jpg',
-          document_type: 'POD',
+          filename: 'driver.jpg',
+          url: 'https://signed.example/driver.jpg',
+          document_type: 'Driver',
         }),
     });
 
@@ -115,10 +117,10 @@ describe('uploadLoadDocument', () => {
       uploadLoadDocument({
         loadId: 'load-1',
         accessToken: 'jwt',
-        documentType: 'POD',
+        documentType: 'Driver',
         file: {
-          uri: 'file:///pod.jpg',
-          name: 'pod.jpg',
+          uri: 'file:///driver.jpg',
+          name: 'driver.jpg',
           type: 'image/jpeg',
           size: 100,
         },
@@ -140,10 +142,10 @@ describe('uploadLoadDocument', () => {
       uploadLoadDocument({
         loadId: 'other-load',
         accessToken: 'jwt',
-        documentType: 'POD',
+        documentType: 'Driver',
         file: {
-          uri: 'file:///pod.jpg',
-          name: 'pod.jpg',
+          uri: 'file:///driver.jpg',
+          name: 'driver.jpg',
           type: 'image/jpeg',
           size: 100,
         },
