@@ -12,11 +12,54 @@ export function parseDocumentUploadError(
   const data = isRecord(body) ? body : {};
   const error = typeof data.error === 'string' ? data.error : undefined;
   const code = typeof data.code === 'string' ? data.code : undefined;
+  const detail = typeof data.detail === 'string' ? data.detail : undefined;
+  const hint = typeof data.hint === 'string' ? data.hint : undefined;
+
+  if (httpStatus === 503) {
+    return new TmsDocumentUploadError(
+      error ?? 'TMS server is missing Supabase service role configuration.',
+      'CONFIG',
+    );
+  }
 
   if (httpStatus === 401) {
+    if (code === 'MISSING_TOKEN') {
+      return new TmsDocumentUploadError(
+        error ?? 'Upload missing session token. Restart the app and try again.',
+        'UNAUTHORIZED',
+      );
+    }
+    if (code === 'MOBILE_JWT_INVALID') {
+      const parts = [error, detail, hint].filter(Boolean);
+      return new TmsDocumentUploadError(
+        parts.join(' ') || 'Session invalid for TMS upload.',
+        'UNAUTHORIZED',
+      );
+    }
     return new TmsDocumentUploadError(
       error ?? 'Session expired. Sign in again.',
       'UNAUTHORIZED',
+    );
+  }
+
+  if (httpStatus === 403 && code === 'NOT_ASSIGNED') {
+    return new TmsDocumentUploadError(
+      error ?? 'You are not assigned to this load.',
+      'FORBIDDEN',
+    );
+  }
+
+  if (httpStatus === 403 && code === 'PROFILE_NOT_FOUND') {
+    return new TmsDocumentUploadError(
+      error ?? 'Driver profile missing in TMS. Ask dispatch to set user_profiles.role = driver.',
+      'FORBIDDEN',
+    );
+  }
+
+  if (httpStatus === 400 && code === 'MISSING_FILE') {
+    return new TmsDocumentUploadError(
+      error ?? 'Photo file was not received by TMS. Try again or update the app.',
+      'BAD_REQUEST',
     );
   }
 

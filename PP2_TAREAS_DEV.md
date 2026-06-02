@@ -91,7 +91,7 @@
 | #   | Tarea |
 | --- | ----- |
 | 6.1 | **Alcance 4.8:** confirmar con cliente casos POD (entrega, sello) y Photo (percances, ponchadura, retrasos, docs extraordinarios); misma pestaña **Documents** del TMS. |
-| 6.2 | **Habilitar subida en app:** sustituir placeholder en `LoadDocumentsSection` por `PodUploadSection` + `useLoadDocumentUpload`; selector **`POD` vs `Photo`** (`assert-driver-document-type.ts`). |
+| 6.2 | ✅ **Completada (1 jun 2026).** Subida **Add driver photo** (`PodUploadSection`, tipo **`Driver`**); TMS Bearer/middleware + `access_token`; Documents fila naranja; Realtime `load_documents`. |
 | 6.3 | **4.3 — Validación cliente:** MIME y tamaño máximo (50 MB) antes de POST; mensajes claros; offline bloquea subida. |
 | 6.4 | **QA E2E subida:** `docs/QA_DRIVER_DOCUMENTS_4_7.md` §D — móvil → TMS + Realtime inverso; cancel/discard; dispatch ve el archivo. |
 | 6.5 | Textos `strings` (entrega, sello, percances, retraso); quitar copy “TMS patch pending” del placeholder. |

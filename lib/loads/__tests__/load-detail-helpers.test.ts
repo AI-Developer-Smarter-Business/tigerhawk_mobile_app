@@ -42,6 +42,7 @@ function createLoadDetail(overrides: Partial<LoadDetail> = {}): LoadDetail {
     customer_phone: null,
     customer_address: null,
     driver_name: null,
+    driver_phone: null,
     is_hazmat: false,
     is_overweight: false,
     is_bonded: false,

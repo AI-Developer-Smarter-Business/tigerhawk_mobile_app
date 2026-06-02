@@ -61,3 +61,10 @@ export function getCapturedDocumentType(
   const value = entries.find((e) => e.name === 'document_type')?.value;
   return typeof value === 'string' ? value : undefined;
 }
+
+export function getCapturedAccessToken(
+  entries: CapturedFormDataEntry[],
+): string | undefined {
+  const value = entries.find((e) => e.name === 'access_token')?.value;
+  return typeof value === 'string' ? value : undefined;
+}

@@ -13,9 +13,13 @@ export type TmsUploadFileDescriptor = {
   size: number;
 };
 
-/** TMS BFF contract: `POST /api/dispatcher/loads/[id]/documents` multipart `file` + `document_type`. */
+/**
+ * Mobile BFF — dedicated route (no TMS cookie middleware).
+ * Multipart fields (same names as dispatcher DocumentsTab):
+ * `file`, `document_type`, plus `access_token` for JWT.
+ */
 export function buildDocumentUploadPath(loadId: string): string {
-  return `/api/dispatcher/loads/${encodeURIComponent(loadId)}/documents`;
+  return `/api/mobile/loads/${encodeURIComponent(loadId)}/documents`;
 }
 
 /** Bearer only — do not set `Content-Type`; fetch sets multipart boundary. */
@@ -60,6 +64,17 @@ export function buildDocumentUploadFormData(params: BuildDocumentFormDataParams)
     type: params.file.type || 'application/octet-stream',
   } as unknown as Blob);
   formData.append('document_type', params.documentType);
+  formData.append('filename', params.file.name);
+  return formData;
+}
+
+/** Multipart body including JWT fallback when proxies strip Authorization. */
+export function buildDocumentUploadFormDataWithAuth(
+  accessToken: string,
+  params: BuildDocumentFormDataParams,
+): FormData {
+  const formData = buildDocumentUploadFormData(params);
+  formData.append('access_token', accessToken.trim());
   return formData;
 }
 
@@ -76,6 +91,6 @@ export function buildDocumentUploadRequestInit(
   return {
     method: 'POST',
     headers: buildDocumentUploadHeaders(accessToken),
-    body: buildDocumentUploadFormData(params),
+    body: buildDocumentUploadFormDataWithAuth(accessToken, params),
   };
 }

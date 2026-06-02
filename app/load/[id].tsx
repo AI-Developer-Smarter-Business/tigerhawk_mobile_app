@@ -9,6 +9,7 @@ import { PP2Theme } from '@/constants/theme';
 import { useLoads } from '@/context/LoadsContext';
 import { useDriverStatusChange } from '@/hooks/useDriverStatusChange';
 import { useLoadDetailQuery } from '@/hooks/useLoadDetailQuery';
+import { useLoadDocumentUpload } from '@/hooks/useLoadDocumentUpload';
 import { useLoadDocumentsQuery } from '@/hooks/useLoadDocumentsQuery';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { formatReference } from '@/lib/loads';
@@ -34,6 +35,7 @@ export default function LoadDetailScreen() {
     retry: retryDocuments,
   } = documentsQuery;
   const handleStatusChange = useDriverStatusChange(load);
+  const uploadDocument = useLoadDocumentUpload(load);
   const refreshDocumentsList = useCallback(
     () => refetchDocuments(),
     [refetchDocuments],
@@ -116,6 +118,7 @@ export default function LoadDetailScreen() {
           documentsError={documentsError}
           onDocumentsRetry={() => void retryDocuments()}
           onRefreshDocuments={refreshDocumentsList}
+          onUploadDocument={uploadDocument}
         />
       </ScrollView>
     </>

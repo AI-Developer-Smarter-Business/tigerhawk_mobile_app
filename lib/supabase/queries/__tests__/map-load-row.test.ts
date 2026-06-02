@@ -93,7 +93,7 @@ describe('mapLoadDetailRowToDetail', () => {
           state: 'TX',
           zip_code: '77001',
         },
-        drivers: { name: 'Test Driver' },
+        drivers: { name: 'Test Driver', phone: '555-9999' },
       }),
     );
 
@@ -105,6 +105,7 @@ describe('mapLoadDetailRowToDetail', () => {
     expect(detail.seal_number).toBe('SEAL9');
     expect(detail.customer_address).toContain('Houston');
     expect(detail.driver_name).toBe('Test Driver');
+    expect(detail.driver_phone).toBe('555-9999');
     expect(detail.is_hazmat).toBe(true);
     expect(detail.is_bonded).toBe(true);
     expect(detail.active_holds).toEqual(['freight_hold']);

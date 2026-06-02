@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 
+import { PodUploadSection } from '@/components/loads/PodUploadSection';
 import {
   documentOpenFailureMessage,
   openLoadDocument,
 } from '@/lib/loads/open-load-document';
+import { isDriverUploadedDocument } from '@/lib/tms/assert-driver-document-type';
 
 import { Button } from '@/components/ui/Button';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
@@ -12,6 +14,7 @@ import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { formatAppointment } from '@/lib/loads';
 import { formatFileSize } from '@/lib/loads/format-document';
+import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
 import type { LoadDocument } from '@/types/load-document';
 
 type LoadDocumentsSectionProps = {
@@ -20,6 +23,7 @@ type LoadDocumentsSectionProps = {
   error: string | null;
   onRetry: () => void;
   onRefreshDocuments: () => Promise<LoadDocument[]>;
+  onUploadDocument: (file: TmsUploadFileDescriptor) => Promise<void>;
 };
 
 export function LoadDocumentsSection({
@@ -28,6 +32,7 @@ export function LoadDocumentsSection({
   error,
   onRetry,
   onRefreshDocuments,
+  onUploadDocument,
 }: LoadDocumentsSectionProps) {
   const [openingId, setOpeningId] = useState<string | null>(null);
 
@@ -74,55 +79,49 @@ export function LoadDocumentsSection({
         <Text style={styles.empty}>{strings.loadDetail.noDocuments}</Text>
       ) : null}
 
-      {documents.map((doc) => (
-        <View key={doc.id} style={styles.docRow}>
-          <View style={styles.docMeta}>
-            <Text style={styles.docName} numberOfLines={2}>
-              {doc.filename}
-            </Text>
-            <Text style={styles.docSub}>
-              {doc.document_type} · {formatFileSize(doc.file_size)}
-              {doc.uploaded_at
-                ? ` · ${formatAppointment(doc.uploaded_at)}`
-                : ''}
-            </Text>
+      {documents.map((doc) => {
+        const driverDoc = isDriverUploadedDocument(doc);
+        return (
+          <View
+            key={doc.id}
+            style={[styles.docRow, driverDoc ? styles.docRowDriver : null]}>
+            <View style={styles.docMeta}>
+              <Text style={styles.docName} numberOfLines={2}>
+                {doc.filename}
+              </Text>
+              <Text style={[styles.docSub, driverDoc ? styles.docSubDriver : null]}>
+                {doc.document_type}
+                {driverDoc ? ` · ${strings.loadDetail.driverDocBadge}` : ''}
+                {' · '}
+                {formatFileSize(doc.file_size)}
+                {doc.uploaded_at
+                  ? ` · ${formatAppointment(doc.uploaded_at)}`
+                  : ''}
+              </Text>
+            </View>
+            <Button
+              title={strings.loadDetail.documentView}
+              variant="outline"
+              loading={openingId === doc.id}
+              disabled={openingId !== null}
+              onPress={() => void handleOpen(doc)}
+              style={styles.viewBtn}
+              accessibilityLabel={`${strings.loadDetail.documentView} ${doc.filename}`}
+            />
           </View>
-          <Button
-            title={strings.loadDetail.documentView}
-            variant="outline"
-            loading={openingId === doc.id}
-            disabled={openingId !== null}
-            onPress={() => void handleOpen(doc)}
-            style={styles.viewBtn}
-            accessibilityLabel={`${strings.loadDetail.documentView} ${doc.filename}`}
-          />
-        </View>
-      ))}
+        );
+      })}
 
       <View style={styles.evidenceBlock}>
-        <Text style={styles.evidenceTitleMuted}>
-          {strings.loadDetail.driverEvidenceTitle}
-        </Text>
-        <Text style={styles.evidenceHintMuted}>
-          {strings.loadDetail.driverEvidenceHint}
-        </Text>
-        <Text style={styles.tmsNote}>{strings.loadDetail.driverUploadTmsRequired}</Text>
-        <Text style={styles.tmsBullet}>{strings.loadDetail.driverUploadTmsPatchBearer}</Text>
-        <Text style={styles.tmsBullet}>{strings.loadDetail.driverUploadTmsPatchDriverDocs}</Text>
-        <Text style={styles.tmsContact}>{strings.loadDetail.driverUploadTmsContact}</Text>
-        <View
-          style={styles.disabledUploadBtn}
-          accessibilityRole="button"
-          accessibilityLabel={strings.loadDetail.podAddPhotoA11y}
-          accessibilityState={{ disabled: true }}>
-          <Text style={styles.disabledUploadBtnText}>
-            {strings.loadDetail.podAddPhoto}
-          </Text>
-        </View>
+        <Text style={styles.evidenceTitle}>{strings.loadDetail.driverEvidenceTitle}</Text>
+        <Text style={styles.evidenceHint}>{strings.loadDetail.driverEvidenceHint}</Text>
+        <PodUploadSection onUpload={onUploadDocument} />
       </View>
     </View>
   );
 }
+
+const driverTint = 'rgba(232, 112, 10, 0.1)';
 
 const styles = StyleSheet.create({
   note: {
@@ -143,8 +142,14 @@ const styles = StyleSheet.create({
     gap: PP2Theme.spacing.sm,
     marginBottom: PP2Theme.spacing.sm,
     paddingVertical: PP2Theme.spacing.xs,
+    paddingHorizontal: PP2Theme.spacing.xs,
     borderBottomWidth: 1,
     borderBottomColor: PP2Theme.colors.border,
+  },
+  docRowDriver: {
+    backgroundColor: driverTint,
+    borderBottomColor: 'rgba(232, 112, 10, 0.2)',
+    borderRadius: PP2Theme.radius.sm,
   },
   docMeta: { flex: 1 },
   docName: {
@@ -157,6 +162,9 @@ const styles = StyleSheet.create({
     color: PP2Theme.colors.textMuted,
     marginTop: 2,
   },
+  docSubDriver: {
+    color: PP2Theme.colors.tms.navActive,
+  },
   viewBtn: { minWidth: 88 },
   evidenceBlock: {
     marginTop: PP2Theme.spacing.lg,
@@ -164,51 +172,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: PP2Theme.colors.border,
   },
-  evidenceTitleMuted: {
+  evidenceTitle: {
     fontSize: PP2Theme.typography.sizes.body,
     fontWeight: '600',
-    color: PP2Theme.colors.textMuted,
+    color: PP2Theme.colors.text,
     marginBottom: PP2Theme.spacing.xs,
   },
-  evidenceHintMuted: {
+  evidenceHint: {
     fontSize: PP2Theme.typography.sizes.caption,
     color: PP2Theme.colors.textMuted,
-    marginBottom: PP2Theme.spacing.sm,
-    lineHeight: 18,
-  },
-  tmsNote: {
-    fontSize: PP2Theme.typography.sizes.caption,
-    color: PP2Theme.colors.textMuted,
-    lineHeight: 18,
-    marginBottom: PP2Theme.spacing.xs,
-  },
-  tmsBullet: {
-    fontSize: PP2Theme.typography.sizes.caption,
-    color: PP2Theme.colors.textMuted,
-    lineHeight: 18,
-    marginBottom: PP2Theme.spacing.xs,
-    paddingLeft: PP2Theme.spacing.xs,
-  },
-  tmsContact: {
-    fontSize: PP2Theme.typography.sizes.caption,
-    color: PP2Theme.colors.textMuted,
-    lineHeight: 18,
     marginBottom: PP2Theme.spacing.md,
-    fontStyle: 'italic',
-  },
-  disabledUploadBtn: {
-    minHeight: PP2Theme.layout.minTouchTarget,
-    borderRadius: PP2Theme.radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: PP2Theme.spacing.md,
-    backgroundColor: PP2Theme.colors.border,
-    borderWidth: 1,
-    borderColor: PP2Theme.colors.border,
-  },
-  disabledUploadBtnText: {
-    fontSize: PP2Theme.typography.sizes.body,
-    fontWeight: '600',
-    color: PP2Theme.colors.textMuted,
+    lineHeight: 18,
   },
 });

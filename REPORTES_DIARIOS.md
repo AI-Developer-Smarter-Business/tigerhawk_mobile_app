@@ -933,4 +933,68 @@ Seguir **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`** (copia lista TMS):
 
 ---
 
+## 1 de junio de 2026
+
+### Tarea 1 — Subida conductor + Documents TMS (dev 6.2)
+
+**Qué se implementó**
+
+- **Móvil:** `LoadDocumentsSection` habilita **Add driver photo** con `PodUploadSection` + `useLoadDocumentUpload` (`document_type=Driver`); filas tipo **Driver** con fondo naranja suave; sin borrado desde la app; `access_token` en multipart como respaldo del header Bearer.
+- **TMS (repo externo):** mismo `POST /api/dispatcher/loads/[id]/documents` que dispatch; JWT móvil vía `admin.auth.getUser` + campo `access_token`; middleware deja pasar ese POST; permisos con service role (`user_profiles` + `loads.driver_id`); tipo **Driver**; `enrichLoadDocuments`; pestaña **Documents** fila naranja, realtime `load_documents`; dispatcher puede eliminar.
+- **Docs/SQL:** `docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`, `supabase/sql-editor/DRIVER_DOCUMENT_UPLOAD_NOTES.sql`, `VERIFY_driver_tms_upload_prereqs.sql`.
+- **Tests:** `document-upload-request`, `load-detail-routes` actualizados.
+
+**Funcionalidad disponible**
+
+- El conductor sube foto desde detalle de carga; aparece en TMS **Dispatcher → Load board → carga → Documents** (fila naranja, tipo Driver) y en la lista móvil sin recargar (Realtime + invalidación tras subida).
+- El dispatcher elimina desde TMS; el conductor solo ve y abre (**View**).
+
+**Cómo probar**
+
+- `npm test -- --testPathPattern="document-upload|load-detail-routes"`.
+- TMS local: `npm run dev` (puerto 3000) con `SUPABASE_SERVICE_ROLE_KEY`; app con `EXPO_PUBLIC_TMS_API_URL=http://localhost:3000` (en teléfono: IP LAN, no localhost). O deploy Netlify + mismo Supabase; SQL `enable_realtime_load_documents.sql` si hace falta.
+- **Móvil:** login conductor → **My Loads** → carga asignada → **POD / Documents** → **Add driver photo** → subir → mensaje de éxito → nueva fila (naranja si tipo Driver).
+- **TMS:** misma carga → pestaña **Documents** → fila naranja, tipo **Driver**, nombre de archivo; eliminar con icono papelera → desaparece en móvil sin reiniciar.
+- **Resultado esperado:** subida **201**; sin botón eliminar en móvil; sincronización bidireccional en segundos.
+
+### Tarea 2 — Realtime Supabase: `loads` + `load_documents` en publicación (dev 6.2)
+
+**Qué se hizo (Supabase Dashboard → SQL Editor)**
+
+- Ejecutado `supabase/sql-editor/enable_realtime_pp2_driver_sync.sql` en el proyecto **Tigerhawk TMS** (mismo Supabase que móvil y Netlify).
+- Verificación: el `SELECT` final devolvió **2 filas** — `load_documents` y `loads` — dentro de la publicación **`supabase_realtime`**.
+
+**Por qué (problema que resolvía)**
+
+- Los datos **sí** se guardaban en la tabla `load_documents` (Table Editor), pero el TMS en [tigerhawk.netlify.app](https://tigerhawk.netlify.app) **no refrescaba** la pestaña **Documents** al subir desde el móvil hasta hacer F5.
+- **Realtime ≠ tener filas en la tabla:** la publicación `supabase_realtime` es el “canal” que emite eventos INSERT/UPDATE/DELETE por WebSocket. Sin incluir la tabla ahí, TMS y móvil no reciben avisos en vivo aunque el INSERT en PostgreSQL funcione.
+- En **Database → Publications** no aparece una publicación llamada `load_documents`; la tabla se **añade dentro** de `supabase_realtime` (p. ej. de 4 a 5 tablas).
+
+**Para qué sirve**
+
+| Tabla | Uso en vivo |
+|-------|-------------|
+| **`load_documents`** | Foto del conductor → fila naranja en TMS **Documents** sin recargar; borrado del dispatcher → desaparece en la app móvil al instante. |
+| **`loads`** | Cambios de estado/asignación en TMS o móvil se reflejan en listados y detalle sin pull-to-refresh manual. |
+
+**Complemento TMS (repo externo, commit `b88e523`)**
+
+- `useRealtimeRefresh` estable (ref del callback) + `fetch` con `cache: 'no-store'` en **Documents** para que, al recibir el evento, la lista no use caché del navegador.
+
+**Cómo probar**
+
+1. Supabase → SQL Editor → repetir solo la verificación:
+   ```sql
+   SELECT tablename FROM pg_publication_tables
+   WHERE pubname = 'supabase_realtime' AND schemaname = 'public'
+     AND tablename IN ('loads', 'load_documents') ORDER BY tablename;
+   ```
+   **Esperado:** 2 filas.
+2. **Móvil** (Expo Go, `EXPO_PUBLIC_TMS_API_URL=https://tigerhawk.netlify.app`) → conductor → carga → **Add driver photo** → subir.
+3. **TMS** → misma carga → pestaña **Documents** **abierta** → en ~1–3 s fila naranja **Driver** sin F5.
+4. **TMS** → eliminar documento → en móvil desaparece sin reiniciar la app.
+5. **Resultado esperado:** sync bidireccional en segundos; si falla solo en TMS, confirmar deploy Netlify con `b88e523`.
+
+---
+
 _Al cerrar cada día, añadir sección `## [fecha]` con **Tarea 1, Tarea 2, Tarea 3…** de arriba abajo (ej. dev 4.6 → Tarea 7, dev 4.7 → Tarea 8). Nunca Tarea 8 antes de Tarea 7._

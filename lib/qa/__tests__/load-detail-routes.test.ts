@@ -13,6 +13,7 @@ describe('load detail routes (5.6)', () => {
     expect(source).toContain('normalizeLoadIdParam');
     expect(source).toContain('LoadDetailContent');
     expect(source).toContain('useLoadDocumentsQuery');
+    expect(source).toContain('useLoadDocumentUpload');
     expect(source).toContain('usePullToRefresh');
   });
 
@@ -27,6 +28,8 @@ describe('load detail routes (5.6)', () => {
     const sectionPath = path.join(root, 'components', 'loads', 'LoadDocumentsSection.tsx');
     const source = fs.readFileSync(sectionPath, 'utf8');
     expect(source).toContain('openLoadDocument');
+    expect(source).toContain('PodUploadSection');
+    expect(source).toContain('onUploadDocument');
     expect(source).toContain('strings.loadDetail.documentView');
   });
 });

@@ -21,6 +21,7 @@ import {
   hasShipmentInfo,
   hasTimeline,
 } from '@/lib/loads/load-detail-helpers';
+import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
 import type { LoadDetail, LoadStatus } from '@/types';
 import type { LoadDocument } from '@/types/load-document';
 
@@ -34,6 +35,7 @@ type LoadDetailContentProps = {
   documentsError: string | null;
   onDocumentsRetry: () => void;
   onRefreshDocuments: () => Promise<LoadDocument[]>;
+  onUploadDocument: (file: TmsUploadFileDescriptor) => Promise<void>;
 };
 
 export function LoadDetailContent({
@@ -46,6 +48,7 @@ export function LoadDetailContent({
   documentsError,
   onDocumentsRetry,
   onRefreshDocuments,
+  onUploadDocument,
 }: LoadDetailContentProps) {
   return (
     <>
@@ -107,7 +110,15 @@ export function LoadDetailContent({
       </Card>
 
       <Card title={strings.location.sectionTitle}>
-        <LoadLocationSection loadReference={load.reference_number} />
+        <LoadLocationSection
+          loadReference={load.reference_number}
+          loadStatus={load.status}
+          containerNumber={load.container_number}
+          pickupLocation={load.pickup_location}
+          deliveryLocation={load.delivery_location}
+          driverName={load.driver_name}
+          driverPhone={load.driver_phone}
+        />
       </Card>
 
       {hasShipmentInfo(load) ? (
@@ -214,6 +225,7 @@ export function LoadDetailContent({
           error={documentsError}
           onRetry={onDocumentsRetry}
           onRefreshDocuments={onRefreshDocuments}
+          onUploadDocument={onUploadDocument}
         />
       </Card>
 

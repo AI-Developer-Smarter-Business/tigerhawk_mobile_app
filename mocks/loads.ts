@@ -19,6 +19,7 @@ const DETAIL_NULLS = {
   customer_phone: null,
   customer_address: null,
   driver_name: null,
+  driver_phone: null,
   is_hazmat: false,
   is_overweight: false,
   is_bonded: false,

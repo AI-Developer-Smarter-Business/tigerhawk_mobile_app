@@ -1,9 +1,10 @@
 import { assertUploadResponseMatchesLoad } from '@/lib/loads/document-load-association';
+import { safeLog } from '@/lib/logging/safe-log';
 
 import type { DriverUploadDocumentType } from './assert-driver-document-type';
 import { assertDriverUploadDocumentType } from './assert-driver-document-type';
 import { assertTmsUrlReachableFromDevice } from './assert-tms-device-url';
-import { tmsDocumentApiPath } from './client';
+import { getTmsApiUrl, tmsDocumentApiPath } from './client';
 import { TmsDocumentUploadError } from './document-errors';
 import {
     buildDocumentUploadPath,
@@ -11,6 +12,40 @@ import {
     type TmsUploadFileDescriptor,
 } from './document-upload-request';
 import { parseDocumentUploadError } from './parse-document-error';
+
+const DEV_FETCH_ATTEMPTS = 3;
+const DEV_FETCH_RETRY_MS = 2500;
+
+async function fetchTmsUpload(
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  const attempts =
+    typeof __DEV__ !== 'undefined' && __DEV__ ? DEV_FETCH_ATTEMPTS : 1;
+
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fetch(url, init);
+    } catch (err) {
+      lastError = err;
+      safeLog.warn('upload-load-document', `fetch attempt ${attempt}/${attempts} failed`, {
+        host: (() => {
+          try {
+            return new URL(url).host;
+          } catch {
+            return 'unknown';
+          }
+        })(),
+        cause: err instanceof Error ? err.message : String(err),
+      });
+      if (attempt < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, DEV_FETCH_RETRY_MS));
+      }
+    }
+  }
+  throw lastError;
+}
 
 export type UploadLoadDocumentParams = {
   loadId: string;
@@ -64,10 +99,27 @@ export async function uploadLoadDocument(
 
   let response: Response;
   try {
-    response = await fetch(url, init);
-  } catch {
+    response = await fetchTmsUpload(url, init);
+  } catch (err) {
+    const base = getTmsApiUrl();
+    safeLog.error('upload-load-document', 'TMS document upload fetch failed', {
+      host: (() => {
+        try {
+          return new URL(url).host;
+        } catch {
+          return 'unknown';
+        }
+      })(),
+      cause: err instanceof Error ? err.message : String(err),
+    });
+    const devHint =
+      typeof __DEV__ !== 'undefined' &&
+      __DEV__ &&
+      base
+        ? ` Could not reach ${base}. Is TMS running (npm run dev)? Open that URL once in the phone browser (first API compile can take ~30s), same Wi‑Fi, and allow port 3000 in Windows Firewall.`
+        : '';
     throw new TmsDocumentUploadError(
-      'Network error. Check your connection and try again.',
+      `Network error. Check your connection and try again.${devHint}`,
       'NETWORK',
     );
   }

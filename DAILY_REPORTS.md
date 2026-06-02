@@ -895,4 +895,68 @@ Follow **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`** (TMS-ready copy):
 
 ---
 
+## June 1, 2026
+
+### Task 1 — Driver upload + TMS Documents UI (dev 6.2)
+
+**What was implemented**
+
+- **Mobile:** `LoadDocumentsSection` enables **Add driver photo** via `PodUploadSection` + `useLoadDocumentUpload` (`document_type=Driver`); **Driver** rows use a soft orange background; no delete in the app; `access_token` in multipart as a fallback when the Bearer header is dropped.
+- **TMS (external repo):** same `POST /api/dispatcher/loads/[id]/documents` as dispatch; mobile JWT via `admin.auth.getUser` + form `access_token`; middleware allows that POST; permission checks via service role; **Driver** type; `enrichLoadDocuments`; **Documents** tab orange rows, realtime on `load_documents`; dispatcher delete allowed.
+- **Docs/SQL:** `docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`, `supabase/sql-editor/DRIVER_DOCUMENT_UPLOAD_NOTES.sql`, `VERIFY_driver_tms_upload_prereqs.sql`.
+- **Tests:** updated `document-upload-request`, `load-detail-routes`.
+
+**What is available**
+
+- Driver uploads from load detail; file shows on TMS **Documents** (orange row, Driver type) and on mobile without reload (Realtime + post-upload invalidation).
+- Dispatcher deletes in TMS; driver can only view/open.
+
+**How to test**
+
+- `npm test -- --testPathPattern="document-upload|load-detail-routes"`.
+- Local TMS: `npm run dev` (port 3000) with `SUPABASE_SERVICE_ROLE_KEY`; app `EXPO_PUBLIC_TMS_API_URL=http://localhost:3000` (physical device: LAN IP, not localhost). Or deploy to Netlify + same Supabase; run `enable_realtime_load_documents.sql` if needed.
+- **Mobile:** driver login → **My Loads** → assigned load → **POD / Documents** → **Add driver photo** → upload → success message → new row (orange for Driver).
+- **TMS:** same load → **Documents** tab → orange row, **Driver** type; delete via trash → row disappears on mobile without restart.
+- **Expected:** upload **201**; no delete on mobile; sync both ways within seconds.
+
+### Task 2 — Supabase Realtime: `loads` + `load_documents` in publication (dev 6.2)
+
+**What was done (Supabase Dashboard → SQL Editor)**
+
+- Ran `supabase/sql-editor/enable_realtime_pp2_driver_sync.sql` on the **Tigerhawk TMS** project (same Supabase as mobile and Netlify).
+- Verification: final `SELECT` returned **2 rows** — `load_documents` and `loads` — in the **`supabase_realtime`** publication.
+
+**Why (problem it fixes)**
+
+- Rows **were** saved in `load_documents` (Table Editor), but TMS at [tigerhawk.netlify.app](https://tigerhawk.netlify.app) did **not** refresh the **Documents** tab after a mobile upload until a full page reload.
+- **Realtime ≠ rows in the table:** the `supabase_realtime` publication is the WebSocket channel for INSERT/UPDATE/DELETE events. Without the table in that publication, TMS and mobile never get live notifications even when PostgreSQL writes succeed.
+- Under **Database → Publications** there is no publication named `load_documents`; the table is **added inside** `supabase_realtime` (e.g. 4 → 5 tables).
+
+**What it enables**
+
+| Table | Live behavior |
+|-------|----------------|
+| **`load_documents`** | Driver photo → orange **Driver** row on TMS **Documents** without reload; dispatcher delete → row disappears on mobile immediately. |
+| **`loads`** | Status/assignment changes on TMS or mobile propagate to lists and detail without manual pull-to-refresh. |
+
+**TMS complement (external repo, commit `b88e523`)**
+
+- Stable `useRealtimeRefresh` (callback ref) + `fetch` with `cache: 'no-store'` on **Documents** so the browser does not serve a stale list after an event.
+
+**How to test**
+
+1. Supabase → SQL Editor → run verification only:
+   ```sql
+   SELECT tablename FROM pg_publication_tables
+   WHERE pubname = 'supabase_realtime' AND schemaname = 'public'
+     AND tablename IN ('loads', 'load_documents') ORDER BY tablename;
+   ```
+   **Expected:** 2 rows.
+2. **Mobile** (Expo Go, `EXPO_PUBLIC_TMS_API_URL=https://tigerhawk.netlify.app`) → driver → load → **Add driver photo** → upload.
+3. **TMS** → same load → **Documents** tab **open** → orange **Driver** row within ~1–3 s without F5.
+4. **TMS** → delete document → row disappears on mobile without restarting the app.
+5. **Expected:** bidirectional sync within seconds; if TMS only fails, confirm Netlify deploy includes `b88e523`.
+
+---
+
 *When closing each day, add a `## [date]` section with **Task 1, Task 2, Task 3…** top to bottom (e.g. dev 4.6 → Task 7, dev 4.7 → Task 8). Never Task 8 before Task 7.*

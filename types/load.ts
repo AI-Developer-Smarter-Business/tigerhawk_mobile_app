@@ -54,6 +54,7 @@ export type LoadDetail = LoadSummary & {
   customer_phone: string | null;
   customer_address: string | null;
   driver_name: string | null;
+  driver_phone: string | null;
   is_hazmat: boolean;
   is_overweight: boolean;
   is_bonded: boolean;

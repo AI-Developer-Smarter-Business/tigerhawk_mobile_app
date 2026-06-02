@@ -2,7 +2,7 @@
 
 **Symptom:** Tigerhawk Mobile shows **Session expired** / **Unauthorized** on POD upload or status PATCH, while Supabase reads (loads list, profile) work.
 
-**Cause:** `lib/supabase/server.ts` builds the Supabase client from **cookies only** (`@supabase/ssr`). The Expo app sends **`Authorization: Bearer <access_token>`** and does not share browser cookies with the TMS host. `supabase.auth.getUser()` in API routes returns no user → **401** — this is **not** an RLS issue on `load_documents`.
+**Cause:** The Expo app sends **`Authorization: Bearer <access_token>`** (no TMS browser cookies). API routes must call **`supabase.auth.getUser(jwt)`** with that token (see `lib/supabase/get-user-from-request.ts`). Relying on cookies only, or only setting `global.headers` without passing the JWT to `getUser()`, returns no user → **401**. This is **not** fixed by changing RLS on `load_documents` (upload uses the TMS **service role** after auth).
 
 **Apply in the TMS Next.js repo** (production: `https://tms.tigerhawklogistics.com`).
 
@@ -48,27 +48,48 @@ export async function createClient(request?: NextRequest) {
 
 ---
 
-## 2. Pass `request` in API routes used by mobile
+## 2. Resolve user with `getUserFromRequest` (Bearer JWT)
 
-**Documents (POD):**
+Add `lib/supabase/get-user-from-request.ts` — extracts the Bearer token and calls **`getUser(bearerToken)`** (required for mobile).
+
+In API routes used by the app:
 
 ```typescript
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> },
-) {
-  const supabase = await createClient(request)
-  // ... rest unchanged
+import { getUserFromRequest } from "@/lib/supabase/get-user-from-request"
+
+export async function POST(request: NextRequest, context: ...) {
+  const { user, supabase } = await getUserFromRequest(request)
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  // ... use `supabase` for RLS-scoped reads (loads, user_profiles)
 }
 ```
 
-**Status PATCH:** same — `const supabase = await createClient(request)` in `PATCH`.
-
-**GET documents:** optional — `createClient(request)` for consistency.
+Apply to: `POST/GET …/documents`, `PATCH …/status`, and any other mobile-facing dispatcher routes.
 
 ---
 
-## 3. Verify (production)
+## 3. Middleware must allow Bearer on `/api/*` (critical)
+
+`middleware.ts` runs **before** API route handlers. If it only calls `getUser()` from cookies, mobile requests get **401** even when the route uses `getUserFromRequest`.
+
+If `getUser()` in middleware cannot validate Bearer (Edge), **do not return 401** when `Authorization: Bearer` is present — let the API route handler authenticate:
+
+```typescript
+if (!user && pathname.startsWith("/api/")) {
+  if (extractBearerToken(request)) {
+    return supabaseResponse
+  }
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+}
+```
+
+Dispatcher web uploads use **cookies** on the same `POST /api/dispatcher/loads/[id]/documents` route; mobile uses **Bearer** on that same route.
+
+---
+
+## 4. Verify (production)
 
 1. Login in mobile as `driver_test@test.com` (same Supabase project as TMS).
 2. Copy `access_token` from dev tools or log (never commit).

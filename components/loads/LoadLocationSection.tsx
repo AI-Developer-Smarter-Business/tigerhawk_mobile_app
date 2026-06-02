@@ -13,13 +13,37 @@ import {
 import { buildGoogleMapsUrl } from '@/lib/location/maps-url';
 import { canPersistLocationToTms } from '@/lib/location/tms-location-integration';
 
+import type { LoadStatus } from '@/types';
+
 type LoadLocationSectionProps = {
   loadReference: string;
+  loadStatus: LoadStatus;
+  containerNumber?: string | null;
+  pickupLocation?: string | null;
+  deliveryLocation?: string | null;
+  driverName?: string | null;
+  driverPhone?: string | null;
 };
 
-export function LoadLocationSection({ loadReference }: LoadLocationSectionProps) {
+export function LoadLocationSection({
+  loadReference,
+  loadStatus,
+  containerNumber,
+  pickupLocation,
+  deliveryLocation,
+  driverName,
+  driverPhone,
+}: LoadLocationSectionProps) {
   const { position, loading, error, needsLocationSettings, lowPowerHint, shareLocation } =
-    useLoadLocationShare({ loadReference });
+    useLoadLocationShare({
+      loadReference,
+      status: loadStatus,
+      containerNumber,
+      pickupLocation,
+      deliveryLocation,
+      driverName,
+      driverPhone,
+    });
 
   if (Platform.OS === 'web') {
     return (

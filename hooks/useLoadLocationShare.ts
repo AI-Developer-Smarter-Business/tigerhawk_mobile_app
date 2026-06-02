@@ -3,8 +3,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { strings } from '@/constants/strings';
+import { useProfile } from '@/hooks/useProfile';
 import { mapLocationError } from '@/lib/errors/map-location-error';
 import type { UserFacingError } from '@/lib/errors/types';
+import type { LoadLocationShareContext } from '@/lib/location/format-coordinates';
 import {
   getForegroundPosition,
   type ForegroundPosition,
@@ -15,11 +17,19 @@ import { LocationError } from '@/lib/location/location-errors';
 import { shareLoadLocation } from '@/lib/location/share-load-location';
 import { formatReference } from '@/lib/loads/format';
 
-type UseLoadLocationShareParams = {
-  loadReference: string | null | undefined;
-};
+type UseLoadLocationShareParams = LoadLocationShareContext;
 
-export function useLoadLocationShare({ loadReference }: UseLoadLocationShareParams) {
+export function useLoadLocationShare({
+  loadReference,
+  status,
+  containerNumber,
+  pickupLocation,
+  deliveryLocation,
+  driverName,
+  driverPhone,
+  driverEmail,
+}: UseLoadLocationShareParams) {
+  const { profile } = useProfile();
   const [position, setPosition] = useState<ForegroundPosition | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<UserFacingError | null>(null);
@@ -44,8 +54,20 @@ export function useLoadLocationShare({ loadReference }: UseLoadLocationSharePara
         ? formatReference(loadReference.trim())
         : strings.loadDetail.emDash;
 
+      const resolvedDriverName =
+        driverName?.trim() || profile?.full_name?.trim() || null;
+      const resolvedDriverEmail =
+        driverEmail?.trim() || profile?.email?.trim() || null;
+
       await shareLoadLocation({
         loadReference: refLabel,
+        status: status?.trim() || null,
+        containerNumber: containerNumber?.trim() || null,
+        pickupLocation: pickupLocation?.trim() || null,
+        deliveryLocation: deliveryLocation?.trim() || null,
+        driverName: resolvedDriverName,
+        driverPhone: driverPhone?.trim() || null,
+        driverEmail: resolvedDriverEmail,
         latitude: coords.latitude,
         longitude: coords.longitude,
         accuracyMeters: coords.accuracyMeters,
@@ -62,7 +84,19 @@ export function useLoadLocationShare({ loadReference }: UseLoadLocationSharePara
     } finally {
       setLoading(false);
     }
-  }, [loadReference, refreshLowPowerHint]);
+  }, [
+    loadReference,
+    status,
+    containerNumber,
+    pickupLocation,
+    deliveryLocation,
+    driverName,
+    driverPhone,
+    driverEmail,
+    profile?.full_name,
+    profile?.email,
+    refreshLowPowerHint,
+  ]);
 
   const clearError = useCallback(() => {
     setError(null);

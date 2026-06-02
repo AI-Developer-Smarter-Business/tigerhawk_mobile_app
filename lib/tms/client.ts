@@ -2,13 +2,14 @@ import { env } from '@/lib/config/env';
 
 import { TmsDocumentUploadError } from './document-errors';
 import { TmsStatusChangeError } from './errors';
+import { resolveTmsApiUrlForDevice } from './resolve-tms-api-url';
 
 const TMS_CONFIG_MESSAGE =
   'TMS API URL is not configured. Set EXPO_PUBLIC_TMS_API_URL in .env.local.';
 
 /** TMS Next.js base URL (`EXPO_PUBLIC_TMS_API_URL` or `NEXT_PUBLIC_APP_URL`). */
 export function getTmsApiUrl(): string {
-  return env.tmsApiUrl;
+  return resolveTmsApiUrlForDevice(env.tmsApiUrl);
 }
 
 function buildAbsoluteTmsPath(path: string): string | null {

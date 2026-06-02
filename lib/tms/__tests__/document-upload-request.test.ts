@@ -10,6 +10,7 @@ import {
 } from '../document-upload-request';
 import {
   captureFormDataAppends,
+  getCapturedAccessToken,
   getCapturedDocumentType,
   getCapturedFilePart,
 } from '../testing/form-data-test-utils';
@@ -24,13 +25,13 @@ const sampleFile = {
 describe('buildDocumentUploadPath', () => {
   it('encodes load id in the path segment', () => {
     expect(buildDocumentUploadPath('load/with spaces')).toBe(
-      '/api/dispatcher/loads/load%2Fwith%20spaces/documents',
+      '/api/mobile/loads/load%2Fwith%20spaces/documents',
     );
   });
 
-  it('uses dispatcher loads documents route', () => {
+  it('uses mobile loads documents route', () => {
     expect(buildDocumentUploadPath('abc-123')).toBe(
-      '/api/dispatcher/loads/abc-123/documents',
+      '/api/mobile/loads/abc-123/documents',
     );
   });
 });
@@ -72,14 +73,13 @@ describe('validateDocumentUploadFile', () => {
 });
 
 describe('assertDriverUploadDocumentType', () => {
-  it('allows POD and Photo', () => {
-    expect(() => assertDriverUploadDocumentType('POD')).not.toThrow();
-    expect(() => assertDriverUploadDocumentType('Photo')).not.toThrow();
+  it('allows Driver type', () => {
+    expect(() => assertDriverUploadDocumentType('Driver')).not.toThrow();
   });
 
   it('rejects staff-only types before network', () => {
     expect(() => assertDriverUploadDocumentType('Invoice')).toThrow(
-      /POD or Photo/,
+      /Driver-type/,
     );
   });
 });
@@ -87,31 +87,24 @@ describe('assertDriverUploadDocumentType', () => {
 describe('buildDocumentUploadFormData', () => {
   it('appends React Native file part and document_type metadata', () => {
     const { entries } = captureFormDataAppends(() =>
-      buildDocumentUploadFormData({ file: sampleFile, documentType: 'POD' }),
+      buildDocumentUploadFormData({ file: sampleFile, documentType: 'Driver' }),
     );
 
-    expect(entries).toHaveLength(2);
+    expect(entries).toHaveLength(3);
+    expect(entries.some((e) => e.name === 'filename' && e.value === 'photo.jpg')).toBe(true);
     expect(getCapturedFilePart(entries)).toEqual({
       uri: 'file:///photo.jpg',
       name: 'photo.jpg',
       type: 'image/jpeg',
     });
-    expect(getCapturedDocumentType(entries)).toBe('POD');
-  });
-
-  it('supports Photo document type metadata', () => {
-    const { entries } = captureFormDataAppends(() =>
-      buildDocumentUploadFormData({ file: sampleFile, documentType: 'Photo' }),
-    );
-
-    expect(getCapturedDocumentType(entries)).toBe('Photo');
+    expect(getCapturedDocumentType(entries)).toBe('Driver');
   });
 
   it('defaults file MIME to application/octet-stream when type is empty', () => {
     const { entries } = captureFormDataAppends(() =>
       buildDocumentUploadFormData({
         file: { ...sampleFile, type: '' },
-        documentType: 'POD',
+        documentType: 'Driver',
       }),
     );
 
@@ -123,7 +116,7 @@ describe('buildDocumentUploadFormData', () => {
       captureFormDataAppends(() =>
         buildDocumentUploadFormData({
           file: { ...sampleFile, size: 0 },
-          documentType: 'POD',
+          documentType: 'Driver',
         }),
       ),
     ).toThrow(TmsDocumentUploadError);
@@ -134,7 +127,7 @@ describe('buildDocumentUploadRequestInit', () => {
   it('builds POST multipart init aligned to uploadLoadDocument', () => {
     const init = buildDocumentUploadRequestInit('jwt', {
       file: sampleFile,
-      documentType: 'POD',
+      documentType: 'Driver',
     });
     expect(init.method).toBe('POST');
     expect(init.headers).toEqual({
@@ -148,12 +141,13 @@ describe('buildDocumentUploadRequestInit', () => {
     const { entries } = captureFormDataAppends(() => {
       const init = buildDocumentUploadRequestInit('driver-jwt', {
         file: sampleFile,
-        documentType: 'POD',
+        documentType: 'Driver',
       });
       return init.body;
     });
 
     expect(getCapturedFilePart(entries)?.uri).toBe(sampleFile.uri);
-    expect(getCapturedDocumentType(entries)).toBe('POD');
+    expect(getCapturedDocumentType(entries)).toBe('Driver');
+    expect(getCapturedAccessToken(entries)).toBe('driver-jwt');
   });
 });
