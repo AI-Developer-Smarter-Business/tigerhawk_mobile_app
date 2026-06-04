@@ -1,0 +1,34 @@
+---
+description: TMS de desarrollo desplegado — ruta del repo editable (no PROYECTO_MUESTRA)
+alwaysApply: true
+---
+
+# TMS desarrollo — repositorio obligatorio
+
+## Dónde editar el TMS
+
+Cualquier cambio de **código o UI del TMS** que deba reflejarse en el entorno de **desarrollo desplegado** (Netlify u otro) se hace **solo** en:
+
+`C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_1_TigerHawk TMS\tigerhawk-tms-main\tigerhawk-tms-main`
+
+(Equivalente con barras `/` si la herramienta lo exige.)
+
+## Qué NO es ese repo
+
+| Carpeta / repo | Uso |
+|----------------|-----|
+| **`PROYECTO_MUESTRA/`** (dentro de `proyecto_PP2_app_mobile`) | **Solo lectura** — referencia de dominio/API; **nunca** modificar |
+| **`proyecto_PP2_app_mobile`** | App **Tigerhawk Mobile** (Expo), SQL copias en `supabase/sql-editor/`, docs PP2 |
+
+## Cuándo aplicar esta regla
+
+- Tareas **8.12–8.13** (mapa en vivo, panel dispatcher), rutas `app/api/…`, componentes `components/dispatcher/`, `components/maps/`
+- Parches documentados en `docs/TMS_PATCH_*.md` del repo móvil → implementar en el **repo TMS de desarrollo** arriba
+- Antes de asumir que el TMS en producción/dev tiene una feature: **leer o buscar en esa ruta**, no solo en `PROYECTO_MUESTRA/`
+
+## Seguimiento GPS en vivo (Semana 8)
+
+- **Canal conductor:** **opción 1** — Tigerhawk Mobile (`proyecto_PP2_app_mobile`), primer plano, envío a Supabase.
+- **Vista dispatch:** extender mapa en repo TMS dev (`LoadDetailPanel` + `LoadSidebarMap`); hoy el mapa es pickup/delivery, **sin** marcador GPS del conductor en tiempo real hasta **8.12**.
+
+Ver `docs/TMS_DEV_REPOSITORY.md` y `docs/GPS_LIVE_TRACKING_ARCHITECTURE.md`.

@@ -8,6 +8,18 @@ Esa carpeta es el TMS web TigerHawk de **solo lectura** (referencia de dominio, 
 
 Si hace falta alinear API o RLS con el TMS, documentarlo en `PP2_*.md` o en el TMS en otro repositorio/PR acordado — no editar `PROYECTO_MUESTRA` desde este flujo.
 
+## TMS de desarrollo (repo editable — deploy dev)
+
+**Cualquier cambio de código del TMS** (UI dispatcher, mapas, `app/api/`, parches `docs/TMS_PATCH_*.md`) para el entorno **desplegado en desarrollo** debe aplicarse en:
+
+`C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_1_TigerHawk TMS\tigerhawk-tms-main\tigerhawk-tms-main`
+
+- **No** implementar esos cambios solo en `PROYECTO_MUESTRA/` (solo lectura).
+- Detalle y auditoría del mapa actual: `docs/TMS_DEV_REPOSITORY.md`.
+- Regla Cursor: `.cursor/rules/tms-dev-repository.mdc`.
+
+**Seguimiento GPS en vivo:** canal conductor = **Tigerhawk Mobile** (repo móvil); vista dispatch = **TMS dev repo** (`LoadSidebarMap` hoy = paradas estáticas; marcador en vivo → tareas **8.12–8.13**).
+
 ## Nombre del producto
 
 - **Proyecto / app:** PP2  

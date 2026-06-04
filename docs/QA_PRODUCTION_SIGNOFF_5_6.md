@@ -72,7 +72,7 @@ Use matrix **B1–B4** in `docs/QA_DRIVER_DOCUMENTS_4_7.md`.
 | B3 | | | |
 | B4 | | | |
 
-**Skip §D** (driver upload) until Semana 6 / TMS 4.1 + UI 4.8.
+**Driver upload (Semana 6):** use **`docs/QA_DRIVER_UPLOAD_E2E_6_4.md`** — preflight `npm run qa:6.4`. Required rows for 6.4: D1, D2, D4, D6, D7.
 
 ---
 

@@ -22,3 +22,11 @@ export async function assertOnlineForDriverAction(): Promise<void> {
     throw new OfflineError(strings.network.offlineActionBlocked);
   }
 }
+
+/** Blocks driver photo upload while offline (task 6.3 — no upload queue in v1). */
+export async function assertOnlineForDocumentUpload(): Promise<void> {
+  const state = await NetInfo.fetch();
+  if (isOfflineFromNetInfo(state)) {
+    throw new OfflineError(strings.network.offlineUploadBlocked);
+  }
+}

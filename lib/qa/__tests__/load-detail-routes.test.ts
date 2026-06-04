@@ -2,9 +2,9 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 /**
- * Guards task 5.6 route consistency: load detail screen and document hooks share id normalization.
+ * Guards task 5.6 / 6.4 route consistency: load detail screen and document hooks share id normalization.
  */
-describe('load detail routes (5.6)', () => {
+describe('load detail routes (5.6 / 6.4)', () => {
   const root = path.join(__dirname, '..', '..', '..');
 
   it('load detail screen uses normalizeLoadIdParam', () => {
@@ -31,5 +31,14 @@ describe('load detail routes (5.6)', () => {
     expect(source).toContain('PodUploadSection');
     expect(source).toContain('onUploadDocument');
     expect(source).toContain('strings.loadDetail.documentView');
+    expect(source).not.toContain('driverUploadTmsRequired');
+  });
+
+  it('upload hook chains online assert, validation, and invalidation', () => {
+    const hookPath = path.join(root, 'hooks', 'useLoadDocumentUpload.ts');
+    const source = fs.readFileSync(hookPath, 'utf8');
+    expect(source).toContain('assertOnlineForDocumentUpload');
+    expect(source).toContain('validateDriverUploadFile');
+    expect(source).toContain("documentType: 'Driver'");
   });
 });

@@ -959,4 +959,217 @@ Follow **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`** (TMS-ready copy):
 
 ---
 
+## June 2, 2026
+
+### Task 1 — MIME/size validation and offline upload block (dev 6.3)
+
+**What was implemented**
+
+- **`lib/media/validate-driver-upload-file.ts`:** single pre-POST gate (image MIME only, 50 MB max, non-empty file); copy in `strings.loadDetail` (`driverUploadInvalidMime`, `driverUploadFileTooLarge`, `driverUploadEmptyFile`).
+- **`PodUploadSection`:** validates after file size is resolved on pick; when offline, disables **Add driver photo** / **Upload** and shows `podOfflineHint` plus a network error if the user still tries.
+- **`useLoadDocumentUpload`:** `assertOnlineForDocumentUpload()` + `validateDriverUploadFile` before Supabase/TMS.
+- **`upload-driver-load-document.ts`:** same validator (no duplicate byte limit).
+- **`lib/network/assert-online.ts`:** `assertOnlineForDocumentUpload` with `strings.network.offlineUploadBlocked`.
+- **Tests:** `lib/media/__tests__/validate-driver-upload-file.test.ts`.
+
+**What is available**
+
+- Clear driver-facing errors for disallowed MIME, files over 50 MB, or empty files **before** upload starts.
+- No photo upload while offline (consistent with offline v1 — no upload queue).
+
+**How to test**
+
+- `npm test -- --testPathPattern="validate-driver-upload-file"`.
+- `npm run lint` (or `npm run ci` for the full gate).
+- **Mobile:** driver login → **My Loads** → load → **POD / Documents** → **Add driver photo**.
+  - **Offline:** airplane mode or no data → disabled control + hint «Connect to the internet…»; tap shows banner «Photo upload needs internet…».
+  - **Valid file online:** same success path as 6.2 (row appears in list).
+- **Expected:** rejected files never hit the network; offline blocks Supabase/TMS upload attempts.
+
+### Task 2 — Driver upload E2E QA (dev 6.4)
+
+**What was implemented**
+
+- **Runbook:** `docs/QA_DRIVER_UPLOAD_E2E_6_4.md` — matrix D1–D10 (happy path, mobile→TMS, inverse Realtime on dispatcher delete, cancel/discard, offline, validation, permissions) + regression R1–R3.
+- **Updates:** `docs/QA_DRIVER_DOCUMENTS_4_7.md` §D (upload enabled, current labels, `enable_realtime_pp2_driver_sync.sql`); `docs/QA_PRODUCTION_SIGNOFF_5_6.md` points to 6.4 instead of “Skip §D”.
+- **Automated preflight:** `npm run qa:6.4` (`scripts/qa-preflight-6-4.mjs`) — lint, secret guard, **67 tests** (documents, upload, validation, routes, Realtime, hook + UI).
+- **New tests:** `driver-upload-e2e-contract.test.ts`, `useLoadDocumentUpload.test.ts`, `PodUploadSection.test.tsx`; extended `load-detail-routes.test.ts`.
+
+**What is available**
+
+- Automated gate before manual upload QA; checklist ready for QA/PM and dispatcher visibility in TMS **Documents** (orange **Driver** row).
+
+**How to test**
+
+- `npm run qa:6.4` — all green.
+- **Manual (~15 min):** `docs/QA_DRIVER_UPLOAD_E2E_6_4.md` — minimum **D1, D2, D4, D6, D7** on staging/production.
+  - **D1:** **My Loads** → load → **Add driver photo** → **Upload photo** → success + orange row on mobile.
+  - **D2:** TMS same load → **Documents** tab open → **Driver** row without F5.
+  - **D3:** dispatcher delete → row disappears on mobile within seconds.
+  - **D4/D5:** **Cancel** → **Discard** / **Keep photo** with no accidental upload.
+- **Expected:** bidirectional sync; manual sign-off rows D* pending in runbook table.
+
+### Task 3 — Business copy for driver upload (dev 6.5)
+
+**What was implemented**
+
+- **`constants/strings.ts`:** `driverEvidenceHint` covers **delivery**, **seal**, **damage**, **delay**, and **incidents**; `podConfirmHint` asks the driver to verify those cases before upload; `documentsNote` explains dispatch documents plus driver photo below.
+- Removed unused **`podNote`**; confirmed no **`driverUploadTmsRequired`** or “TMS patch pending” copy remains.
+- **`podPreviewA11y`:** “Preview of selected driver photo” (aligned with 6.1).
+- **Tests:** `constants/__tests__/strings-driver-evidence.test.ts`; included in `npm run qa:6.4`.
+
+**What is available**
+
+- Drivers see when to upload (delivery, seal, incidents, delay) without TMS placeholder messaging.
+
+**How to test**
+
+- `npm test -- --testPathPattern="strings-driver-evidence"`.
+- **Mobile:** **My Loads** → load → **POD / Documents** → read top note and **Driver photo (optional)** block → pick photo → confirm hint before **Upload photo**.
+- **Expected:** clear English copy; no gray “TMS patch pending” text.
+
+### Task 4 — Light resize/compress before driver photo upload (dev 6.6)
+
+**What was implemented**
+
+- **`expo-image-manipulator`** (Expo SDK 54).
+- **`lib/media/driver-upload-image-policy.ts`:** max **1920 px** per edge, JPEG **0.82**, skip when ≤1.5 MB and already small.
+- **`lib/media/prepare-driver-upload-image.ts`:** after pick, resize/compress (HEIC→JPEG, large photos); **web** and small photos unchanged.
+- **`PodUploadSection`:** calls `prepareDriverUploadImage` before validate/preview.
+- **Tests:** `prepare-driver-upload-image.test.ts`; contract and `PodUploadSection` updated.
+
+**What is available**
+
+- Lower memory and bandwidth on camera/gallery uploads; same one-file-at-a-time UX.
+
+**How to test**
+
+- `npm test -- --testPathPattern="prepare-driver-upload-image"`.
+- `npm run lint`.
+- **Mobile:** high-res camera photo → **Add driver photo** → preview → **Upload photo** → success; image still readable in TMS.
+- **Expected:** faster upload on slow networks; no errors on already-small photos.
+
+---
+
+## June 3, 2026
+
+### Task 1 — Formal release QA P0/P1 (dev 7.1)
+
+**What was implemented**
+
+- **`docs/QA_RELEASE_SIGNOFF_7_1.md`:** P0 (TMS Bearer) and P1 (driver upload) matrix; links to week 5–6 checklists; master sign-off table.
+- **`npm run qa:7.1`:** lint + secrets + focused Jest (documents, upload, network, GPS, routes, release guards).
+- **`lib/qa/__tests__/release-qa-preflight.test.ts`**
+- Updated **`docs/DRIVER_TMS_CAPABILITIES_5_7.md`** P0/P1 status.
+
+**How to test**
+
+- `npm run qa:7.1` — all green.
+- Manual: fill sign-off tables in `docs/QA_RELEASE_SIGNOFF_7_1.md` on device + production TMS.
+
+### Task 2 — EAS Android build + release notes (dev 7.2)
+
+**What was implemented**
+
+- **`docs/RELEASE_NOTES_0_1_0.md`** for v0.1.0.
+- **`npm run build:preflight`** — validates EAS config before build.
+- **`docs/MOBILE_BUILDS.md`** — 7.1 → 7.2 flow; `preview` / `production` APK profiles.
+
+**How to test**
+
+- `npm run build:preflight`
+- After Expo project + secrets: `npm run build:android:preview` → install APK → driver login smoke.
+
+### Task 3 — Semver, changelog, README (dev 7.3)
+
+**What was implemented**
+
+- `CHANGELOG.md`, `docs/VERSIONING.md`, `docs/BUG_REPORTING.md`
+- README: installation, env table, bug reporting; version **0.1.0** aligned
+
+**How to test:** `npm test -- --testPathPattern="release-handoff-docs"`
+
+### Task 4 — Rollback plan (dev 7.4)
+
+**What was implemented:** `docs/ROLLBACK_PP2.md` (app, Supabase scripts, Realtime, TMS)
+
+### Task 5 — EAS credentials handoff (dev 7.5)
+
+**What was implemented:** `docs/EAS_CREDENTIALS_HANDOFF_7_5.md` (custody matrix, secrets, keystore checklist)
+
+**How to test:** Fill ownership table with client; `npm run build:preflight` before first EAS build
+
+### Task 6 — Why EAS custody and `projectId` matter (7.5 follow-up, client pending)
+
+**What was documented**
+
+- In this report (and `REPORTES_DIARIOS.md`), the **business rationale** for steps that `docs/EAS_CREDENTIALS_HANDOFF_7_5.md` intentionally leaves **unfilled in git** until the client handoff meeting.
+- Dev task **7.5** delivered the template; what remains is **operational** (Expo accounts, owners, first build), not app source code.
+
+**Why it matters — custody matrix (“Ownership matrix”)**
+
+- The APK and, later, **Google Play** depend on assets **not stored in git**: Expo login, Android upload keystore (app signing identity), `EXPO_PUBLIC_*` EAS secrets, and who may run `eas build`.
+- **Without a filled matrix**, if someone leaves the team tomorrow, **no one knows for sure** who holds the Expo password, where the keystore backup lives, or who can ship an update to Play Store. Losing the keystore means **you cannot update the same Play listing** (new package identity or a long Google support process).
+- Agreed rule in the guide: the **client owns** production credentials; dev gets least privilege until handoff.
+
+**Why it matters — `extra.eas.projectId` in `app.json`**
+
+- EAS requires a **real UUID** from the project created on [expo.dev](https://expo.dev). That ID **links this repo** to the cloud project where APKs are built and where build **secrets** are stored.
+- While the placeholder `REEMPLAZAR_TRAS_CREAR_PROYECTO_EN_EXPO_DEV` remains, `npm run build:preflight` warns and the first `eas build` does **not** target the client’s correct Expo project.
+- The UUID is **not secret** (commit it after project creation); secrets, passwords, and `.jks` files are.
+
+**Client pending (before first `eas build`)**
+
+1. Create or link **Tigerhawk Mobile** (`pp2`) on expo.dev and set `projectId` in `app.json`.
+2. Set EAS secrets (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_PUBLIC_TMS_API_URL` with **public** TMS URL, not `localhost`).
+3. Fill **Ownership matrix** in `docs/EAS_CREDENTIALS_HANDOFF_7_5.md` (names/roles, keystore backup location, Expo 2FA recovery).
+4. Run `npm run build:android:preview` and archive the QA APK per `docs/MOBILE_BUILDS.md`.
+
+**What is available**
+
+- No change in Expo Go; drivers still test with `.env.local`. The **installable field APK** depends on the steps above.
+
+**How to test**
+
+- Review `docs/EAS_CREDENTIALS_HANDOFF_7_5.md` §1 and checklist §6 with PM/client.
+- `npm run build:preflight` — confirm `projectId` warning is gone after the real UUID is set.
+- After secrets + build: install APK → login → **My Loads** → upload smoke (same Supabase/TMS as QA 7.1).
+
+### Task 7 — Support runbook (dev 7.6)
+
+**What was implemented**
+
+- **`docs/MOBILE_SUPPORT_RUNBOOK_7_6.md`:** L1 field → L2 app support → L3 engineering; **RLS** triage (empty list, `42501`, no policy revert without DBA); **Storage/documents** (expired signed URL, offline, 50 MB, TMS Bearer); TMS HTTP codes; Realtime; P0/P1 incident triggers; contacts table (fill at handoff).
+- Linked from `docs/BUG_REPORTING.md` and README.
+
+**What is available**
+
+- No driver UI change; dispatch/QA get a post–v0.1.0 operations guide.
+
+**How to test**
+
+- `npm test -- --testPathPattern="release-handoff-docs"`.
+- Walk through runbook with PM: “View expired” → pull-to-refresh; upload 403 → TMS patches section.
+
+### Task 8 — v1.1 backlog (dev 7.7)
+
+**What was implemented**
+
+- **`docs/BACKLOG_V1_1_7_7.md`:** prioritized table (push, messages, wait time, geofencing, Maestro/Detox E2E, P2 tap-to-call/directions, offline-first, dynamic TMS rules); **live tracking** explicitly under **Week 8** (8.1–8.17); suggested v1.1 order + diagram; v0.1.0 code anchors; production P0/P1 called out separately.
+- Cross-links to `docs/DRIVER_TMS_CAPABILITIES_5_7.md` and `PP2_TAREAS_DEV.md` Week 8.
+- Extended `release-handoff-docs.test.ts` (7.6–7.7).
+
+**Routes / code consistency review**
+
+- `app-routes-smoke` and `load-detail-routes` tests — required routes and shared `normalizeLoadIdParam` on detail + document hooks.
+- Load detail messages: `noMessages` placeholder only (no production mock); aligned with v1.1 backlog.
+
+**How to test**
+
+- `npm test -- --testPathPattern="release-handoff-docs|app-routes-smoke|load-detail-routes"`.
+- `npm run lint`.
+- Open `docs/BACKLOG_V1_1_7_7.md` and confirm Week 8 link in `PP2_TAREAS_DEV.md`.
+
+---
+
 *When closing each day, add a `## [date]` section with **Task 1, Task 2, Task 3…** top to bottom (e.g. dev 4.6 → Task 7, dev 4.7 → Task 8). Never Task 8 before Task 7.*

@@ -2,6 +2,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
+import { validateDriverUploadFile } from '@/lib/media/validate-driver-upload-file';
+import { assertOnlineForDocumentUpload } from '@/lib/network/assert-online';
 import { invalidateLoadDocuments } from '@/lib/query/invalidate-loads';
 import { uploadDriverLoadDocumentViaSupabase } from '@/lib/supabase/upload-driver-load-document';
 import { getTmsApiUrl, resolveSupabaseAccessToken, uploadLoadDocument } from '@/lib/tms';
@@ -10,7 +12,7 @@ import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request'
 import type { LoadDetail } from '@/types';
 
 /**
- * Uploads a POD image for the current load via the TMS documents API (task 4.1 contract).
+ * Uploads a driver photo for the current load (Supabase first, TMS fallback; type Driver).
  */
 export function useLoadDocumentUpload(load: LoadDetail | null) {
   const queryClient = useQueryClient();
@@ -25,6 +27,9 @@ export function useLoadDocumentUpload(load: LoadDetail | null) {
         if (!userId) {
           throw new TmsDocumentUploadError('Session expired. Sign in again.', 'UNAUTHORIZED');
         }
+
+        await assertOnlineForDocumentUpload();
+        validateDriverUploadFile(file);
 
         try {
           await uploadDriverLoadDocumentViaSupabase({

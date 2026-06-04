@@ -10,6 +10,8 @@ npm run smoke:5.7
 
 Runs full `npm run ci` (lint + secrets + all Jest suites).
 
+**Before release (7.1):** `npm run qa:7.1` — focused Semanas 5–6 suites + `docs/QA_RELEASE_SIGNOFF_7_1.md`.
+
 **Capability / backlog context:** `docs/DRIVER_TMS_CAPABILITIES_5_7.md`.
 
 ---

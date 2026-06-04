@@ -972,10 +972,10 @@ Seguir **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`** (copia lista TMS):
 
 **Para qué sirve**
 
-| Tabla | Uso en vivo |
-|-------|-------------|
+| Tabla                | Uso en vivo                                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | **`load_documents`** | Foto del conductor → fila naranja en TMS **Documents** sin recargar; borrado del dispatcher → desaparece en la app móvil al instante. |
-| **`loads`** | Cambios de estado/asignación en TMS o móvil se reflejan en listados y detalle sin pull-to-refresh manual. |
+| **`loads`**          | Cambios de estado/asignación en TMS o móvil se reflejan en listados y detalle sin pull-to-refresh manual.                             |
 
 **Complemento TMS (repo externo, commit `b88e523`)**
 
@@ -994,6 +994,288 @@ Seguir **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`** (copia lista TMS):
 3. **TMS** → misma carga → pestaña **Documents** **abierta** → en ~1–3 s fila naranja **Driver** sin F5.
 4. **TMS** → eliminar documento → en móvil desaparece sin reiniciar la app.
 5. **Resultado esperado:** sync bidireccional en segundos; si falla solo en TMS, confirmar deploy Netlify con `b88e523`.
+
+---
+
+## 2 de junio de 2026
+
+### Tarea 1 — Validación MIME/tamaño y bloqueo offline en subida (dev 6.3)
+
+**Qué se implementó**
+
+- **`lib/media/validate-driver-upload-file.ts`:** validación central antes de cualquier POST (solo JPEG/PNG/HEIC/HEIF/WebP, máx. 50 MB, archivo no vacío); mensajes en `strings.loadDetail` (`driverUploadInvalidMime`, `driverUploadFileTooLarge`, `driverUploadEmptyFile`).
+- **`PodUploadSection`:** valida tras resolver tamaño al elegir foto; sin red deshabilita **Add driver photo** / **Upload** y muestra `podOfflineHint` + error de red si el usuario intenta igual.
+- **`useLoadDocumentUpload`:** `assertOnlineForDocumentUpload()` + `validateDriverUploadFile` antes de Supabase/TMS.
+- **`upload-driver-load-document.ts`:** reutiliza el mismo validador (sin duplicar límite de bytes).
+- **`lib/network/assert-online.ts`:** `assertOnlineForDocumentUpload` con `strings.network.offlineUploadBlocked`.
+- **Tests:** `lib/media/__tests__/validate-driver-upload-file.test.ts`.
+
+**Funcionalidad disponible**
+
+- El conductor ve un mensaje claro si el archivo no es imagen permitida, supera 50 MB o está vacío **antes** de subir.
+- Sin internet no puede iniciar ni confirmar subida de foto (coherente con offline v1 sin cola).
+
+**Cómo probar**
+
+- `npm test -- --testPathPattern="validate-driver-upload-file"`.
+- `npm run lint` (o `npm run ci` si se quiere el gate completo).
+- **Móvil:** login conductor → **My Loads** → carga → **POD / Documents** → **Add driver photo**.
+  - **Offline:** modo avión o sin Wi‑datos → botón deshabilitado + texto «Connect to the internet…»; al tocar, banner «Photo upload needs internet…».
+  - **MIME inválido** (solo si se puede simular; en producción el picker suele devolver imagen): mensaje «Only JPEG, PNG, HEIC, or WebP…».
+  - **Archivo válido online:** flujo normal de 6.2 (éxito y fila en lista).
+- **Resultado esperado:** ningún POST con archivo rechazado; offline sin intento de red hacia Supabase/TMS.
+
+### Tarea 2 — QA E2E subida conductor (dev 6.4)
+
+**Qué se implementó**
+
+- **Runbook:** `docs/QA_DRIVER_UPLOAD_E2E_6_4.md` — matriz D1–D10 (happy path, móvil→TMS, Realtime inverso al borrar en dispatch, cancel/discard, offline, validación, permisos) + regresión R1–R3.
+- **Actualización:** `docs/QA_DRIVER_DOCUMENTS_4_7.md` §D (subida habilitada, labels actuales, Realtime `enable_realtime_pp2_driver_sync.sql`); `docs/QA_PRODUCTION_SIGNOFF_5_6.md` enlaza 6.4 en lugar de «Skip §D».
+- **Preflight automatizado:** `npm run qa:6.4` (`scripts/qa-preflight-6-4.mjs`) — lint, secret guard, **67 tests** (documentos, upload, validación, rutas, Realtime, hook y UI).
+- **Tests nuevos:** `driver-upload-e2e-contract.test.ts`, `useLoadDocumentUpload.test.ts`, `PodUploadSection.test.tsx`; ampliación `load-detail-routes.test.ts`.
+
+**Funcionalidad disponible**
+
+- Gate automatizado antes del QA manual de subida; checklist listo para QA/PM y verificación de que dispatch ve la foto en TMS **Documents** (fila naranja **Driver**).
+
+**Cómo probar**
+
+- `npm run qa:6.4` — todo en verde.
+- **Manual (~15 min):** `docs/QA_DRIVER_UPLOAD_E2E_6_4.md` — mínimo **D1, D2, D4, D6, D7** en staging/producción.
+  - **D1:** **My Loads** → carga → **Add driver photo** → **Upload photo** → mensaje de éxito + fila naranja en móvil.
+  - **D2:** TMS misma carga → **Documents** (pestaña abierta) → fila **Driver** sin F5.
+  - **D3:** dispatcher elimina → desaparece en móvil en segundos.
+  - **D4/D5:** **Cancel** → **Discard** / **Keep photo** sin subida involuntaria.
+- **Resultado esperado:** sync bidireccional; sign-off manual pendiente filas D\* en tabla del runbook.
+
+### Tarea 3 — Textos de negocio en subida (dev 6.5)
+
+**Qué se implementó**
+
+- **`constants/strings.ts`:** `driverEvidenceHint` menciona **delivery**, **seal**, **damage**, **delay** e **incidents**; `podConfirmHint` pide verificar esos casos antes de subir; `documentsNote` aclara documentos de dispatch + foto del conductor abajo.
+- Eliminado **`podNote`** (sin uso) y confirmado que no queda **`driverUploadTmsRequired`** ni copy «TMS patch pending».
+- **`podPreviewA11y`:** «Preview of selected driver photo» (consistente con 6.1).
+- **Tests:** `constants/__tests__/strings-driver-evidence.test.ts`; incluido en `npm run qa:6.4`.
+
+**Funcionalidad disponible**
+
+- El conductor entiende cuándo subir foto (entrega, sello, percances/retraso) sin mensajes de placeholder TMS.
+
+**Cómo probar**
+
+- `npm test -- --testPathPattern="strings-driver-evidence"`.
+- **Móvil:** **My Loads** → carga → **POD / Documents** → leer nota superior y bloque **Driver photo (optional)** → elegir foto → texto de confirmación antes de **Upload photo**.
+- **Resultado esperado:** copy en inglés claro; sin texto gris de «TMS patch pending».
+
+### Tarea 4 — Compresión/redimensionado antes de subir foto (dev 6.6)
+
+**Qué se implementó**
+
+- Dependencia **`expo-image-manipulator`** (Expo SDK 54).
+- **`lib/media/driver-upload-image-policy.ts`:** máx. **1920 px** por lado, JPEG **0.82**, omitir si ≤1.5 MB y dimensiones ya pequeñas.
+- **`lib/media/prepare-driver-upload-image.ts`:** tras elegir foto, redimensiona/comprime (HEIC→JPEG, fotos grandes); **web** y fotos pequeñas sin cambio.
+- **`PodUploadSection`:** usa `prepareDriverUploadImage` antes de validar y mostrar vista previa.
+- **Tests:** `prepare-driver-upload-image.test.ts`; contrato y `PodUploadSection` actualizados.
+
+**Funcionalidad disponible**
+
+- Menos memoria y ancho de banda en subidas desde cámara/galería; misma UX (una foto por vez).
+
+**Cómo probar**
+
+- `npm test -- --testPathPattern="prepare-driver-upload-image"`.
+- `npm run lint`.
+- **Móvil:** foto de cámara de alta resolución → **Add driver photo** → vista previa → **Upload photo** → éxito; archivo en TMS sigue siendo imagen legible.
+- **Resultado esperado:** subida más rápida en red lenta; sin error en fotos ya pequeñas.
+
+---
+
+## 3 de junio de 2026
+
+### Tarea 1 — QA release formal P0/P1 (dev 7.1)
+
+**Qué se implementó**
+
+- **`docs/QA_RELEASE_SIGNOFF_7_1.md`:** matriz P0 (Bearer TMS) y P1 (subida conductor); enlaces a smoke 5.7, producción 5.6, upload 6.4, red, GPS, acciones; tabla maestra de firma.
+- **`npm run qa:7.1`:** lint + secret guard + Jest focalizado (documentos, upload, red, GPS, rutas, `release-qa-preflight`).
+- **`lib/qa/__tests__/release-qa-preflight.test.ts`:** guardas de scripts y documentos 7.1.
+- Actualizado **`docs/DRIVER_TMS_CAPABILITIES_5_7.md`** (estado P0/P1).
+
+**Funcionalidad disponible**
+
+- Gate automatizado previo a sesión QA con cliente/PM; criterios claros para cerrar semanas 5–6.
+
+**Cómo probar**
+
+- `npm run qa:7.1` — todo en verde.
+- **Manual:** completar tablas en `docs/QA_RELEASE_SIGNOFF_7_1.md` en dispositivo + TMS producción (mín. S1–S10, D1–D7, A1–A5, P0 acciones si Bearer desplegado).
+
+### Tarea 2 — EAS Build Android + notas de versión (dev 7.2)
+
+**Qué se implementó**
+
+- **`docs/RELEASE_NOTES_0_1_0.md`:** notas v0.1.0 (alcance conductor, env, limitaciones v1).
+- **`npm run build:preflight`:** valida `app.json` / `eas.json` / scripts de build / release notes; avisa si falta `extra.eas.projectId`.
+- **`docs/MOBILE_BUILDS.md`:** sección 7.1 → 7.2 antes del APK; perfiles `preview` y `production` documentados.
+- Scripts existentes: `npm run build:android:preview`, `npm run build:android:production`.
+
+**Funcionalidad disponible**
+
+- Checklist para generar APK interno o producción en EAS con mismas variables que Expo Go (vía secrets).
+
+**Cómo probar**
+
+- `npm run build:preflight` — OK (warning esperado si `projectId` aún placeholder).
+- Tras configurar Expo: `npx eas login`, secrets `EXPO_PUBLIC_*`, `projectId` en `app.json` → `npm run build:android:preview`.
+- Instalar APK → login conductor → **My Loads** → subida foto → misma Supabase/TMS que en QA 7.1.
+
+### Tarea 3 — Semver, changelog y README (dev 7.3)
+
+**Qué se implementó**
+
+- **`CHANGELOG.md`** (Keep a Changelog + semver) — sección **[0.1.0]**.
+- **`docs/VERSIONING.md`**, **`docs/BUG_REPORTING.md`** (plantilla y severidades).
+- **`README.md`:** instalación, tabla env, reporte de bugs, enlaces release/rollback/EAS; versión **0.1.0** alineada con `app.json`.
+- Tests **`release-handoff-docs.test.ts`**; incluido en `npm run qa:7.1`.
+
+**Cómo probar**
+
+- `npm test -- --testPathPattern="release-handoff-docs"`.
+- Revisar README → secciones Installation, Environment, Reporting bugs.
+
+### Tarea 4 — Plan rollback Supabase (dev 7.4)
+
+**Qué se implementó**
+
+- **`docs/ROLLBACK_PP2.md`:** rollback APK, políticas RLS (con advertencia), Realtime `DROP TABLE` publication, datos Storage, TMS externo; inventario scripts PP2.
+
+**Cómo probar**
+
+- Revisar doc con DBA/cliente; validar rutas `supabase/sql-editor/*.sql` listadas existen en el repo.
+
+### Tarea 5 — Handoff credenciales EAS (dev 7.5)
+
+**Qué se implementó**
+
+- **`docs/EAS_CREDENTIALS_HANDOFF_7_5.md`:** matriz de custodia, comandos `eas secret`, keystore, checklist reunión (sin commitear `.jks` ni passwords).
+
+**Cómo probar**
+
+- Completar tabla “Ownership matrix” en reunión con cliente; verificar `npm run build:preflight` antes del primer `eas build`.
+
+### Tarea 6 — Por qué importa la custodia EAS y el `projectId` (seguimiento 7.5, pendiente cliente)
+
+**Qué se documentó**
+
+- En este reporte (y en `DAILY_REPORTS.md`) el **motivo de negocio** de los pasos que la guía `docs/EAS_CREDENTIALS_HANDOFF_7_5.md` deja **sin rellenar en el repo** hasta la reunión de entrega con el cliente.
+- La tarea dev **7.5** ya entregó la plantilla; lo que sigue abierto es **operativo** (cuentas Expo, dueños, primer build), no código de la app.
+
+**Por qué es importante — matriz de custodia (“Ownership matrix”)**
+
+- El APK y, más adelante, **Google Play**, dependen de activos que **no viven en git**: login de Expo, keystore Android (firma de la app), secrets `EXPO_PUBLIC_*`, y quién puede ejecutar `eas build`.
+- **Sin la matriz rellenada**, si mañana alguien del equipo se va, **nadie sabe con certeza** quién tiene la contraseña de Expo, dónde está el backup del keystore ni quién puede publicar una actualización en Play Store. Perder el keystore implica **no poder actualizar la misma app** en Play (solo nueva identidad de paquete o proceso largo con Google).
+- La regla acordada en la guía: el **cliente es dueño** de credenciales de producción; el equipo dev solo privilegio mínimo hasta el handoff.
+
+**Por qué es importante — `extra.eas.projectId` en `app.json`**
+
+- EAS necesita un **UUID real** del proyecto creado en [expo.dev](https://expo.dev). Ese ID **enlaza este repositorio** con el proyecto en la nube donde se compilan los APK y donde viven los **secrets** del build.
+- Mientras figure el placeholder `REEMPLAZAR_TRAS_CREAR_PROYECTO_EN_EXPO_DEV`, `npm run build:preflight` avisa (warning) y el primer `eas build` **no apunta** al proyecto correcto del cliente.
+- El UUID **no es secreto** (sí commitearlo tras crear el proyecto); lo secreto son keys, contraseñas y el `.jks`.
+
+**Pendiente con el cliente (antes del primer `eas build`)**
+
+1. Crear o vincular proyecto **Tigerhawk Mobile** (`pp2`) en expo.dev e insertar el `projectId` en `app.json`.
+2. Configurar secrets EAS (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_PUBLIC_TMS_API_URL` con URL **pública** del TMS, no `localhost`).
+3. Rellenar la tabla **Ownership matrix** en `docs/EAS_CREDENTIALS_HANDOFF_7_5.md` (nombres/roles, ubicación del backup del keystore, 2FA Expo).
+4. Ejecutar `npm run build:android:preview` y guardar el APK de QA según `docs/MOBILE_BUILDS.md`.
+
+**Funcionalidad disponible**
+
+- Sin cambio en la app en Expo Go; el conductor sigue probando con `.env.local`. El **APK instalable** para campo depende de los pasos anteriores.
+
+**Cómo probar**
+
+- Leer `docs/EAS_CREDENTIALS_HANDOFF_7_5.md` §1 y checklist §6 con PM/cliente.
+- `npm run build:preflight` — confirmar que desaparece el warning de `projectId` tras pegar el UUID real.
+- Tras secrets + build: instalar APK → login → **My Loads** → smoke de subida (misma Supabase/TMS que QA 7.1).
+
+### Tarea 7 — Runbook de soporte (dev 7.6)
+
+**Qué se implementó**
+
+- **`docs/MOBILE_SUPPORT_RUNBOOK_7_6.md`:** escalado L1 (campo) → L2 (soporte app) → L3 (ingeniería); triage **RLS** (lista vacía, `42501`, no revertir sin DBA); **Storage/documentos** (enlace expirado, offline, 50 MB, Bearer TMS); códigos HTTP TMS; Realtime; cuándo abrir incidente P0/P1; tabla de contactos (rellenar en handoff).
+- Enlaces desde `docs/BUG_REPORTING.md` y README.
+
+**Funcionalidad disponible**
+
+- El conductor no ve cambios en UI; dispatch/QA tienen guía operativa post–v0.1.0.
+
+**Cómo probar**
+
+- `npm test -- --testPathPattern="release-handoff-docs"`.
+- Revisar runbook con PM: simular “View expirado” → pull-to-refresh; simular upload 403 → sección TMS + parches.
+
+### Tarea 8 — Backlog v1.1 (dev 7.7)
+
+**Qué se implementó**
+
+- **`docs/BACKLOG_V1_1_7_7.md`:** tabla priorizada (push, mensajes, wait time, geofencing, E2E Maestro/Detox, P2 tap-to-call/direcciones, offline-first, reglas dinámicas); **rastreo en vivo** explícitamente en **Semana 8** (8.1–8.17), no duplicado; orden sugerido v1.1 + diagrama; anclas de código v0.1.0; P0/P1 de cierre separados del backlog.
+- Cruce con `docs/DRIVER_TMS_CAPABILITIES_5_7.md` y `PP2_TAREAS_DEV.md` § Semana 8.
+- Tests ampliados en `release-handoff-docs.test.ts` (7.6–7.7).
+
+**Revisión rutas/código (consistencia)**
+
+- `lib/qa/__tests__/app-routes-smoke.test.ts` y `load-detail-routes.test.ts` — rutas obligatorias y `normalizeLoadIdParam` en detalle + hooks de documentos.
+- Mensajes en detalle: placeholder `noMessages` (sin mock en producción); coherente con backlog v1.1.
+
+**Cómo probar**
+
+- `npm test -- --testPathPattern="release-handoff-docs|app-routes-smoke|load-detail-routes"`.
+- `npm run lint`.
+- Abrir `docs/BACKLOG_V1_1_7_7.md` y confirmar enlace a Semana 8 en `PP2_TAREAS_DEV.md`.
+
+---
+
+## PREGUNTAS DE FEEDBACK DE CLIENTE (2 de junio de 2026)
+
+Tras la demo. Respuestas breves para alinear expectativas (v1 móvil + roadmap Semana 8).
+
+### 1. ¿Hace falta “expiración” de documentos? ¿Es por seguridad?
+
+**Pregunta (cliente):** No ve un caso de negocio para que un documento tenga vida útil temporal, salvo que sea para reducir vulnerabilidad. Si no mitigan un riesgo, ¿hace falta preocuparse por la expiración?
+
+**Respuesta:** No es que el **archivo** caduque en la carga. Lo que expira (~1 h) es el **enlace firmado** de Supabase Storage para **descargar/ver** el PDF o la imagen de forma segura (patrón estándar del TMS). El documento sigue en `load_documents`; al pulsar **View** o al refrescar la lista, el TMS/móvil pide un enlace nuevo. En la app, si el enlace viejo falla, el conductor ve “link expired” y hace pull-to-refresh. **No hace falta** una política de negocio de “borrar documentos a los X días”; sí conviene mantener enlaces firmados cortos por seguridad.
+
+---
+
+### 2. ¿WhatsApp es respaldo del GPS en vivo que alimenta el TMS automáticamente?
+
+**Pregunta (cliente):** Le gusta enviar datos por WhatsApp; ¿confirma que es respaldo del GPS en vivo que entra al TMS solo?
+
+**Respuesta:** **Hoy en v1, sí es un respaldo manual**, no el canal principal de tracking. **Share location** abre WhatsApp (u otra app) con texto: carga, conductor, coordenadas y enlace a mapas; **no escribe GPS en el TMS** automáticamente (`strings.location.tmsShareOnlyHint`). El GPS **automático y persistente en TMS/mapa en vivo** está planificado en **Semana 8 / v1.1** (Supabase + Realtime), pendiente de confirmar reglas con el cliente (solo viaje activo vs jornada completa).
+
+---
+
+### 3. GPS: ¿permiso siempre, solo con la app abierta, o también en segundo plano? Batería vs “casi siempre” ubicación
+
+**Pregunta (cliente):** ¿El tracking requiere ubicación siempre permitida, solo con la app abierta, o funciona en background? No quieren agotar batería, pero sí necesitan saber dónde están casi todo el tiempo.
+
+**Respuesta:**
+
+| Alcance                          | Comportamiento                                                                                                                                                                                            |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **v1 (app actual, hasta 9 jun)** | Solo **mientras la app está abierta** (permiso _When in use_ / “al usar la app”). **Sin** tracking en background ni con la app cerrada (`docs/GPS_V1_DECISION.md`, `gps-v1-policy.ts`).                   |
+| **“Casi todo el tiempo”**        | **No** lo cubre v1. Requiere decisión de negocio + **Semana 8**: (A) solo carga/viaje en estados “en curso”, o (B) jornada completa con background (más batería, permisos _Always_, más QA y copy legal). |
+
+**Recomendación PP2:** empezar por **(A) viaje activo + app abierta o servicio mínimo en primer plano**; escalar a (B) solo si el cliente lo exige por escrito.
+
+---
+
+### 4. ¿Los botones de Field actions leen las opciones en vivo desde el TMS?
+
+**Pregunta (cliente):** En el teléfono de la demo vio los botones de field actions; ¿vienen en vivo del TMS?
+
+**Respuesta:** **No en tiempo real desde una API de “menú de acciones”.** La app usa reglas **definidas en el código móvil**, alineadas al panel conductor del TMS (`lib/loads/constants.ts`, `driver-actions.ts`): según el **estado actual de la carga** (dato sí viene de Supabase/TMS al cargar detalle) se muestran solo transiciones permitidas al conductor. Al pulsar un botón, el cambio de estado va al TMS vía **`PATCH` API** (con sesión Bearer cuando el TMS lo tiene desplegado). Si en el TMS cambian las reglas de estados, hay que **actualizar la app** (o en el futuro exponer reglas dinámicas desde el TMS — no está en v1).
 
 ---
 

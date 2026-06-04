@@ -1,5 +1,6 @@
-import { getSupabase } from '@/lib/supabase/client';
 import { filterDocumentsForExpectedLoad } from '@/lib/loads/document-load-association';
+import { validateDriverUploadFile } from '@/lib/media/validate-driver-upload-file';
+import { getSupabase } from '@/lib/supabase/client';
 import { TmsDocumentUploadError } from '@/lib/tms/document-errors';
 import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
 import type { LoadDocument } from '@/types/load-document';
@@ -8,7 +9,6 @@ import { mapLoadDocumentRow, type LoadDocumentRow } from './queries/map-load-doc
 
 const BUCKET = 'load-documents';
 const DRIVER_DOCUMENT_TYPE = 'Driver';
-const MAX_BYTES = 52_428_800;
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -39,15 +39,7 @@ export async function uploadDriverLoadDocumentViaSupabase(params: {
 }): Promise<LoadDocument> {
   const { loadId, file, userId } = params;
 
-  if (!file.name?.trim()) {
-    throw new TmsDocumentUploadError('File name is required.', 'BAD_REQUEST');
-  }
-  if (file.size <= 0 || file.size > MAX_BYTES) {
-    throw new TmsDocumentUploadError(
-      file.size > MAX_BYTES ? 'File exceeds 50MB limit.' : 'File is empty.',
-      file.size > MAX_BYTES ? 'FILE_TOO_LARGE' : 'BAD_REQUEST',
-    );
-  }
+  validateDriverUploadFile(file);
 
   const supabase = getSupabase();
   const storagePath = `${loadId}/${Date.now()}_${sanitizeFilename(file.name)}`;

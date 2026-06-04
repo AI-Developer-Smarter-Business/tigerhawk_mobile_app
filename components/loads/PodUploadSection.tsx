@@ -2,18 +2,19 @@ import type { ImagePickerAsset } from 'expo-image-picker';
 import { useCallback, useState } from 'react';
 import { Alert, Image, StyleSheet, Text, View } from 'react-native';
 
+import { useNetwork } from '@/context/NetworkContext';
 import { Button } from '@/components/ui/Button';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { mapErrorToUserFacing, type UserFacingError } from '@/lib/errors';
-import { mapPickerAssetToUploadFile } from '@/lib/media/map-picker-asset';
+import { prepareDriverUploadImage } from '@/lib/media/prepare-driver-upload-image';
 import {
   pickLoadPhotoFromCamera,
   pickLoadPhotoFromLibrary,
   showLoadPhotoSourcePicker,
 } from '@/lib/media/pick-load-photo';
-import { resolveUploadFileSize } from '@/lib/media/resolve-upload-file-size';
+import { validateDriverUploadFile } from '@/lib/media/validate-driver-upload-file';
 import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
 
 type PodUploadSectionProps = {
@@ -25,6 +26,9 @@ type PendingPhoto = TmsUploadFileDescriptor & {
 };
 
 export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
+  const { isOffline, isReady: networkReady } = useNetwork();
+  const uploadBlockedOffline = networkReady && isOffline;
+
   const [pending, setPending] = useState<PendingPhoto | null>(null);
   const [uploading, setUploading] = useState(false);
   const [picking, setPicking] = useState(false);
@@ -36,6 +40,15 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
   }, []);
 
   const handlePickResult = useCallback(async (pick: () => Promise<ImagePickerAsset | null>) => {
+    if (uploadBlockedOffline) {
+      setUploadError({
+        kind: 'network',
+        title: strings.network.offlineTitle,
+        message: strings.network.offlineUploadBlocked,
+      });
+      return;
+    }
+
     setPicking(true);
     setUploadError(null);
     setSuccessMessage(null);
@@ -43,22 +56,31 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
       const asset = await pick();
       if (!asset) return;
 
-      const mapped = mapPickerAssetToUploadFile(asset);
-      const withSize = await resolveUploadFileSize(mapped);
-      setPending({ ...withSize, previewUri: withSize.uri });
+      const prepared = await prepareDriverUploadImage(asset);
+      validateDriverUploadFile(prepared);
+      setPending({ ...prepared, previewUri: prepared.uri });
     } catch (err) {
       setUploadError(mapErrorToUserFacing(err));
     } finally {
       setPicking(false);
     }
-  }, []);
+  }, [uploadBlockedOffline]);
 
   const startPick = useCallback(() => {
+    if (uploadBlockedOffline) {
+      setUploadError({
+        kind: 'network',
+        title: strings.network.offlineTitle,
+        message: strings.network.offlineUploadBlocked,
+      });
+      return;
+    }
+
     showLoadPhotoSourcePicker({
       onCamera: () => void handlePickResult(pickLoadPhotoFromCamera),
       onLibrary: () => void handlePickResult(pickLoadPhotoFromLibrary),
     });
-  }, [handlePickResult]);
+  }, [handlePickResult, uploadBlockedOffline]);
 
   const handleCancel = useCallback(() => {
     if (uploading) return;
@@ -68,6 +90,15 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
 
   const handleConfirm = useCallback(async () => {
     if (!pending || uploading) return;
+
+    if (uploadBlockedOffline) {
+      setUploadError({
+        kind: 'network',
+        title: strings.network.offlineTitle,
+        message: strings.network.offlineUploadBlocked,
+      });
+      return;
+    }
 
     setUploading(true);
     setUploadError(null);
@@ -86,7 +117,7 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
     } finally {
       setUploading(false);
     }
-  }, [pending, uploading, onUpload, clearPending]);
+  }, [pending, uploading, onUpload, clearPending, uploadBlockedOffline]);
 
   const handleDiscardPress = useCallback(() => {
     Alert.alert(
@@ -119,6 +150,10 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
         </Text>
       ) : null}
 
+      {uploadBlockedOffline ? (
+        <Text style={styles.offlineHint}>{strings.loadDetail.podOfflineHint}</Text>
+      ) : null}
+
       {pending ? (
         <View style={styles.previewBlock}>
           <Image
@@ -134,7 +169,7 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
             title={strings.loadDetail.podUpload}
             variant="accent"
             loading={uploading}
-            disabled={uploading}
+            disabled={uploading || uploadBlockedOffline}
             onPress={() => void handleConfirm()}
             style={styles.actionBtn}
             accessibilityLabel={strings.loadDetail.podUploadA11y}
@@ -153,7 +188,7 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
           title={strings.loadDetail.podAddPhoto}
           variant="accent"
           loading={picking}
-          disabled={picking || uploading}
+          disabled={picking || uploading || uploadBlockedOffline}
           onPress={startPick}
           accessibilityLabel={strings.loadDetail.podAddPhotoA11y}
         />
@@ -191,5 +226,10 @@ const styles = StyleSheet.create({
     color: PP2Theme.colors.success,
     marginBottom: PP2Theme.spacing.sm,
     fontWeight: '600',
+  },
+  offlineHint: {
+    fontSize: PP2Theme.typography.sizes.caption,
+    color: PP2Theme.colors.textMuted,
+    marginBottom: PP2Theme.spacing.sm,
   },
 });

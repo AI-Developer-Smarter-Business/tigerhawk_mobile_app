@@ -1,4 +1,6 @@
-# PP2 — Driver mobile app
+# Tigerhawk Mobile (PP2)
+
+**Version:** `0.1.0` · **Package:** `pp2-mobile` · **Android:** `com.tigerhawk.pp2`
 
 **React Native + Expo** field driver app connected to the **same Supabase project** as the TigerHawk TMS (reference in `PROYECTO_MUESTRA/`). No separate backend: data and auth via Supabase; privileged operations via the TMS Next.js API when required.
 
@@ -28,6 +30,17 @@
 | `docs/GitHub_Setup_Guide.md` | GitHub & CI for this repo (task 1.8) |
 | `docs/SUPABASE_AUTH_REDIRECTS.md` | Magic-link redirect URLs |
 | `docs/MOBILE_BUILDS.md` | **Android APK / iOS** — EAS env, Realtime, test driver on device |
+| `CHANGELOG.md` | Semver history ([Keep a Changelog](https://keepachangelog.com/)) |
+| `docs/VERSIONING.md` | When to bump MAJOR / MINOR / PATCH |
+| `docs/RELEASE_NOTES_0_1_0.md` | User-facing v0.1.0 summary |
+| `docs/BUG_REPORTING.md` | Bug report template and severity |
+| `docs/ROLLBACK_PP2.md` | App + Supabase rollback plan |
+| `docs/EAS_CREDENTIALS_HANDOFF_7_5.md` | EAS / keystore custody checklist |
+| `docs/MOBILE_SUPPORT_RUNBOOK_7_6.md` | **Support** — RLS, Storage, TMS errors, escalation |
+| `docs/BACKLOG_V1_1_7_7.md` | **v1.1 backlog** — live GPS first (Semana 8), then push/messages |
+| `docs/GPS_LIVE_TRACKING_ARCHITECTURE.md` | **Live tracking** — Supabase + Realtime + TMS map (no external tracking API) |
+| `docs/TMS_DEV_REPOSITORY.md` | **TMS dev repo path** — where to edit deployed TMS (not `PROYECTO_MUESTRA/`) |
+| `docs/QA_RELEASE_SIGNOFF_7_1.md` | Pre-release QA (P0/P1) |
 
 ## Requirements
 
@@ -37,26 +50,44 @@
 - [expo.dev](https://expo.dev) account for EAS Build (optional)  
 - **macOS + Xcode** only if building iOS locally  
 
-## Setup
+## Installation (developers)
 
 ```bash
+git clone <repo-url>
 cd proyecto_PP2_app_mobile
 npm install
+cp .env.example .env.local   # then edit values
+npm run lint
+npm test
 ```
+
+| Command | Purpose |
+|---------|---------|
+| `npm start` | Expo dev server (Expo Go / emulator) |
+| `npm run ci` | Lint + secret guard + tests (same as GitHub Actions) |
+| `npm run qa:7.1` | Release QA preflight (Semanas 5–6) |
+| `npm run build:preflight` | Check EAS config before APK build |
 
 ### Environment variables
 
-Use **`.env.local`** at the repo root (shared with the TMS).
+Copy **`.env.example`** → **`.env.local`** at the repo root (often shared with the TMS repo on your machine).
 
-```env
-EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-EXPO_PUBLIC_TMS_API_URL=http://localhost:3000
-```
+| Variable | Required | Notes |
+|----------|----------|--------|
+| `EXPO_PUBLIC_SUPABASE_URL` | Yes | Same Supabase project as TMS |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Yes | **Anon** key only |
+| `EXPO_PUBLIC_TMS_API_URL` | Yes | TMS base URL — use **LAN IP** on a physical phone if TMS runs on `localhost:3000` |
+| `EXPO_PUBLIC_ENABLE_MOCK_AUTH` | No | Dev only; legacy mock login |
 
-Template: `.env.example`.
+**EAS builds:** `.env.local` is **not** bundled — set [EAS secrets](https://docs.expo.dev/build-reference/variables/) (`docs/EAS_CREDENTIALS_HANDOFF_7_5.md`).
 
-**Never** ship in the mobile app: `SUPABASE_SERVICE_ROLE_KEY`, Port Houston secrets, `RESEND_API_KEY`, etc.
+**Never** put in the mobile app or commit: `SUPABASE_SERVICE_ROLE_KEY`, Port Houston secrets, `RESEND_API_KEY`, etc. (`npm run check:secrets`).
+
+### Reporting bugs
+
+Use **`docs/BUG_REPORTING.md`** (version, device, steps, load reference). Do **not** send passwords or tokens.
+
+Severity **P0/P1** examples: cannot login, wrong driver sees another’s loads, upload always fails.
 
 ### Supabase redirect URLs (task 1.4)
 
@@ -110,9 +141,9 @@ If QR fails: `npx expo start --tunnel`.
 | **Android APK** | Ready | `npm run build:android:preview` |
 | **iOS** | On hold (Mac + iPhone + Apple account) | `eas build --platform ios --profile preview` when ready |
 
-**Before building:** set EAS secrets for `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, and `EXPO_PUBLIC_TMS_API_URL` (use a **public** TMS URL, not `localhost`). Same Supabase → `driver_test@test.com` and Realtime work on device like local.
+**Before building:** `npm run build:preflight`, then set EAS secrets (`docs/EAS_CREDENTIALS_HANDOFF_7_5.md`). Use a **public** TMS URL, not `localhost`.
 
-Full checklist: **`docs/MOBILE_BUILDS.md`**.
+Full flow: **`docs/MOBILE_BUILDS.md`** · Release notes: **`docs/RELEASE_NOTES_0_1_0.md`** · Rollback: **`docs/ROLLBACK_PP2.md`**.
 
 ## Project structure
 
@@ -144,16 +175,16 @@ Files: `supabase/sql-editor/*.sql` (run) and `supabase/migrations/*.sql` (versio
 
 Optional CLI: `npm run db:apply-rls` if `SUPABASE_DB_PASSWORD` is set (not required for SQL Editor workflow).
 
-## Current scope (v0.2.x — through dev week 3)
+## Current scope (v0.1.0)
 
 - Supabase Auth: password login, magic link + deep link `pp2://auth/callback`
-- Driver loads list/detail from Supabase (RLS); pagination; Realtime refresh
-- Status changes via TMS `PATCH …/loads/[id]/status` (driver-field only); errors + optimistic UI
-- UI: PP2 Driver drawer chrome; login/account styled; a11y touch targets
-- Jest (115+ tests) + GitHub Actions CI + client secrets guard
+- **My Loads** + load detail (Supabase RLS); pagination; Realtime on `loads` / `load_documents`
+- Field actions via TMS `PATCH …/loads/[id]/status` (driver subset)
+- **POD / Documents** + **Add driver photo** (validation, compress, offline rules)
+- Foreground GPS + Share location; offline v1
+- Jest + `npm run ci` + QA runbooks (`docs/QA_RELEASE_SIGNOFF_7_1.md`)
 
-**Handoff vs initial mockup:** `HANDOFF_DEV.md`  
-**Next:** `PP2_TAREAS_DEV.md` — week 4 POD, messages, E2E.
+**Handoff:** `HANDOFF_DEV.md` · **Tasks:** `PP2_TAREAS_DEV.md` · **Changelog:** `CHANGELOG.md`
 
 ## TMS reference
 

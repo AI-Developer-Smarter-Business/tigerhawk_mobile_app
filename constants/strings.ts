@@ -35,6 +35,8 @@ export const strings = {
       'No internet connection. Connect to load or update data.',
     offlineActionBlocked:
       'This action needs internet. Reconnect and try again.',
+    offlineUploadBlocked:
+      'Photo upload needs internet. Reconnect and try again.',
   },
   location: {
     sectionTitle: 'Your location',
@@ -163,7 +165,7 @@ export const strings = {
     noMessages: 'No messages on this load.',
     pod: 'POD / Documents',
     documentsNote:
-      'Documents attached to this load in TMS appear here. Pull to refresh if you just uploaded from dispatch.',
+      'BOL, rate confirmations, and other dispatch uploads appear here. Below, you can add your own photos or images—one file per upload. Pull to refresh after any upload.',
     documentsLoading: 'Loading documents…',
     noDocuments: 'No documents on this load yet.',
     documentView: 'View',
@@ -179,16 +181,16 @@ export const strings = {
     documentOpening: 'Opening document…',
     driverEvidenceTitle: 'Driver photo (optional)',
     driverEvidenceHint:
-      'Add a photo for delivery proof, damage, or other evidence. Dispatch can see it in TMS Documents and may remove it; you cannot delete files from the app.',
+      'Add photos or images of documents of interest (delivery, seal, damage, delay, or other incidents). Upload one file at a time—you can add as many as you need by uploading again. Dispatch sees each file in TMS Documents and may remove them; you cannot delete from the app.',
     driverDocBadge: 'from mobile',
-    podNote: 'Upload a driver photo for this load.',
     podAddPhoto: 'Add driver photo',
     podAddPhotoA11y: 'Add driver photo from camera or gallery',
     podPickTitle: 'Add photo',
     podPickMessage: 'Choose camera or photo library.',
     podPickCamera: 'Take photo',
     podPickGallery: 'Choose from gallery',
-    podConfirmHint: 'Review the photo, then upload or cancel.',
+    podConfirmHint:
+      'Check the photo or document image is clear, then upload or cancel. To add another file, upload again after this one succeeds.',
     podUpload: 'Upload photo',
     podUploadA11y: 'Upload driver photo to TMS',
     podCancel: 'Cancel',
@@ -197,8 +199,13 @@ export const strings = {
     podDiscardMessage: 'The selected photo will not be uploaded.',
     podDiscardConfirm: 'Discard',
     podKeepEditing: 'Keep photo',
-    podPreviewA11y: 'Preview of selected POD photo',
+    podPreviewA11y: 'Preview of selected driver photo',
     podUploadSuccess: 'Photo uploaded. It will appear in TMS Documents and in this list without reloading.',
+    driverUploadInvalidMime:
+      'Only JPEG, PNG, HEIC, or WebP images can be uploaded (maximum 50 MB).',
+    driverUploadFileTooLarge: 'This photo exceeds the 50 MB limit. Choose a smaller file.',
+    driverUploadEmptyFile: 'This file is empty. Choose another photo.',
+    podOfflineHint: 'Connect to the internet to upload a driver photo.',
     screenTitle: 'Load details',
     emDash: '—',
   },

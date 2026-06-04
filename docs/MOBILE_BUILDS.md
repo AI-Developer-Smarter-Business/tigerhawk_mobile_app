@@ -37,14 +37,30 @@ npx eas secret:create --name EXPO_PUBLIC_TMS_API_URL --value "https://your-tms-h
 
 ---
 
-## 3. Android APK (current path)
+## 3. Release QA before build (tasks 7.1 → 7.2)
+
+| Step | Command | Doc |
+|------|---------|-----|
+| **7.1** Automated + manual P0/P1 | `npm run qa:7.1` | `docs/QA_RELEASE_SIGNOFF_7_1.md` |
+| **7.2** EAS config check | `npm run build:preflight` | This file + `docs/RELEASE_NOTES_0_1_0.md` |
+
+`qa:7.1` does **not** replace manual sign-off on device (smoke S1–S10, upload D1–D7, documents A–C).
+
+---
+
+## 4. Android APK (current path)
 
 ```bash
 npm install -g eas-cli   # if needed
 npx eas login
+npm run build:preflight
 # Set projectId in app.json → extra.eas.projectId (create project on expo.dev)
 npm run build:android:preview
+# or
+npm run build:android:production
 ```
+
+**Release notes:** `docs/RELEASE_NOTES_0_1_0.md` (version **0.1.0**).
 
 - Profile **`preview`**: internal distribution, **APK** (`eas.json`).
 - Install the downloaded APK on the device (allow unknown sources if sideloading).
@@ -58,7 +74,7 @@ npm run build:android:preview
 
 ---
 
-## 4. iOS — on hold
+## 5. iOS — on hold
 
 Blocked until:
 
@@ -76,7 +92,7 @@ npx eas build --platform ios --profile preview
 
 ---
 
-## 5. Parity checklist (local vs installed build)
+## 6. Parity checklist (local vs installed build)
 
 | Capability | Local (Expo Go) | Android APK | iOS (later) |
 |------------|-----------------|-------------|-------------|
@@ -89,9 +105,12 @@ npx eas build --platform ios --profile preview
 
 ---
 
-## 6. References
+## 7. References
 
 - [EAS Build](https://docs.expo.dev/build/introduction/)
 - `docs/QUERY_CACHE.md` § Realtime
 - `docs/SECRETS_AND_BFF.md`
+- `CHANGELOG.md` · `docs/VERSIONING.md`
+- `docs/ROLLBACK_PP2.md` · `docs/EAS_CREDENTIALS_HANDOFF_7_5.md`
+- `docs/BUG_REPORTING.md`
 - `PP2_TAREAS_DEV.md` week 8 (EAS / stores)

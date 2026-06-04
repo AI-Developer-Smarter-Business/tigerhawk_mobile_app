@@ -16,7 +16,7 @@ export function mapPickerAssetToUploadFile(asset: ImagePickerAsset): TmsUploadFi
   const mimeType = asset.mimeType ?? 'image/jpeg';
   if (!isAllowedPodImageMime(mimeType)) {
     throw new TmsDocumentUploadError(
-      'Only image files (JPEG, PNG, HEIC, WebP) can be uploaded as POD.',
+      'Only image files (JPEG, PNG, HEIC, WebP) can be uploaded.',
       'BAD_REQUEST',
     );
   }

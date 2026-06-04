@@ -52,8 +52,8 @@ Reference: `DriverActionPanel.tsx` → `DRIVER_STATUSES` vs dispatcher buttons; 
 
 | Priority | Feature | Effort | Depends on |
 |----------|---------|--------|------------|
-| **P0** | TMS Bearer on status + documents API | TMS deploy | Client go-ahead (see daily report Tarea 3) |
-| **P1** | Enable POD/Photo upload (Semana 6) | Dev 6.2 + TMS 4.1 | Same Bearer + 4.1 |
+| **P0** | TMS Bearer on status + documents API | **7.1:** verify on production TMS; mobile paths in **6.2** | `docs/QA_RELEASE_SIGNOFF_7_1.md` §P0 |
+| **P1** | Driver photo upload (Semana 6) | **✅ 6.1–6.6** code complete | `docs/QA_DRIVER_UPLOAD_E2E_6_4.md` §D |
 | **P2** | **Call customer** — `Linking.openURL('tel:…')` on phone row | Small | None |
 | **P2** | **HOT** badge already on list — filter “hot only” | Small | None |
 | **P3** | Sort loads by pickup/delivery appointment | Small | Data in `loads` |
@@ -76,4 +76,5 @@ Reference: `DriverActionPanel.tsx` → `DRIVER_STATUSES` vs dispatcher buttons; 
 
 ---
 
-**Related:** `docs/QA_SMOKE_E2E_5_7.md`, `docs/MVP_SCOPE.md`, `docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`.
+**Related:** `docs/QA_RELEASE_SIGNOFF_7_1.md`, `docs/QA_SMOKE_E2E_5_7.md`, `docs/MVP_SCOPE.md`, `docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`.  
+**v1.1 backlog (task 7.7):** `docs/BACKLOG_V1_1_7_7.md` · **Support (7.6):** `docs/MOBILE_SUPPORT_RUNBOOK_7_6.md`.

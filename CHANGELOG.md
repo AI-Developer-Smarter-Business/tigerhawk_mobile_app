@@ -1,0 +1,41 @@
+# Changelog
+
+All notable changes to **Tigerhawk Mobile** (`pp2-mobile`) follow [Semantic Versioning](https://semver.org/) and [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+Version alignment: `package.json`, `app.json` → `expo.version`, and `docs/RELEASE_NOTES_<version>.md`.
+
+## [Unreleased]
+
+### Planned (v1.1)
+
+- Live GPS tracking + TMS map (Semana 8)
+- Push notifications, load messages API, E2E automation
+
+---
+
+## [0.1.0] - 2026-06-03
+
+First production-ready **driver** release for field use (deadline 9 Jun 2026).
+
+### Added
+
+- Supabase Auth (password + magic link, `pp2://auth/callback`)
+- **My Loads** with RLS, pagination, pull-to-refresh, Realtime on `loads` / `load_documents`
+- Load detail: route, customer, container, timeline, holds, field actions
+- **POD / Documents:** view TMS uploads; **Add driver photo** (type `Driver`)
+- Client upload validation (MIME, 50 MB, offline block); light image resize/compress
+- Foreground GPS + **Share location** (manual; not auto TMS tracking)
+- Offline v1 banner and reconnect recovery
+- TMS drawer chrome; driver-only role gate
+- Jest suites + `npm run ci`; QA runbooks (`docs/QA_RELEASE_SIGNOFF_7_1.md`)
+
+### Security
+
+- Client secret guard (`npm run check:secrets`)
+- Driver-scoped RLS on `load_messages` / `load_documents` (Supabase migrations)
+
+### Documentation
+
+- `docs/MOBILE_BUILDS.md`, `docs/RELEASE_NOTES_0_1_0.md`, `README` install/env/bugs
+
+[0.1.0]: https://github.com/your-org/pp2-mobile/compare/v0.0.0...v0.1.0
