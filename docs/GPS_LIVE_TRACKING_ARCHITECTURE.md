@@ -104,14 +104,11 @@ Do **not** edit `PROYECTO_MUESTRA/`. See `docs/TMS_DEV_REPOSITORY.md`.
 
 ---
 
-## Business default (task 8.1 — phase 0)
+## Product scope (phase 0 — fixed)
 
-**Assumption until client says otherwise:**
-
-- Tracking **only** when load is in **active trip** statuses (define list in 8.2, e.g. _In Transit_, _At Pickup_, _At Delivery_, …).
-- **Foreground only** — no full workday / background.
-
-Full-shift + background remains a **separate** decision that only unlocks task **8.10**.
+- Tracking **only** when load is in **active trip** statuses (list in task **8.2**, e.g. _In Transit_, _At Pickup_, _At Delivery_, …).
+- **Foreground only** — Tigerhawk Mobile open on load detail; no full workday / background (**8.10** N/A).
+- No written client sign-off required for this scope.
 
 ---
 
@@ -119,7 +116,6 @@ Full-shift + background remains a **separate** decision that only unlocks task *
 
 | Task | Required for phase 0? |
 |------|------------------------|
-| 8.1 | Light — confirm active-trip + foreground (written OK in this doc) |
 | 8.2 | **Yes** — status list + map surface (load detail vs board) |
 | 8.3 | **Yes** — this document |
 | 8.4–8.6 | **Yes** — schema, RLS, Realtime |

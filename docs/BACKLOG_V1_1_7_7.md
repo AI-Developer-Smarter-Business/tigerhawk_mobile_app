@@ -14,7 +14,7 @@ v0.1.0 scope is frozen in `docs/MVP_SCOPE.md` and `docs/RELEASE_NOTES_0_1_0.md`.
 |-------|---------|
 | **P2** | Small win; no new backend contract |
 | **v1.1** | Next mobile release slice |
-| **S8** | **Semana 8** (`PP2_TAREAS_DEV.md` **8.1–8.17**) — **#1 priority**; phase 0 = foreground 30–60 s, no external tracking API |
+| **S8** | **Semana 8** (`PP2_TAREAS_DEV.md` **8.2–8.17**) — **#1 priority**; phase 0 = active trip + foreground 30–60 s, no external tracking API |
 
 ---
 
@@ -34,19 +34,19 @@ v0.1.0 scope is frozen in `docs/MVP_SCOPE.md` and `docs/RELEASE_NOTES_0_1_0.md`.
 | **v1.1** | **Driver itinerary** (day view) | TMS feature | Medium | API or Supabase view | Optional “today” filter on **My Loads** as interim |
 | **v1.1** | **Offline-first** (queue uploads/actions) | Mobile | Large | Conflict resolution with TMS | v0.1.0 has banner + reconnect refetch (`docs/OFFLINE_V1.md`) |
 | **v1.1** | **Dynamic field-action rules** from TMS | Both | Large | Admin transitions API exposed to mobile | v0.1.0 uses `lib/loads/driver-actions.ts` |
-| **Deferred** | Background GPS all day | Mobile | Large | Client chooses full shift in **8.1** | Battery + Play/App Store policy |
+| **Deferred** | Background GPS all day | Mobile | Large | Out of phase 0 (**8.10**) | Battery + Play/App Store policy |
 | **Excluded** | BOL/RC upload by driver, dispatch menus, pay/settlements | — | — | — | Driver type **Driver** only (Semana 6) |
 
 ---
 
 ## Semana 8 — live tracking (not duplicated here)
 
-All tasks **8.1–8.17** live in `PP2_TAREAS_DEV.md` § Semana 8:
+All tasks **8.2–8.17** live in `PP2_TAREAS_DEV.md` § Semana 8:
 
-1. **8.1** — Client decision: active load only vs full workday (blocking).
-2. **8.3** — Architecture doc `GPS_LIVE_TRACKING_ARCHITECTURE.md`.
-3. **8.4–8.5** — Supabase schema + RLS for `current_*` / optional history.
-4. **8.6–8.9** — Mobile sender, TMS map, Realtime, QA.
+1. **8.2** — Active load statuses + map surface.
+2. **8.3** ✅ — Architecture `GPS_LIVE_TRACKING_ARCHITECTURE.md`.
+3. **8.4–8.6** — Supabase schema, RLS, Realtime.
+4. **8.7–8.9** — Mobile sender; **8.12–8.13** — TMS map.
 
 **v1 GPS delivered in v0.1.0:** foreground **Share location** only — `docs/GPS_V1_DECISION.md`, `docs/GPS_TMS_INTEGRATION_5_3.md`.
 
@@ -66,7 +66,7 @@ flowchart LR
 1. **S8 live GPS (phase 0)** — Supabase + TMS map + mobile foreground 30–60 s (**no third-party tracking API**).  
 2. **Quick wins (P2)** — tap-to-call, directions.  
 3. **Messages + push** — dispatcher ↔ driver comms.  
-4. **Geofencing + offline-first + background (8.10)** — only if product mandates full shift.
+4. **Geofencing + offline-first + background (8.10)** — deferred post phase 0.
 
 ---
 

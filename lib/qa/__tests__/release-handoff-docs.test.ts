@@ -80,7 +80,7 @@ describe('release handoff docs (7.6–7.7)', () => {
     expect(backlog).toMatch(/wait.?time/i);
     expect(backlog).toMatch(/geofenc/i);
     expect(backlog).toMatch(/E2E|Maestro|Detox/i);
-    expect(backlog).toMatch(/8\.1|Semana 8|live GPS/i);
+    expect(backlog).toMatch(/8\.2|Semana 8|live GPS/i);
     expect(backlog).toContain('docs/GPS_LIVE_TRACKING_ARCHITECTURE.md');
     expect(backlog).toContain('docs/DRIVER_TMS_CAPABILITIES_5_7.md');
     expect(backlog).toContain('docs/MOBILE_SUPPORT_RUNBOOK_7_6.md');
