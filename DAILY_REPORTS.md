@@ -1172,4 +1172,62 @@ Follow **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`** (TMS-ready copy):
 
 ---
 
+## June 5, 2026
+
+### Task 1 — HOT loads first on My Loads (P2 priority)
+
+**What was implemented**
+
+- **`lib/loads/sort-assigned-loads.ts`:** sort — HOT first, then `created_at` descending.
+- **`fetch-driver-loads-page.ts`:** Supabase `.order('is_hot')` + `.order('created_at')` for correct pagination.
+- **`useAssignedLoadsQuery`:** re-sort after dedupe (Realtime when dispatch toggles HOT).
+- **`map-load-row.ts`:** `created_at` on list rows for tie-break.
+- Tests: `sort-assigned-loads.test.ts`.
+
+**What is available**
+
+- On **My Loads**, urgent (TMS **Hot**) assignments appear **at the top**; existing orange badge/border unchanged.
+
+**How to test**
+
+- `npm test -- --testPathPattern="sort-assigned-loads"`.
+- `npm run lint`.
+- **Mobile:** mark an assigned load **Hot** in TMS → app **My Loads** → pull-to-refresh → HOT load moves to the top.
+
+### Task 2 — Live GPS planning + TMS dev repository
+
+**What was implemented**
+
+- **`docs/GPS_LIVE_TRACKING_ARCHITECTURE.md`**, **`docs/TMS_DEV_REPOSITORY.md`**, **`.cursor/rules/tms-dev-repository.mdc`**, **`AGENTS.md`** TMS dev section — TMS code edits only in `tigerhawk-tms-main`, not `PROYECTO_MUESTRA/`.
+- **`PP2_TAREAS_DEV.md`:** condensed Week 8; v1.1 GPS priority; removed task **8.1** (written sign-off); fixed scope active trip + foreground.
+- Updated `docs/BACKLOG_V1_1_7_7.md`, `README.md`, `release-handoff-docs` tests.
+
+**What is available**
+
+- No UI change; docs and rules for **8.4–8.13** (Supabase + mobile + TMS map).
+
+**How to test**
+
+- `npm test -- --testPathPattern="release-handoff-docs"`.
+- Review `PP2_TAREAS_DEV.md` § Week 8 and `docs/TMS_DEV_REPOSITORY.md`.
+
+### Task 3 — Additive Supabase GPS SQL (dev 8.4 / 8.5 / 8.6 scripts)
+
+**What was implemented**
+
+- **`supabase/sql-editor/20260605120000_pp2_driver_live_location_loads.sql`** (+ `supabase/migrations/` copy): nullable `current_*` / `last_seen_at` on `loads`; `last_seen_at` index; **new** RLS policy (no Staff DROP); trigger blocking non-GPS driver updates.
+- **`VERIFY_pp2_driver_live_location.sql`**, **`enable_realtime_driver_tracking.sql`**; updated `docs/GPS_LIVE_TRACKING_ARCHITECTURE.md`, `docs/ROLLBACK_PP2.md`, `PP2_TAREAS_DEV.md`.
+
+**What is available**
+
+- **Not in app yet** until SQL is applied in Supabase and mobile **8.7–8.8**. Production TMS **unchanged** (nullable columns).
+
+**How to test**
+
+- Supabase → SQL Editor → run `20260605120000_pp2_driver_live_location_loads.sql` → then `VERIFY_pp2_driver_live_location.sql`.
+- TMS smoke: dispatcher login → load list → detail (no GPS UI until 8.12).
+- `npm test -- --testPathPattern="release-handoff-docs"`.
+
+---
+
 *When closing each day, add a `## [date]` section with **Task 1, Task 2, Task 3…** top to bottom (e.g. dev 4.6 → Task 7, dev 4.7 → Task 8). Never Task 8 before Task 7.*

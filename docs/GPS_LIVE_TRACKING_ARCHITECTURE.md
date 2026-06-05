@@ -60,18 +60,22 @@ sequenceDiagram
 
 On table **`loads`** (per-load marker for dispatch):
 
-```sql
--- illustrative — final SQL in supabase/sql-editor/
-current_latitude   double precision,
-current_longitude  double precision,
-last_seen_at       timestamptz,
--- optional phase 0:
-location_accuracy_m double precision
-```
+| Column | Type |
+|--------|------|
+| `current_latitude` | `double precision` NULL |
+| `current_longitude` | `double precision` NULL |
+| `last_seen_at` | `timestamptz` NULL |
+| `location_accuracy_m` | `double precision` NULL (optional) |
 
-**RLS (task 8.5):** driver may `UPDATE` only rows where `driver_id = auth.uid()`; staff roles `SELECT` all needed for dispatcher map.
+**Apply in Supabase SQL Editor (additive — safe for prod TMS):**
 
-**Realtime (task 8.6):** include `loads` (already in publication for status) — confirm `UPDATE` on `current_*` columns triggers events.
+1. `supabase/sql-editor/20260605120000_pp2_driver_live_location_loads.sql` — **8.4 + 8.5** (columns, RLS, trigger guard).
+2. `supabase/sql-editor/VERIFY_pp2_driver_live_location.sql` — smoke.
+3. `supabase/sql-editor/enable_realtime_driver_tracking.sql` — **8.6** if `loads` not yet in Realtime.
+
+**RLS (8.5):** new policy `Drivers update live location on assigned loads` only — **does not** replace Staff policies. Trigger `pp2_enforce_driver_location_update` blocks drivers from changing `status` or other fields.
+
+**Realtime (8.6):** `loads` UPDATE fires events when `current_*` changes (usually already published).
 
 ---
 

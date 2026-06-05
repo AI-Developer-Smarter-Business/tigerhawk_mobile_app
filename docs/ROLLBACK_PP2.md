@@ -29,8 +29,9 @@ Files live in `supabase/sql-editor/` (run order) and `supabase/migrations/` (git
 | 3 | `enable_realtime_loads.sql` | `loads` in `supabase_realtime` | Optional: remove from publication (§4) |
 | 4 | `enable_realtime_load_documents.sql` | `load_documents` in publication | Superseded by `enable_realtime_pp2_driver_sync.sql` |
 | 5 | `enable_realtime_pp2_driver_sync.sql` | `loads` + `load_documents` in publication | Optional: remove tables from publication (§4) |
+| 6 | `20260605120000_pp2_driver_live_location_loads.sql` | GPS columns on `loads` + driver UPDATE policy + trigger | Drop policy/trigger; columns can stay NULL (TMS ignores) |
 
-**Verify before/after:** `VERIFY_pp2_driver_rls_policies.sql`, `VERIFY_driver_tms_upload_prereqs.sql`.
+**Verify before/after:** `VERIFY_pp2_driver_rls_policies.sql`, `VERIFY_driver_tms_upload_prereqs.sql`, `VERIFY_pp2_driver_live_location.sql`.
 
 ---
 

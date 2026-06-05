@@ -51,6 +51,7 @@ export async function fetchDriverLoadsPageImpl(
     .from('loads')
     .select('id', { count: 'exact' })
     .eq('driver_id', driverUserId)
+    .order('is_hot', { ascending: false })
     .order('created_at', { ascending: false })
     .range(from, to);
 

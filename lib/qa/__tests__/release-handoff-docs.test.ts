@@ -63,6 +63,19 @@ describe('release handoff docs (7.6–7.7)', () => {
     expect(arch).toContain('current_latitude');
     expect(arch).toContain('docs/GPS_V1_DECISION.md');
     expect(arch).toContain('docs/TMS_DEV_REPOSITORY.md');
+    expect(arch).toContain('20260605120000_pp2_driver_live_location_loads.sql');
+  });
+
+  it('GPS live location SQL is additive with verify script', () => {
+    const sql = read('supabase/sql-editor/20260605120000_pp2_driver_live_location_loads.sql');
+    expect(sql).toContain('ADD COLUMN IF NOT EXISTS current_latitude');
+    expect(sql).toContain('Drivers update live location on assigned loads');
+    expect(sql).toContain('pp2_enforce_driver_location_update');
+    expect(sql).not.toMatch(/DROP POLICY.*Staff update shipments/i);
+
+    const verify = read('supabase/sql-editor/VERIFY_pp2_driver_live_location.sql');
+    expect(verify).toContain('current_latitude');
+    expect(verify).toContain('Staff update shipments');
   });
 
   it('TMS dev repository doc defines editable path and map audit', () => {

@@ -43,6 +43,7 @@ export type LoadListRow = {
   fees_hold: string | null;
   other_hold: string | null;
   carrier_hold: boolean | null;
+  created_at: string | null;
   containers: ContainerEmbed | ContainerEmbed[] | null;
   customers: CustomerEmbed | CustomerEmbed[] | null;
 };
@@ -128,6 +129,7 @@ export function mapLoadRowToDetail(row: LoadListRow): LoadDetail {
     customer_name: customer?.name ?? null,
     active_holds: getActiveHoldKeysFromLoad(row),
     ...DETAIL_DEFAULTS,
+    created_at: row.created_at ?? null,
     bol_number: container?.bol_number ?? null,
     container_type: container?.type ?? null,
     seal_number: container?.seal_number ?? null,

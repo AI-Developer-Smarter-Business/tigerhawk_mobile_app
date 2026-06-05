@@ -1236,6 +1236,64 @@ Seguir **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`** (copia lista TMS):
 
 ---
 
+## 5 de junio de 2026
+
+### Tarea 1 — Cargas HOT primero en My Loads (prioridad P2)
+
+**Qué se implementó**
+
+- **`lib/loads/sort-assigned-loads.ts`:** orden — `is_hot` primero, luego `created_at` descendente.
+- **`fetch-driver-loads-page.ts`:** query Supabase `.order('is_hot')` + `.order('created_at')` para paginación correcta.
+- **`useAssignedLoadsQuery`:** reorden tras dedupe (Realtime si dispatch marca/desmarca HOT).
+- **`map-load-row.ts`:** `created_at` en filas de listado para desempate.
+- Tests: `sort-assigned-loads.test.ts`.
+
+**Funcionalidad disponible**
+
+- En **My Loads**, las cargas urgentes (HOT del TMS) aparecen **al inicio**; el badge/borde naranja existente se mantiene.
+
+**Cómo probar**
+
+- `npm test -- --testPathPattern="sort-assigned-loads"`.
+- `npm run lint`.
+- **Mobile:** en TMS marcar una carga asignada al conductor como **Hot** → app **My Loads** → pull-to-refresh → la carga HOT queda arriba del resto.
+
+### Tarea 2 — Planificación GPS en vivo + repo TMS dev
+
+**Qué se implementó**
+
+- **`docs/GPS_LIVE_TRACKING_ARCHITECTURE.md`**, **`docs/TMS_DEV_REPOSITORY.md`**, **`.cursor/rules/tms-dev-repository.mdc`**, **`AGENTS.md`** § TMS desarrollo — cambios TMS solo en `tigerhawk-tms-main`, no en `PROYECTO_MUESTRA/`.
+- **`PP2_TAREAS_DEV.md`:** Semana 8 resumida; prioridad v1.1 GPS; eliminada tarea **8.1** (confirmación escrita); alcance fijo viaje activo + primer plano.
+- Actualizados `docs/BACKLOG_V1_1_7_7.md`, `README.md`, tests `release-handoff-docs`.
+
+**Funcionalidad disponible**
+
+- Sin cambio de UI; documentación y reglas para implementar **8.4–8.13** (Supabase + móvil + mapa TMS).
+
+**Cómo probar**
+
+- `npm test -- --testPathPattern="release-handoff-docs"`.
+- Revisar `PP2_TAREAS_DEV.md` § Semana 8 y `docs/TMS_DEV_REPOSITORY.md`.
+
+### Tarea 3 — SQL GPS aditivo Supabase (dev 8.4 / 8.5 / 8.6 scripts)
+
+**Qué se implementó**
+
+- **`supabase/sql-editor/20260605120000_pp2_driver_live_location_loads.sql`** (+ copia en `supabase/migrations/`): columnas nullable `current_latitude`, `current_longitude`, `last_seen_at`, `location_accuracy_m`; índice `last_seen_at`; política RLS **nueva** (sin DROP de Staff); trigger que impide al conductor cambiar columnas distintas al GPS.
+- **`VERIFY_pp2_driver_live_location.sql`**, **`enable_realtime_driver_tracking.sql`**; actualizados `docs/GPS_LIVE_TRACKING_ARCHITECTURE.md`, `docs/ROLLBACK_PP2.md`, `PP2_TAREAS_DEV.md`.
+
+**Funcionalidad disponible**
+
+- **Aún no en app** hasta aplicar SQL en Supabase y tareas **8.7–8.8** móvil. TMS producción **no se rompe** si el script es aditivo (columnas NULL).
+
+**Cómo probar**
+
+- Supabase → SQL Editor → pegar y ejecutar `20260605120000_pp2_driver_live_location_loads.sql` → luego `VERIFY_pp2_driver_live_location.sql` (4 columnas + política + trigger + Realtime).
+- Smoke TMS: login dispatcher → listar cargas → abrir detalle (sin cambios visibles hasta mapa 8.12).
+- `npm test -- --testPathPattern="release-handoff-docs"`.
+
+---
+
 ## PREGUNTAS DE FEEDBACK DE CLIENTE (2 de junio de 2026)
 
 Tras la demo. Respuestas breves para alinear expectativas (v1 móvil + roadmap Semana 8).

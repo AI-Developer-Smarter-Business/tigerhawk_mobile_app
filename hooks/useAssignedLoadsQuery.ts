@@ -9,6 +9,7 @@ import {
 } from '@/lib/query/driver-query-gate';
 import { invalidateDriverLoads } from '@/lib/query/invalidate-loads';
 import { queryKeys } from '@/lib/query/query-keys';
+import { sortAssignedLoadsByPriority } from '@/lib/loads/sort-assigned-loads';
 import { dedupeLoadsById } from '@/lib/supabase/queries/map-load-row';
 import { getUserFacingMessage } from '@/lib/errors';
 import { fetchDriverLoadsPage } from '@/lib/supabase/queries';
@@ -71,7 +72,7 @@ export function useAssignedLoadsQuery(): UseAssignedLoadsQueryResult {
 
   const loads = useMemo(() => {
     const flat = query.data?.pages.flatMap((page) => page.loads) ?? [];
-    return dedupeLoadsById(flat);
+    return sortAssignedLoadsByPriority(dedupeLoadsById(flat));
   }, [query.data]);
 
   const lastPage = query.data?.pages[query.data.pages.length - 1];

@@ -19,6 +19,7 @@ const BASE_LIST_ROW: LoadListRow = {
   fees_hold: null,
   other_hold: null,
   carrier_hold: null,
+  created_at: null,
   containers: null,
   customers: null,
 };

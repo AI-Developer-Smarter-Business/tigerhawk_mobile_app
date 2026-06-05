@@ -128,9 +128,9 @@
 | ---- | ----- |
 | 8.2  | Definir estados `loads` “en curso”, superficie del mapa (detalle / dispatcher) y alcance de visibilidad. |
 | 8.3  | ✅ **Completada (3 jun 2026).** Arquitectura fase 0: `docs/GPS_LIVE_TRACKING_ARCHITECTURE.md`, `docs/TMS_DEV_REPOSITORY.md`, regla `.cursor/rules/tms-dev-repository.mdc`. Pendiente alinear lista de estados con **8.2**. |
-| 8.4  | SQL: `current_latitude`, `current_longitude`, `last_seen_at` en `loads` (`supabase/sql-editor/`). |
-| 8.5  | RLS: conductor `UPDATE` GPS solo en sus cargas; staff `SELECT` sin romper políticas actuales. |
-| 8.6  | Realtime: script `enable_realtime_driver_tracking.sql` (publicación `loads`). |
+| 8.4  | ⏳ **Scripts listos (5 jun 2026).** `supabase/sql-editor/20260605120000_pp2_driver_live_location_loads.sql` — columnas nullable en `loads`. **Aplicar** en SQL Editor (no ejecutado en repo). |
+| 8.5  | ⏳ **Incluido en el mismo script** — política nueva `Drivers update live location…` + trigger (solo `current_*`); **sin DROP** de políticas Staff. Verificar: `VERIFY_pp2_driver_live_location.sql`. |
+| 8.6  | ⏳ `enable_realtime_driver_tracking.sql` (idempotente; suele bastar con `enable_realtime_pp2_driver_sync.sql`). |
 | 8.7  | Móvil: `lib/location/tracking-policy.ts` (intervalo 30–60 s, estados activos, umbral metros). |
 | 8.8  | Móvil: `useDriverLocationTracking` — `expo-location` primer plano, `UPDATE` Supabase, offline/retry. |
 | 8.9  | Móvil: UI “Sharing location with dispatch” + copy `strings`. |
