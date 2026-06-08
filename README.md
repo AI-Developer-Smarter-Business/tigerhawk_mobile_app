@@ -47,8 +47,8 @@
 - **Node.js** 20 LTS or newer  
 - **npm** 10+  
 - **Android Studio** (emulator) or Android device with [Expo Go](https://expo.dev/go)  
-- [expo.dev](https://expo.dev) account for EAS Build (optional)  
-- **macOS + Xcode** only if building iOS locally  
+- [expo.dev](https://expo.dev) account for EAS Build (APK / IPA)  
+- **macOS + Xcode** only if building iOS **locally** — not required when using **EAS Build** (cloud)  
 
 ## Installation (developers)
 
@@ -66,7 +66,9 @@ npm test
 | `npm start` | Expo dev server (Expo Go / emulator) |
 | `npm run ci` | Lint + secret guard + tests (same as GitHub Actions) |
 | `npm run qa:7.1` | Release QA preflight (Semanas 5–6) |
-| `npm run build:preflight` | Check EAS config before APK build |
+| `npm run build:preflight` | Check EAS config before APK/IPA build |
+| `npm run eas:push-env` | Push `.env.local` `EXPO_PUBLIC_*` to EAS (preview + production) |
+| `npm run build:android:preview` | EAS cloud build → Android APK (internal QA) |
 
 ### Environment variables
 
@@ -134,16 +136,69 @@ Use `safeLog` from `lib/logging/safe-log.ts` in dev only. **Do not** `console.lo
 
 If QR fails: `npx expo start --tunnel`.
 
-### Installed builds (Android now · iOS later)
+### Installed builds (Android · iOS)
 
 | Platform | Status | Command |
 |----------|--------|---------|
 | **Android APK** | Ready | `npm run build:android:preview` |
-| **iOS** | On hold (Mac + iPhone + Apple account) | `eas build --platform ios --profile preview` when ready |
+| **iOS (IPA)** | Ready via EAS cloud — needs Apple setup (client) | `npx eas-cli build --platform ios --profile preview` |
 
-**Before building:** `npm run build:preflight`, then set EAS secrets (`docs/EAS_CREDENTIALS_HANDOFF_7_5.md`). Use a **public** TMS URL, not `localhost`.
+**Before any EAS build:** `npm run build:preflight`, EAS env vars set (`npm run eas:push-env` from `.env.local`), and a **public** TMS URL (not `localhost`). Custody checklist: `docs/EAS_CREDENTIALS_HANDOFF_7_5.md`.
 
 Full flow: **`docs/MOBILE_BUILDS.md`** · Release notes: **`docs/RELEASE_NOTES_0_1_0.md`** · Rollback: **`docs/ROLLBACK_PP2.md`**.
+
+#### Android APK (step-by-step)
+
+1. **Expo account** — `npx eas-cli login` (once).
+2. **Link project** — already linked: `@likaon1606/pp2` (`app.json` → `extra.eas.projectId`).
+3. **Environment variables** — copy `.env.example` → `.env.local`, fill values, then `npm run eas:push-env`.  
+   - `EXPO_PUBLIC_TMS_API_URL` = **base URL only**, e.g. `https://tigerhawk.netlify.app` (not `/dashboard`). Staging Netlify is fine if mobile TMS patches are deployed there.
+4. **Preflight** — `npm run build:preflight` (must pass with no errors).
+5. **Build** — `npm run build:android:preview` (first run may create Android keystore on EAS).
+6. **Download** — [expo.dev](https://expo.dev) → project **pp2** → **Builds** → download APK → install on device (enable “unknown sources” if sideloading).
+
+#### iOS installable — mini-guide for the client
+
+You **do not need a Mac** on the developer machine to **compile** iOS: **EAS Build** runs on Expo’s cloud (macOS servers). A Mac at the client is useful for Apple portal tasks but is **not** required to trigger `eas build` from Windows.
+
+**What is optional vs required**
+
+| Item | Required? | Notes |
+|------|-----------|--------|
+| Expo account + EAS project | Yes | Same as Android (`pp2`). |
+| EAS env vars (`EXPO_PUBLIC_*`) | Yes | Same three variables as Android (`npm run eas:push-env`). |
+| **Apple Developer Program** (~**$99/year**) | **Optional for dev only** · **Required to install on real iPhones** | Apple’s paid membership to **sign** the app and distribute outside Expo Go. Without it you can only test in **Expo Go** (not a store-style installable). |
+| Physical **iPhone** | Yes (for field QA) | To validate GPS, camera, installs. |
+| **Mac** | Optional | Helpful for App Store Connect / Xcode; EAS can manage signing credentials without a local Mac. |
+
+**Distribution options (after Apple Developer account)**
+
+| Method | Best for | Apple account? |
+|--------|----------|----------------|
+| **TestFlight** | Client / QA on iPhone | Yes — recommended |
+| **Ad hoc / internal** | Few registered devices (UDID list) | Yes |
+| **App Store** | Public release | Yes |
+| **Expo Go** | Quick UI dev only | No — not an installable IPA |
+
+**iOS steps (client + dev team)**
+
+1. **Enroll in [Apple Developer Program](https://developer.apple.com/programs/)** (paid, annual) — owner should be the **client organization**, not a personal throwaway account.
+2. **App Store Connect** — create app (or let EAS create on first build). Bundle ID is already set: `com.tigerhawk.pp2` (`app.json`).
+3. **EAS iOS credentials** (one-time, with client Apple ID or App Store Connect API key):
+   ```bash
+   npx eas-cli credentials -p ios
+   ```
+   Prefer **EAS-managed** certificates and provisioning profiles unless the client already has their own.
+4. **Build IPA** (from Windows or Mac — same command):
+   ```bash
+   npx eas-cli build --platform ios --profile preview
+   ```
+5. **Install on iPhone** — download IPA alone is **not** enough on iOS. Typical path:
+   - **TestFlight:** `npx eas-cli submit --platform ios` (after build), then invite testers by email in App Store Connect.
+   - Or register device UDIDs for ad hoc distribution (more manual).
+6. **Verify** — login `driver_test@test.com`, **My Loads**, status change and upload against the **public** TMS URL.
+
+**Summary for the client:** Android APK can be sideloaded immediately after EAS build. iOS needs the **Apple Developer Program** only when you want a **signed installable** on iPhones (TestFlight / App Store). Until then, Android APK + Expo Go on iOS cover most cross-platform dev; production iOS for drivers should plan for Apple enrollment + TestFlight.
 
 ## Project structure
 

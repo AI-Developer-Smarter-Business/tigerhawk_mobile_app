@@ -14,15 +14,13 @@ Same **Supabase** and **TMS** as local dev → same `driver_test@test.com`, same
 |----------|---------|--------|
 | `EXPO_PUBLIC_SUPABASE_URL` | `https://xxxx.supabase.co` | Same project as TMS |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `eyJ…` | Anon key only |
-| `EXPO_PUBLIC_TMS_API_URL` | `https://tms-staging.example.com` | **Must be reachable from the phone** — not `localhost` |
+| `EXPO_PUBLIC_TMS_API_URL` | `https://tigerhawk.netlify.app` | **Base URL only** (no `/dashboard`). Staging Netlify is OK if mobile patches live there. Must be reachable from the phone — not `localhost`. |
 
-`eas.json` profiles `preview` and `production` already reference these via `$EXPO_PUBLIC_*`.
+Set on EAS with `npm run eas:push-env` (reads `.env.local`) or Expo Dashboard → project → **Environment variables** (preview + production). Do **not** duplicate them in `eas.json` `env` — that overrides EAS and can bundle empty values into the APK.
 
 ```bash
-# One-time (Expo account)
-npx eas secret:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://..."
-npx eas secret:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "..."
-npx eas secret:create --name EXPO_PUBLIC_TMS_API_URL --value "https://your-tms-host"
+npm run eas:push-env   # from filled .env.local
+npx eas-cli env:list --environment preview
 ```
 
 ---

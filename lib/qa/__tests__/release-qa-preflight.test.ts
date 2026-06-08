@@ -25,9 +25,7 @@ describe('release QA preflight (7.1 / 7.2)', () => {
     const eas = JSON.parse(read('eas.json'));
     expect(eas.build.preview.android.buildType).toBe('apk');
     expect(eas.build.production.android.buildType).toBe('apk');
-    expect(eas.build.preview.env.EXPO_PUBLIC_SUPABASE_URL).toBe(
-      '$EXPO_PUBLIC_SUPABASE_URL',
-    );
+    expect(eas.build.preview.env).toBeUndefined();
   });
 
   it('app.json version aligns with package and driver routes exist', () => {

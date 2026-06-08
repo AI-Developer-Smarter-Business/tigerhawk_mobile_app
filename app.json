@@ -22,7 +22,11 @@
     },
     "android": {
       "package": "com.tigerhawk.pp2",
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#0B1120"
@@ -38,7 +42,10 @@
               "pathPrefix": "/auth/callback"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -79,9 +86,11 @@
       "typedRoutes": true
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "REEMPLAZAR_TRAS_CREAR_PROYECTO_EN_EXPO_DEV"
+        "projectId": "711ff937-bac6-440a-b680-d15285b697aa"
       }
-    }
+    },
+    "owner": "likaon1606"
   }
 }

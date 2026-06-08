@@ -38,8 +38,10 @@ const envKeys = ['EXPO_PUBLIC_SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_ANON_KEY', 'E
 for (const profile of ['preview', 'production']) {
   const env = eas.build?.[profile]?.env ?? {};
   for (const key of envKeys) {
-    if (env[key] !== `$${key}`) {
-      warnings.push(`eas.json ${profile}.env.${key} — expected $${key} EAS secret reference`);
+    if (key in env) {
+      warnings.push(
+        `eas.json ${profile}.env.${key} — remove inline env; use EAS Environment variables (npm run eas:push-env)`,
+      );
     }
   }
 }
@@ -87,7 +89,7 @@ if (errors.length) {
 console.log('\n✓ EAS build preflight passed (7.2).');
 console.log(`  Version: ${app.version}`);
 console.log(`  Android: ${app.android.package}`);
-console.log('\n  Next: set EAS secrets, then:');
+console.log('\n  Next: npm run eas:push-env (from .env.local), then:');
 console.log('    npm run build:android:preview');
 console.log('    npm run build:android:production');
 console.log('\n  Notes: docs/RELEASE_NOTES_0_1_0.md · docs/MOBILE_BUILDS.md\n');

@@ -15,21 +15,11 @@
       },
       "ios": {
         "simulator": false
-      },
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "$EXPO_PUBLIC_SUPABASE_URL",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "$EXPO_PUBLIC_SUPABASE_ANON_KEY",
-        "EXPO_PUBLIC_TMS_API_URL": "$EXPO_PUBLIC_TMS_API_URL"
       }
     },
     "production": {
       "android": {
         "buildType": "apk"
-      },
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "$EXPO_PUBLIC_SUPABASE_URL",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "$EXPO_PUBLIC_SUPABASE_ANON_KEY",
-        "EXPO_PUBLIC_TMS_API_URL": "$EXPO_PUBLIC_TMS_API_URL"
       }
     }
   },
