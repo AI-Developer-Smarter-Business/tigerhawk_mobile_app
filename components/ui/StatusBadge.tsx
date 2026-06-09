@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { PP2Theme } from '@/constants/theme';
-import { formatLoadStatus } from '@/lib/loads';
+import { formatLoadStatus, getLoadStatusColors } from '@/lib/loads';
 import type { LoadStatus } from '@/types';
 
 type StatusBadgeProps = {
@@ -10,10 +10,21 @@ type StatusBadgeProps = {
 };
 
 export function StatusBadge({ status, hot }: StatusBadgeProps) {
+  const statusColors = getLoadStatusColors(status);
+
   return (
     <View style={styles.row}>
-      <View style={styles.badge}>
-        <Text style={styles.text}>{formatLoadStatus(status)}</Text>
+      <View
+        style={[
+          styles.badge,
+          {
+            backgroundColor: statusColors.background,
+            borderColor: statusColors.border,
+          },
+        ]}>
+        <Text style={[styles.text, { color: statusColors.text }]}>
+          {formatLoadStatus(status)}
+        </Text>
       </View>
       {hot ? (
         <View style={[styles.badge, styles.hot]}>
@@ -27,17 +38,18 @@ export function StatusBadge({ status, hot }: StatusBadgeProps) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   badge: {
-    backgroundColor: PP2Theme.colors.background,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: PP2Theme.radius.sm,
+    paddingVertical: 5,
+    borderRadius: PP2Theme.radius.md,
     borderWidth: 1,
-    borderColor: PP2Theme.colors.border,
+    minHeight: 28,
+    justifyContent: 'center',
   },
   text: {
     fontSize: PP2Theme.typography.sizes.caption,
-    fontWeight: '600',
-    color: PP2Theme.colors.primary,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   hot: {
     backgroundColor: PP2Theme.colors.hotSurface,

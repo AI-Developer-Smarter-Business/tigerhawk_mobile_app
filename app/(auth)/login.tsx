@@ -71,14 +71,16 @@ export default function LoginScreen() {
         <BrandHeader variant="login" style={styles.header} />
 
         <Card title={strings.auth.signIn} variant="chrome">
-          <Text style={styles.sessionHint}>
-            {strings.auth.supabaseLabel}:{' '}
-            {initError
-              ? 'error'
-              : isSupabaseAuthenticated
-                ? strings.auth.sessionActive
-                : strings.auth.sessionReady}
-          </Text>
+          <View style={styles.sessionPill}>
+            <Text style={styles.sessionHint}>
+              {strings.auth.driverSubtitle} ·{' '}
+              {initError
+                ? 'error'
+                : isSupabaseAuthenticated
+                  ? strings.auth.sessionActive
+                  : strings.auth.sessionReady}
+            </Text>
+          </View>
           {initError ? <ErrorBanner message={initError} /> : null}
           {error ? <ErrorBanner message={error} /> : null}
           {info ? <Text style={styles.info}>{info}</Text> : null}
@@ -129,10 +131,20 @@ const styles = StyleSheet.create({
     marginBottom: PP2Theme.spacing.lg,
     marginTop: PP2Theme.spacing.lg,
   },
+  sessionPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: PP2Theme.colors.accentMuted,
+    borderWidth: 1,
+    borderColor: tms.navActive,
+    borderRadius: PP2Theme.radius.sm,
+    paddingHorizontal: PP2Theme.spacing.sm,
+    paddingVertical: PP2Theme.spacing.xs,
+    marginBottom: PP2Theme.spacing.md,
+  },
   sessionHint: {
     fontSize: PP2Theme.typography.sizes.caption,
     color: tms.navActive,
-    marginBottom: PP2Theme.spacing.sm,
+    fontWeight: '600',
   },
   redirect: {
     marginTop: PP2Theme.spacing.sm,

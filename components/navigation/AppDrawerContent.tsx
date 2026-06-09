@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   itemPressed: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: PP2Theme.colors.tms.pressOverlay,
   },
   itemIcon: {
     width: 28,

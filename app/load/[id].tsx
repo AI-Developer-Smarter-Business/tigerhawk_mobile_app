@@ -1,7 +1,8 @@
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo } from 'react';
-import { RefreshControl, ScrollView, StyleSheet } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
+import { DriverActionBar } from '@/components/loads/DriverActionBar';
 import { LoadDetailContent } from '@/components/loads/LoadDetailContent';
 import { ErrorState, LoadingState } from '@/components/ui/ScreenState';
 import { strings } from '@/constants/strings';
@@ -74,7 +75,7 @@ export default function LoadDetailScreen() {
     return (
       <LoadingState
         message={strings.loadDetail.loading}
-        spinnerColor={PP2Theme.colors.primary}
+        spinnerColor={PP2Theme.colors.tms.navActive}
       />
     );
   }
@@ -97,35 +98,60 @@ export default function LoadDetailScreen() {
       <Stack.Screen
         options={{ title: formatReference(load.reference_number) }}
       />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={pullRefreshing}
-            onRefresh={onPullRefresh}
-            tintColor={PP2Theme.colors.tms.navActive}
+      <View style={styles.page}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl
+              refreshing={pullRefreshing}
+              onRefresh={onPullRefresh}
+              tintColor={PP2Theme.colors.tms.navActive}
+              colors={[PP2Theme.colors.tms.navActive]}
+            />
+          }
+        >
+          <LoadDetailContent
+            load={load}
+            error={error}
+            onRetry={() => void retry()}
+            documents={documents}
+            documentsLoading={documentsLoading}
+            documentsError={documentsError}
+            onDocumentsRetry={() => void retryDocuments()}
+            onRefreshDocuments={refreshDocumentsList}
+            onUploadDocument={uploadDocument}
           />
-        }
-      >
-        <LoadDetailContent
-          load={load}
-          error={error}
-          onRetry={() => void retry()}
-          onStatusChange={handleStatusChange}
-          documents={documents}
-          documentsLoading={documentsLoading}
-          documentsError={documentsError}
-          onDocumentsRetry={() => void retryDocuments()}
-          onRefreshDocuments={refreshDocumentsList}
-          onUploadDocument={uploadDocument}
-        />
-      </ScrollView>
+        </ScrollView>
+        <View style={styles.actionFooter}>
+          <DriverActionBar
+            currentStatus={load.status}
+            activeHolds={load.active_holds}
+            onStatusChange={handleStatusChange}
+          />
+        </View>
+      </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: PP2Theme.colors.background },
-  content: { padding: PP2Theme.spacing.md, paddingBottom: PP2Theme.spacing.xl },
+  page: {
+    flex: 1,
+    backgroundColor: PP2Theme.colors.background,
+  },
+  scroll: { flex: 1 },
+  content: {
+    padding: PP2Theme.spacing.md,
+    paddingBottom: PP2Theme.spacing.md,
+  },
+  actionFooter: {
+    backgroundColor: PP2Theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: PP2Theme.colors.border,
+    paddingHorizontal: PP2Theme.spacing.md,
+    paddingTop: PP2Theme.spacing.md,
+    paddingBottom: PP2Theme.spacing.lg,
+    ...PP2Theme.shadow.md,
+  },
 });

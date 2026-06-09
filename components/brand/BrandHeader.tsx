@@ -56,9 +56,9 @@ const styles = StyleSheet.create({
   logoPlate: {
     padding: PP2Theme.spacing.sm,
     borderRadius: PP2Theme.radius.lg,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: tms.logoPlateBackground,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: tms.logoPlateBorder,
     marginBottom: PP2Theme.spacing.md,
   },
   titles: {

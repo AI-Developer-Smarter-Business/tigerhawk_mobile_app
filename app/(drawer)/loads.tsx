@@ -73,7 +73,10 @@ export default function LoadsScreen() {
 
   return (
     <Screen>
-      <Text style={styles.heading}>{strings.loads.title}</Text>
+      <View style={styles.header}>
+        <Text style={styles.heading}>{strings.loads.title}</Text>
+        <Text style={styles.subheading}>{strings.loads.subtitle}</Text>
+      </View>
       {countLabel ? <LoadsCountBadge label={countLabel} /> : null}
 
       {error ? (
@@ -152,11 +155,18 @@ function ListSeparator() {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    marginBottom: PP2Theme.spacing.sm,
+  },
   heading: {
     fontSize: PP2Theme.typography.sizes.headline,
     fontWeight: '700',
     color: PP2Theme.colors.text,
-    marginBottom: PP2Theme.spacing.sm,
+  },
+  subheading: {
+    marginTop: PP2Theme.spacing.xs,
+    fontSize: PP2Theme.typography.sizes.subhead,
+    color: PP2Theme.colors.textMuted,
   },
   loadingWrap: {
     flex: 1,

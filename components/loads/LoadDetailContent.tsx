@@ -1,12 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { DriverActionBar } from '@/components/loads/DriverActionBar';
+import { LoadDetailHero } from '@/components/loads/LoadDetailHero';
 import { LoadDocumentsSection } from '@/components/loads/LoadDocumentsSection';
 import { LoadLocationSection } from '@/components/loads/LoadLocationSection';
 import { LoadDetailMeta, LoadDetailRow } from '@/components/loads/LoadDetailRow';
 import { Card } from '@/components/ui/Card';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
-import { StatusBadge } from '@/components/ui/StatusBadge';
 import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { formatHoldLabel } from '@/lib/loads/active-holds';
@@ -22,14 +21,13 @@ import {
   hasTimeline,
 } from '@/lib/loads/load-detail-helpers';
 import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
-import type { LoadDetail, LoadStatus } from '@/types';
+import type { LoadDetail } from '@/types';
 import type { LoadDocument } from '@/types/load-document';
 
 type LoadDetailContentProps = {
   load: LoadDetail;
   error: string | null;
   onRetry: () => void;
-  onStatusChange: (status: LoadStatus) => Promise<void>;
   documents: LoadDocument[];
   documentsLoading: boolean;
   documentsError: string | null;
@@ -42,7 +40,6 @@ export function LoadDetailContent({
   load,
   error,
   onRetry,
-  onStatusChange,
   documents,
   documentsLoading,
   documentsError,
@@ -60,10 +57,10 @@ export function LoadDetailContent({
         />
       ) : null}
 
-      <StatusBadge status={load.status} hot={load.is_hot} />
+      <LoadDetailHero load={load} />
 
       {load.active_holds.length > 0 ? (
-        <Card title={strings.loadDetail.holds}>
+        <Card title={strings.loadDetail.holds} elevated>
           <Text style={styles.holdsNote}>{strings.loadDetail.holdsNote}</Text>
           {load.active_holds.map((holdKey) => (
             <Text key={holdKey} style={styles.holdItem}>
@@ -73,7 +70,7 @@ export function LoadDetailContent({
         </Card>
       ) : null}
 
-      <Card title={strings.loadDetail.route}>
+      <Card title={strings.loadDetail.route} elevated>
         <LoadDetailRow
           label={strings.loadDetail.pickup}
           value={formatDisplayValue(load.pickup_location)}
@@ -109,7 +106,7 @@ export function LoadDetailContent({
         ) : null}
       </Card>
 
-      <Card title={strings.location.sectionTitle}>
+      <Card title={strings.location.sectionTitle} elevated>
         <LoadLocationSection
           loadReference={load.reference_number}
           loadStatus={load.status}
@@ -122,7 +119,7 @@ export function LoadDetailContent({
       </Card>
 
       {hasShipmentInfo(load) ? (
-        <Card title={strings.loadDetail.shipment}>
+        <Card title={strings.loadDetail.shipment} elevated>
           {load.load_type ? (
             <LoadDetailRow label={strings.loadDetail.loadType} value={load.load_type} />
           ) : null}
@@ -138,7 +135,7 @@ export function LoadDetailContent({
       ) : null}
 
       {hasContainerInfo(load) ? (
-        <Card title={strings.loadDetail.container}>
+        <Card title={strings.loadDetail.container} elevated>
           {load.container_number ? (
             <LoadDetailRow label={strings.loadDetail.container} value={load.container_number} />
           ) : null}
@@ -161,7 +158,7 @@ export function LoadDetailContent({
       ) : null}
 
       {hasTimeline(load) ? (
-        <Card title={strings.loadDetail.timeline}>
+        <Card title={strings.loadDetail.timeline} elevated>
           {load.scheduled_pickup ? (
             <LoadDetailRow
               label={strings.loadDetail.scheduledPickup}
@@ -191,7 +188,7 @@ export function LoadDetailContent({
       ) : null}
 
       {hasLoadFlags(load) ? (
-        <Card title={strings.loadDetail.flags}>
+        <Card title={strings.loadDetail.flags} elevated>
           <LoadDetailRow
             label={strings.loadDetail.hazmat}
             value={load.is_hazmat ? strings.loadDetail.yes : strings.loadDetail.no}
@@ -209,16 +206,16 @@ export function LoadDetailContent({
       ) : null}
 
       {load.notes ? (
-        <Card title={strings.loadDetail.notes}>
+        <Card title={strings.loadDetail.notes} elevated>
           <Text style={styles.notes}>{load.notes}</Text>
         </Card>
       ) : null}
 
-      <Card title={strings.loadDetail.messages}>
+      <Card title={strings.loadDetail.messages} elevated>
         <Text style={styles.muted}>{strings.loadDetail.noMessages}</Text>
       </Card>
 
-      <Card title={strings.loadDetail.pod}>
+      <Card title={strings.loadDetail.pod} elevated>
         <LoadDocumentsSection
           documents={documents}
           loading={documentsLoading}
@@ -228,12 +225,6 @@ export function LoadDetailContent({
           onUploadDocument={onUploadDocument}
         />
       </Card>
-
-      <DriverActionBar
-        currentStatus={load.status}
-        activeHolds={load.active_holds}
-        onStatusChange={onStatusChange}
-      />
     </>
   );
 }

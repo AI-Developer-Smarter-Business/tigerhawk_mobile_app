@@ -1,3 +1,4 @@
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -17,46 +18,72 @@ export function LoadListItem({ load, onPress }: LoadListItemProps) {
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
       style={({ pressed }) => [
         styles.card,
         isHot && styles.cardHot,
         pressed && styles.pressed,
       ]}>
-      <View style={styles.header}>
-        <Text style={styles.ref}>{formatReference(load.reference_number)}</Text>
-        <StatusBadge status={load.status} hot={load.is_hot} />
-      </View>
-      {load.container_number ? (
-        <Text style={styles.meta}>
-          {strings.loads.container}: {load.container_number}
+      {isHot ? <View style={styles.accentStrip} /> : null}
+      <View style={styles.body}>
+        <View style={styles.header}>
+          <Text style={styles.ref}>{formatReference(load.reference_number)}</Text>
+          <StatusBadge status={load.status} hot={load.is_hot} />
+        </View>
+        {load.container_number ? (
+          <Text style={styles.meta}>
+            {strings.loads.container}: {load.container_number}
+          </Text>
+        ) : null}
+        <Text style={styles.location} numberOfLines={1}>
+          {load.pickup_location ?? '—'} → {load.delivery_location ?? '—'}
         </Text>
-      ) : null}
-      <Text style={styles.location} numberOfLines={1}>
-        {load.pickup_location ?? '—'} → {load.delivery_location ?? '—'}
-      </Text>
-      <Text style={styles.apt}>
-        {strings.loads.delivery}: {formatAppointment(load.delivery_apt_from)}
-      </Text>
-      {load.active_holds.length > 0 ? (
-        <Text style={styles.hold}>{strings.loads.activeHold}</Text>
-      ) : null}
+        <Text style={styles.apt}>
+          {strings.loads.delivery}: {formatAppointment(load.delivery_apt_from)}
+        </Text>
+        {load.active_holds.length > 0 ? (
+          <Text style={styles.hold}>{strings.loads.activeHold}</Text>
+        ) : null}
+      </View>
+      <FontAwesome
+        name="chevron-right"
+        size={14}
+        color={PP2Theme.colors.textMuted}
+        style={styles.chevron}
+      />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: PP2Theme.colors.surface,
-    borderRadius: PP2Theme.radius.md,
+    borderRadius: PP2Theme.radius.lg,
     borderWidth: 1,
     borderColor: PP2Theme.colors.border,
-    padding: PP2Theme.spacing.md,
+    overflow: 'hidden',
+    ...PP2Theme.shadow.sm,
   },
   cardHot: {
     backgroundColor: PP2Theme.colors.hotSurface,
     borderColor: PP2Theme.colors.hotBorder,
   },
-  pressed: { opacity: 0.92 },
+  accentStrip: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    backgroundColor: PP2Theme.colors.accentStrip,
+  },
+  body: {
+    flex: 1,
+    padding: PP2Theme.spacing.md,
+    paddingLeft: PP2Theme.spacing.md + 2,
+  },
+  pressed: { opacity: 0.94 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -73,12 +100,13 @@ const styles = StyleSheet.create({
   meta: {
     fontSize: PP2Theme.typography.sizes.caption,
     color: PP2Theme.colors.textMuted,
-    marginBottom: 4,
+    marginBottom: PP2Theme.spacing.xs,
   },
   location: {
-    fontSize: PP2Theme.typography.sizes.body,
+    fontSize: PP2Theme.typography.sizes.subhead,
+    fontWeight: '600',
     color: PP2Theme.colors.text,
-    marginBottom: 4,
+    marginBottom: PP2Theme.spacing.xs,
   },
   apt: {
     fontSize: PP2Theme.typography.sizes.caption,
@@ -89,5 +117,9 @@ const styles = StyleSheet.create({
     fontSize: PP2Theme.typography.sizes.caption,
     color: PP2Theme.colors.warning,
     fontWeight: '600',
+  },
+  chevron: {
+    marginRight: PP2Theme.spacing.md,
+    opacity: 0.7,
   },
 });

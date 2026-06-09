@@ -37,6 +37,28 @@ export const PP2Theme = {
       /** Slightly elevated surface on dark chrome screens (login, account) */
       cardBackground: '#1F2937',
       inputBackground: 'rgba(255,255,255,0.06)',
+      pressOverlay: 'rgba(255,255,255,0.05)',
+      logoPlateBackground: 'rgba(255,255,255,0.03)',
+      logoPlateBorder: 'rgba(255,255,255,0.08)',
+    },
+    /** Light-surface accent derived from TMS orange */
+    accentMuted: 'rgba(232,112,10,0.12)',
+    accentStrip: '#E8700A',
+  },
+  shadow: {
+    sm: {
+      shadowColor: '#1A2332',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    md: {
+      shadowColor: '#1A2332',
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 6,
     },
   },
   spacing: {
@@ -55,6 +77,7 @@ export const PP2Theme = {
     fontFamily: 'System',
     sizes: {
       caption: 12,
+      subhead: 14,
       body: 16,
       title: 20,
       headline: 28,

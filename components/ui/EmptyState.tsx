@@ -16,7 +16,9 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <View style={styles.wrap}>
-      <FontAwesome name={icon} size={48} color={PP2Theme.colors.border} />
+      <View style={styles.iconPlate}>
+        <FontAwesome name={icon} size={40} color={PP2Theme.colors.tms.navActive} />
+      </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
     </View>
@@ -29,10 +31,20 @@ const styles = StyleSheet.create({
     paddingVertical: PP2Theme.spacing.xl,
     paddingHorizontal: PP2Theme.spacing.lg,
   },
+  iconPlate: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: PP2Theme.colors.accentMuted,
+    borderWidth: 1,
+    borderColor: PP2Theme.colors.tms.navActive,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
     marginTop: PP2Theme.spacing.md,
     fontSize: PP2Theme.typography.sizes.title,
-    fontWeight: '600',
+    fontWeight: '700',
     color: PP2Theme.colors.text,
     textAlign: 'center',
   },
@@ -42,5 +54,6 @@ const styles = StyleSheet.create({
     color: PP2Theme.colors.textMuted,
     textAlign: 'center',
     lineHeight: 22,
+    maxWidth: 280,
   },
 });

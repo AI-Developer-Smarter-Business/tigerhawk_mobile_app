@@ -76,7 +76,10 @@ export function DriverActionBar({
       style={styles.wrap}
       accessibilityRole="menu"
       accessibilityLabel={strings.driverActions.title}>
-      <Text style={styles.title}>{strings.driverActions.title}</Text>
+      <View style={styles.titleRow}>
+        <View style={styles.titleAccent} />
+        <Text style={styles.title}>{strings.driverActions.title}</Text>
+      </View>
       {actionError ? (
         <ErrorBanner
           title={actionError.title}
@@ -112,17 +115,29 @@ export function DriverActionBar({
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginTop: PP2Theme.spacing.md },
+  wrap: { marginTop: 0 },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: PP2Theme.spacing.sm,
+    marginBottom: PP2Theme.spacing.sm,
+  },
+  titleAccent: {
+    width: 3,
+    height: 18,
+    borderRadius: 2,
+    backgroundColor: PP2Theme.colors.accentStrip,
+  },
   title: {
     fontSize: PP2Theme.typography.sizes.title,
-    fontWeight: '600',
+    fontWeight: '700',
     color: PP2Theme.colors.text,
-    marginBottom: PP2Theme.spacing.sm,
   },
   btn: { marginBottom: PP2Theme.spacing.sm },
   done: {
     fontSize: PP2Theme.typography.sizes.body,
     color: PP2Theme.colors.textMuted,
+    textAlign: 'center',
   },
   success: {
     fontSize: PP2Theme.typography.sizes.caption,

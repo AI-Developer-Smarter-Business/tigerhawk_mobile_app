@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -11,6 +11,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 
 const tms = PP2Theme.colors.tms;
+
+function profileInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'DR';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
+}
 
 export default function AccountScreen() {
   const {
@@ -38,18 +45,29 @@ export default function AccountScreen() {
       <Text style={styles.heading}>{strings.account.title}</Text>
       <Text style={styles.subheading}>{strings.app.tagline}</Text>
 
-      <Card title={displayName} variant="chrome">
+      <Card variant="chrome">
+        <View style={styles.profileRow}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{profileInitials(displayName)}</Text>
+          </View>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{displayName}</Text>
+            <View style={styles.rolePill}>
+              <Text style={styles.rolePillText}>
+                {profile?.role ?? strings.account.driverRole}
+              </Text>
+            </View>
+          </View>
+        </View>
         {profile ? (
           <>
-            <Text style={styles.label}>{strings.account.roleLabel}</Text>
-            <Text style={styles.value}>{profile.role}</Text>
             <Text style={[styles.label, styles.mt]}>{strings.account.emailLabel}</Text>
             <Text style={styles.value}>{profile.email ?? session?.user.email}</Text>
           </>
         ) : profileLoading ? (
-          <Text style={styles.muted}>{strings.account.loadingProfile}</Text>
+          <Text style={[styles.muted, styles.mt]}>{strings.account.loadingProfile}</Text>
         ) : (
-          <Text style={styles.muted}>
+          <Text style={[styles.muted, styles.mt]}>
             {profileError ?? strings.account.noProfile}
           </Text>
         )}
@@ -86,8 +104,7 @@ export default function AccountScreen() {
       </Card>
 
       <Card title={strings.account.environment} variant="chrome">
-        <Text style={styles.label}>{strings.account.projectLabel}</Text>
-        <Text style={styles.value}>{supabaseHost}…</Text>
+        <Text style={styles.envValue}>{supabaseHost}…</Text>
       </Card>
 
       <Button title={strings.auth.signOut} variant="accent" onPress={handleLogout} />
@@ -107,6 +124,51 @@ const styles = StyleSheet.create({
     color: tms.navItem,
     marginBottom: PP2Theme.spacing.lg,
   },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: PP2Theme.spacing.md,
+    marginBottom: PP2Theme.spacing.sm,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: PP2Theme.colors.accentMuted,
+    borderWidth: 2,
+    borderColor: tms.navActive,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: PP2Theme.typography.sizes.title,
+    fontWeight: '700',
+    color: tms.navActive,
+  },
+  profileInfo: {
+    flex: 1,
+    gap: PP2Theme.spacing.xs,
+  },
+  profileName: {
+    fontSize: PP2Theme.typography.sizes.title,
+    fontWeight: '700',
+    color: tms.navActiveText,
+  },
+  rolePill: {
+    alignSelf: 'flex-start',
+    backgroundColor: tms.inputBackground,
+    borderWidth: 1,
+    borderColor: tms.navActive,
+    borderRadius: PP2Theme.radius.sm,
+    paddingHorizontal: PP2Theme.spacing.sm,
+    paddingVertical: 2,
+  },
+  rolePillText: {
+    fontSize: PP2Theme.typography.sizes.caption,
+    fontWeight: '700',
+    color: tms.navActive,
+    textTransform: 'capitalize',
+  },
   label: {
     fontSize: PP2Theme.typography.sizes.caption,
     color: tms.navItem,
@@ -116,7 +178,12 @@ const styles = StyleSheet.create({
   value: {
     fontSize: PP2Theme.typography.sizes.body,
     color: tms.navActiveText,
-    marginTop: 4,
+    marginTop: PP2Theme.spacing.xs,
+  },
+  envValue: {
+    fontSize: PP2Theme.typography.sizes.caption,
+    color: tms.navItem,
+    fontFamily: 'monospace',
   },
   muted: {
     fontSize: PP2Theme.typography.sizes.body,
@@ -125,7 +192,7 @@ const styles = StyleSheet.create({
   error: {
     fontSize: PP2Theme.typography.sizes.body,
     color: PP2Theme.colors.error,
-    marginTop: 4,
+    marginTop: PP2Theme.spacing.xs,
   },
   mt: { marginTop: PP2Theme.spacing.md },
 });

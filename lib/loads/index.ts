@@ -24,4 +24,5 @@ export {
     hasTimeline
 } from './load-detail-helpers';
 export { canOptimisticallyUpdateLoadStatus } from './optimistic-status';
+export { getLoadStatusColors } from './status-colors';
 

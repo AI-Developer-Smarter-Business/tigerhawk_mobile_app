@@ -89,6 +89,7 @@ export const strings = {
   },
   loads: {
     title: 'My loads',
+    subtitle: 'Your assigned drayage loads',
     fromSupabase: 'Data from Supabase (driver RLS)',
     fromMock: 'Mock data (client demo)',
     noData: 'No data',
@@ -113,7 +114,8 @@ export const strings = {
   },
   account: {
     title: 'Account',
-    roleLabel: 'Role (user_profiles)',
+    driverRole: 'Driver',
+    roleLabel: 'Role',
     emailLabel: 'Email',
     loadingProfile: 'Loading profile…',
     noProfile: 'No profile found. Sign in with a TMS user.',
