@@ -143,19 +143,146 @@ If QR fails: `npx expo start --tunnel`.
 | **Android APK** | Ready | `npm run build:android:preview` |
 | **iOS (IPA)** | Ready via EAS cloud — needs Apple setup (client) | `npx eas-cli build --platform ios --profile preview` |
 
-**Before any EAS build:** `npm run build:preflight`, EAS env vars set (`npm run eas:push-env` from `.env.local`), and a **public** TMS URL (not `localhost`). Custody checklist: `docs/EAS_CREDENTIALS_HANDOFF_7_5.md`.
+Full reference: **`docs/MOBILE_BUILDS.md`** · Release notes: **`docs/RELEASE_NOTES_0_1_0.md`** · Rollback: **`docs/ROLLBACK_PP2.md`**.
 
-Full flow: **`docs/MOBILE_BUILDS.md`** · Release notes: **`docs/RELEASE_NOTES_0_1_0.md`** · Rollback: **`docs/ROLLBACK_PP2.md`**.
+---
 
-#### Android APK (step-by-step)
+### How to create the Android APK (Expo EAS) — step by step
 
-1. **Expo account** — `npx eas-cli login` (once).
-2. **Link project** — already linked: `@likaon1606/pp2` (`app.json` → `extra.eas.projectId`).
-3. **Environment variables** — copy `.env.example` → `.env.local`, fill values, then `npm run eas:push-env`.  
-   - `EXPO_PUBLIC_TMS_API_URL` = **base URL only**, e.g. `https://tigerhawk.netlify.app` (not `/dashboard`). Staging Netlify is fine if mobile TMS patches are deployed there.
-4. **Preflight** — `npm run build:preflight` (must pass with no errors).
-5. **Build** — `npm run build:android:preview` (first run may create Android keystore on EAS).
-6. **Download** — [expo.dev](https://expo.dev) → project **pp2** → **Builds** → download APK → install on device (enable “unknown sources” if sideloading).
+The APK is **not built on your PC**. Expo **EAS Build** compiles it in the cloud (~10–20 min). You need Node.js, this repo, and an [expo.dev](https://expo.dev) account.
+
+#### What you need before starting
+
+| Requirement | Notes |
+|-------------|--------|
+| Node.js 20+ and `npm install` in this repo | Once per machine |
+| Expo account | [expo.dev/signup](https://expo.dev/signup) |
+| `.env.local` with real values | Copy from `.env.example` — **never commit** |
+| Public TMS URL in env | e.g. `https://tigerhawk.netlify.app` — **not** `localhost`, **not** `/dashboard` |
+| Same Supabase as TMS | `EXPO_PUBLIC_SUPABASE_URL` + anon key |
+
+**Important:** `.env.local` is used on your PC only. For the APK, the same three variables must exist on **EAS** (step 4 below).
+
+#### Step 1 — Install dependencies
+
+```bash
+cd proyecto_PP2_app_mobile
+npm install
+```
+
+#### Step 2 — Log in to Expo (once per machine)
+
+Use the package name **`eas-cli`** (not `eas` alone):
+
+```bash
+npx eas-cli login
+```
+
+Browser opens or you enter expo.dev credentials. Verify:
+
+```bash
+npx eas-cli whoami
+```
+
+#### Step 3 — Link the EAS project (first time only)
+
+This repo is already linked to **`@likaon1606/pp2`**. If you clone on a new machine and `app.json` has no `extra.eas.projectId`, run:
+
+```bash
+npx eas-cli init --force
+```
+
+That writes the project UUID into `app.json`. Current project: [expo.dev → pp2](https://expo.dev/accounts/likaon1606/projects/pp2).
+
+#### Step 4 — Push environment variables to EAS
+
+1. Create `.env.local` from `.env.example` and fill:
+
+   | Variable | Example |
+   |----------|---------|
+   | `EXPO_PUBLIC_SUPABASE_URL` | `https://xxxx.supabase.co` |
+   | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `eyJ…` (anon key only) |
+   | `EXPO_PUBLIC_TMS_API_URL` | `https://tigerhawk.netlify.app` |
+
+2. Upload to EAS (preview + production):
+
+   ```bash
+   npm run eas:push-env
+   ```
+
+3. Confirm:
+
+   ```bash
+   npx eas-cli env:list --environment preview
+   ```
+
+   You should see all three `EXPO_PUBLIC_*` variables.
+
+**Do not** add duplicate `env` blocks in `eas.json` for these keys — EAS environment variables are enough. Duplicates can bundle empty values and break Supabase login in the APK.
+
+#### Step 5 — Preflight check
+
+```bash
+npm run build:preflight
+npm run lint
+```
+
+Must pass with **no errors**. Fix any warning about missing `projectId` before building.
+
+#### Step 6 — Start the cloud build (APK)
+
+```bash
+npm run build:android:preview
+```
+
+- **First build:** EAS may ask to create an **Android keystore** — choose **Let EAS manage** (recommended).
+- Terminal shows a link like `https://expo.dev/accounts/.../projects/pp2/builds/...`
+- You can **close the terminal** after upload; the build continues in the cloud.
+
+Production profile (same APK type, production env):
+
+```bash
+npm run build:android:production
+```
+
+#### Step 7 — Download and install
+
+1. Open [expo.dev](https://expo.dev) → account **likaon1606** → project **pp2** → **Builds**.
+2. Wait until status is **Finished**.
+3. Download the **APK** (or scan the QR on an Android device).
+4. On the phone: allow **Install unknown apps** for your browser/files app if sideloading.
+5. **Uninstall** an older APK before installing a new build with the same package (`com.tigerhawk.pp2`).
+
+#### Step 8 — Smoke test on device
+
+1. Open **Tigerhawk Mobile** → login `driver_test@test.com` / `Driver01*`
+2. **My Loads** — assigned loads visible
+3. Open a load → change status (needs TMS reachable at `EXPO_PUBLIC_TMS_API_URL`)
+4. Upload driver photo / POD if testing documents
+
+#### Quick reference (repeat builds)
+
+After the first setup, each new APK is:
+
+```bash
+npm run eas:push-env          # only if .env.local changed
+npm run build:preflight
+npm run build:android:preview
+```
+
+#### Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| `eas-cli` / `eas` not recognized | Run from repo root after `npm install`; use `npx eas-cli` or `npm run build:android:preview` |
+| `Invalid supabaseUrl` on APK | Re-run `npm run eas:push-env`; rebuild. Do not put `$EXPO_PUBLIC_*` placeholders in `eas.json` |
+| Network error / TMS upload fails | `EXPO_PUBLIC_TMS_API_URL` must be a **public HTTPS** URL the phone can reach |
+| Build stuck “in queue” | Normal; check status on expo.dev → Builds |
+| Login works in Expo Go but not APK | APK uses EAS env, not `.env.local` — verify step 4 |
+
+Custody (keystore, secrets): **`docs/EAS_CREDENTIALS_HANDOFF_7_5.md`**.
+
+---
 
 #### iOS installable — mini-guide for the client
 

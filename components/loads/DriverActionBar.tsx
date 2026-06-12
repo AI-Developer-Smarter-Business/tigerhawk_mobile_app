@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -18,21 +18,32 @@ type DriverActionBarProps = {
   currentStatus: LoadStatus;
   activeHolds: string[];
   onStatusChange: (status: LoadStatus) => Promise<void>;
+  /** Blocks all actions while wait timer or another flow is in flight. */
+  locked?: boolean;
 };
 
 export function DriverActionBar({
   currentStatus,
   activeHolds,
   onStatusChange,
+  locked = false,
 }: DriverActionBarProps) {
   const [pending, setPending] = useState<LoadStatus | null>(null);
   const [actionError, setActionError] = useState<UserFacingError | null>(null);
   const [lastChange, setLastChange] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   const actions = getDriverActionsForStatus(currentStatus);
   const blocked = activeHolds.length > 0;
+  const actionsDisabled = blocked || locked || pending !== null;
 
   const handleAction = async (next: LoadStatus) => {
+    if (submittingRef.current || actionsDisabled) {
+      return;
+    }
+    if (next === currentStatus) {
+      return;
+    }
     if (blocked) {
       setActionError(mapActiveHoldsPreview(activeHolds));
       return;
@@ -45,6 +56,7 @@ export function DriverActionBar({
       });
       return;
     }
+    submittingRef.current = true;
     setPending(next);
     setActionError(null);
     setLastChange(null);
@@ -56,6 +68,7 @@ export function DriverActionBar({
     } catch (err) {
       setActionError(mapErrorToUserFacing(err));
     } finally {
+      submittingRef.current = false;
       setPending(null);
     }
   };
@@ -100,7 +113,7 @@ export function DriverActionBar({
             title={label}
             variant="accent"
             loading={pending === action}
-            disabled={blocked || (pending !== null && pending !== action)}
+            disabled={actionsDisabled}
             onPress={() => handleAction(action)}
             style={styles.btn}
             accessibilityLabel={`${strings.driverActions.changeStatusA11y} ${label}`}

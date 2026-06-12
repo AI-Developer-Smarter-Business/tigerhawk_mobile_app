@@ -1,5 +1,5 @@
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { DriverActionBar } from '@/components/loads/DriverActionBar';
@@ -8,6 +8,7 @@ import { ErrorState, LoadingState } from '@/components/ui/ScreenState';
 import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { useLoads } from '@/context/LoadsContext';
+import { useDeliveryWaitTimer } from '@/hooks/useDeliveryWaitTimer';
 import { useDriverStatusChange } from '@/hooks/useDriverStatusChange';
 import { useLoadDetailQuery } from '@/hooks/useLoadDetailQuery';
 import { useLoadDocumentUpload } from '@/hooks/useLoadDocumentUpload';
@@ -20,6 +21,7 @@ import {
   shouldRunThrottledRefetch,
 } from '@/lib/query/foreground-refetch-throttle';
 import { resolveRouteParam } from '@/lib/router/route-params';
+import type { LoadStatus } from '@/types';
 
 export default function LoadDetailScreen() {
   const { id: rawId } = useLocalSearchParams<{ id: string | string[] }>();
@@ -35,7 +37,20 @@ export default function LoadDetailScreen() {
     refetch: refetchDocuments,
     retry: retryDocuments,
   } = documentsQuery;
-  const handleStatusChange = useDriverStatusChange(load);
+  const handleStatusChangeRaw = useDriverStatusChange(load);
+  const [fieldActionPending, setFieldActionPending] = useState(false);
+  const handleStatusChange = useCallback(
+    async (status: LoadStatus) => {
+      setFieldActionPending(true);
+      try {
+        await handleStatusChangeRaw(status);
+      } finally {
+        setFieldActionPending(false);
+      }
+    },
+    [handleStatusChangeRaw],
+  );
+  const waitTimer = useDeliveryWaitTimer(load);
   const uploadDocument = useLoadDocumentUpload(load);
   const refreshDocumentsList = useCallback(
     () => refetchDocuments(),
@@ -54,6 +69,7 @@ export default function LoadDetailScreen() {
       if (!loadId) {
         return;
       }
+      void waitTimer.refresh();
       const loadThrottleKey = `load-focus:${loadId}`;
       if (shouldRunThrottledRefetch(loadThrottleKey, FOCUS_DOCUMENTS_REFETCH_MIN_MS)) {
         void refetch();
@@ -62,7 +78,7 @@ export default function LoadDetailScreen() {
       if (shouldRunThrottledRefetch(documentsThrottleKey, FOCUS_DOCUMENTS_REFETCH_MIN_MS)) {
         void refetchDocuments();
       }
-    }, [loadId, refetch, refetchDocuments]),
+    }, [loadId, refetch, refetchDocuments, waitTimer.refresh]),
   );
 
   useEffect(() => {
@@ -111,9 +127,11 @@ export default function LoadDetailScreen() {
             />
           }
         >
-          <LoadDetailContent
-            load={load}
-            error={error}
+        <LoadDetailContent
+          load={load}
+          waitTimer={waitTimer}
+          fieldActionPending={fieldActionPending}
+          error={error}
             onRetry={() => void retry()}
             documents={documents}
             documentsLoading={documentsLoading}
@@ -128,6 +146,7 @@ export default function LoadDetailScreen() {
             currentStatus={load.status}
             activeHolds={load.active_holds}
             onStatusChange={handleStatusChange}
+            locked={waitTimer.loading || waitTimer.stopping || fieldActionPending}
           />
         </View>
       </View>

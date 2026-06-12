@@ -1,9 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 
 import { useLoads } from '@/context/LoadsContext';
 import { useAuth } from '@/hooks/useAuth';
 import { runDriverStatusChange } from '@/lib/driver-status';
+import { canDriverTransition } from '@/lib/loads';
 import { assertOnlineForDriverAction } from '@/lib/network/assert-online';
 import { rethrowIfTmsApiUnauthorized, resolveSupabaseAccessToken } from '@/lib/tms';
 import type { LoadDetail, LoadStatus } from '@/types';
@@ -15,16 +16,21 @@ export function useDriverStatusChange(load: LoadDetail | null) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { updateLoadStatus } = useLoads();
+  const inFlightRef = useRef(false);
 
   return useCallback(
     async (status: LoadStatus) => {
       if (!load || !user?.id) return;
+      if (inFlightRef.current) return;
+      if (status === load.status) return;
+      if (!canDriverTransition(load.status, status)) return;
 
-      await assertOnlineForDriverAction();
-
-      const accessToken = await resolveSupabaseAccessToken();
-
+      inFlightRef.current = true;
       try {
+        await assertOnlineForDriverAction();
+
+        const accessToken = await resolveSupabaseAccessToken();
+
         await runDriverStatusChange({
           queryClient,
           userId: user.id,
@@ -35,6 +41,9 @@ export function useDriverStatusChange(load: LoadDetail | null) {
         });
       } catch (err) {
         rethrowIfTmsApiUnauthorized(err);
+        throw err;
+      } finally {
+        inFlightRef.current = false;
       }
     },
     [load, user?.id, queryClient, updateLoadStatus],

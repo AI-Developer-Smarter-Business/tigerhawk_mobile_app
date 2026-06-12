@@ -211,6 +211,22 @@ export const strings = {
     screenTitle: 'Load details',
     emDash: '—',
   },
+  waitTime: {
+    sectionTitle: 'Delivery wait time',
+    phaseIdle: 'Not started',
+    phaseFree: 'Free waiting time',
+    phaseBillable: 'Billable wait',
+    phaseStopped: 'Stopped',
+    freeRemaining: (minutes: number) =>
+      `${minutes} min free time remaining`,
+    exceededBanner:
+      'Waiting time exceeded — dispatch has been notified. Billable time may apply.',
+    mockHint: 'Demo mode — timer stored locally (Phase A).',
+    endWaitTime: 'End wait time',
+    endWaitTimeHint: 'Stops the timer only. Load status stays the same.',
+    endWaitTimeA11y: 'Stop the delivery wait timer without changing load status',
+    syncHint: 'Syncing wait time with the server…',
+  },
   driverActions: {
     title: 'Field actions',
     transitionDenied: 'Transition not allowed for driver.',

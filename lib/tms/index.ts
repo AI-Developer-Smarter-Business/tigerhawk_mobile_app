@@ -52,3 +52,14 @@ export {
   type StatusPatchPayload,
   type StatusPatchRequestInit,
 } from './status-patch-request';
+export {
+  buildWaitTimePath,
+  fetchWaitTimeEvents,
+  findOpenDeliveryWaitEvent,
+  startDeliveryWaitEvent,
+  endOpenDeliveryWaitEvent,
+  stopDeliveryWaitEvent,
+  syncOpenDeliveryWaitDuration,
+  type WaitTimeEvent,
+  type WaitTimeListResponse,
+} from './wait-time';

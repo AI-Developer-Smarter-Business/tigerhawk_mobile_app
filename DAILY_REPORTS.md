@@ -1230,4 +1230,133 @@ Follow **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`** (TMS-ready copy):
 
 ---
 
+## June 10, 2026
+
+### Task 1 — Wait time overage: spec + TMS audit (WT.1 / WT.2)
+
+**What was implemented**
+
+- **`docs/WAIT_TIME_OVERAGE_SPEC.md`** — rules: start on **Arrived At Delivery**, 60 min free, `delivery_wait` event, EN copy.
+- **`docs/TMS_PATCH_WT_DRIVER_WAIT_TIME.md`** — API/table/trigger audit and Bearer driver patch plan.
+
+**What is available**
+
+- Product documentation ready for QA and TMS deploy.
+
+**How to test**
+
+- Review both docs and the WT table in `PP2_TAREAS_DEV.md`.
+
+### Task 2 — Mobile Phase A + B: delivery wait timer (WT.3 / WT.5–WT.7)
+
+**What was implemented**
+
+- **`lib/wait-time/`** — constants, `timer-math`, Phase A mock (`EXPO_PUBLIC_WAIT_TIME_MOCK=1`).
+- **`lib/tms/wait-time.ts`** — GET/POST/PATCH wait-time with Bearer.
+- **`hooks/useDeliveryWaitTimer`** — auto start/stop on status; 1 s tick; 60 s API sync.
+- **`components/loads/DeliveryWaitSection`** wired into **`LoadDetailContent`** / **`app/load/[id].tsx`**.
+- **`constants/strings.ts`** → `waitTime.*`; tests `timer-math`, `wait-time`.
+
+**What is available**
+
+- On **load detail**, transitioning to **Arrived At Delivery** shows **Delivery wait time** card with live timer, *Free* / *Billable* / *Stopped* phases, and banner after 1 h.
+- Demo mode: `EXPO_PUBLIC_WAIT_TIME_MOCK=1` (no API calls).
+
+**How to test**
+
+- `npm test -- --testPathPattern="timer-math|wait-time"`.
+- **Mobile:** login → **My Loads** → detail → **Field actions** → **Arrived At Delivery** → see timer; with mock=1, *Demo mode* hint.
+- **Phase B:** remove mock; after status change, verify TMS POST (`logged_by: driver`).
+
+### Task 3 — TMS dev: Bearer API + panel + bell + toasts (WT.4 / WT.8–WT.12)
+
+**What was implemented (TMS dev repo, Netlify deploy)**
+
+- **`wait-time/route.ts`** — `getUserFromRequest`, assigned driver, open POST `start_time`, PATCH + `maybeNotifyWaitExceeded`.
+- **`DeliveryWaitTimerPanel`** in **`LoadDetailPanel`** sidebar; demo `?waitMock=1`.
+- **`NotificationBell`** — ⏳ billable wait alerts + Realtime on `waiting_time_events`.
+- **`useWaitTimeAlerts`** + toasts in **`FloatingToasts`** (WT.12).
+
+**What is available**
+
+- Dispatcher sees sidebar timer on active wait; bell + toast after 1 h; link to **Waiting Time Audit**.
+
+**How to test**
+
+- TMS: **Dispatcher** → open load → sidebar **Delivery wait time**; demo with `?waitMock=1` in URL.
+- Simulate **Arrived At Delivery** → timer; after 61 min (or dev adjustment) → bell + toast.
+- Deploy TMS dev to Netlify before Phase B testing from APK.
+
+### Task 4 — Realtime SQL + QA + backlog (WT.13–WT.15)
+
+**What was implemented**
+
+- **`supabase/sql-editor/enable_realtime_waiting_time_events.sql`** (idempotent).
+- **`docs/QA_WAIT_TIME_OVERAGE.md`** — manual matrix mobile + TMS.
+- **`PP2_TAREAS_DEV.md`** WT.1–WT.15 marked; **`docs/BACKLOG_V1_1_7_7.md`** wait time ✅.
+
+**What is available**
+
+- Realtime on panel/bell after SQL is applied in Supabase.
+
+**How to test**
+
+- SQL Editor → run `enable_realtime_waiting_time_events.sql`.
+- Follow checklist in `docs/QA_WAIT_TIME_OVERAGE.md`.
+- `npm run lint` in mobile repo.
+
+---
+
+## June 11, 2026
+
+### Task 1 — Wait time QA: Supabase schema fixes + timer hardening
+
+**What was implemented**
+
+- **`supabase/sql-editor/fix_waiting_time_events_billing_columns.sql`** — aligns legacy columns (`billable`, `duration_minutes`, etc.), `event_name` CHECK (legacy + API), charge trigger.
+- Fix for timer stuck at **0:00** (auto-start, TMS admin client, `actual_delivery` fallback).
+
+**What is available**
+
+- POST/PATCH wait-time persists to shared Supabase after running the SQL script.
+
+**How to test**
+
+- SQL Editor → full script → reload load at **Arrived At Delivery** → timer ticks with no schema cache errors.
+
+### Task 2 — Mobile: End wait time button + double-tap guards
+
+**What was implemented**
+
+- **`DeliveryWaitSection`** — **End wait time** button (closes event without status change).
+- **`lib/tms/wait-time.ts`** → `endOpenDeliveryWaitEvent`.
+- **`DriverActionBar`** / **`useDriverStatusChange`** — in-flight lock; skip same status; cross-lock timer ↔ field actions.
+- **`lib/wait-time/hydrate-timer-state.ts`** — UI prefers `waiting_time_events`; refresh on screen focus.
+
+**What is available**
+
+- Stop timer from mobile; prevents duplicate **Delivered** / **End wait time** from rapid QA taps.
+
+**How to test**
+
+- `npm test -- --testPathPattern="hydrate-timer|wait-time"`.
+- Mobile: **Arrived At Delivery** → **End wait time** → **Stopped**; status unchanged; double tap does not duplicate audit rows.
+
+### Task 3 — TMS: Billing tab charge on wait event close
+
+**What was implemented (TMS dev repo)**
+
+- **`lib/wait-time/sync-load-billing.ts`** — idempotent `load_billing` Detention upsert when closed event has `charge_amount > 0`.
+- **`wait-time/route.ts`** POST/PATCH and **`status/route.ts`** on Completed — dedupe via `[wte:{id}]` tag.
+
+**What is available**
+
+- After **>60 min** and closing the timer, load **Billing** tab shows **Detention** without waiting for **Completed**.
+
+**How to test**
+
+- Local TMS + schema SQL → simulate **>60 min** wait → **End wait time** or **Delivered** → **Billing** → Detention line; **Waiting Time Audit** matches.
+
+---
+
 *When closing each day, add a `## [date]` section with **Task 1, Task 2, Task 3…** top to bottom (e.g. dev 4.6 → Task 7, dev 4.7 → Task 8). Never Task 8 before Task 7.*

@@ -25,7 +25,8 @@ v0.1.0 scope is frozen in `docs/MVP_SCOPE.md` and `docs/RELEASE_NOTES_0_1_0.md`.
 | **S8** | **Live GPS + TMS map** (persist location, Realtime marker) | Both | Large | **8.2** status list; **8.4–8.6** Supabase | **Driver:** mobile app only (foreground). **TMS UI:** edit `docs/TMS_DEV_REPOSITORY.md` path — extend `LoadSidebarMap` (**8.12**); map today is stops-only, not live. No external tracking API. |
 | **v1.1** | **Expo push** (assignment, status change) | Mobile + TMS events | Medium | TMS notification hooks or Supabase triggers | Out of v0.1.0 (`DRIVER_TMS_CAPABILITIES` §v1.1) |
 | **v1.1** | **Load messages** (replace placeholder card) | Both | Medium | `GET/POST …/loads/[id]/messages` driver channel + RLS | UI today: `LoadDetailContent` shows `noMessages` only; `mocks/messages.ts` unused in production path |
-| **v1.1** | **Wait time** capture / display | TMS API exists | Medium | Product rules for driver-entered wait | Not in v0.1.0 parity matrix |
+| **v1.1** | **Wait time / overtime billing** (delivery timer → billing + alerts) | Both | Large | WT.1–WT.15 ✅ (10 jun 2026) | Fase A mock + Fase B API; TMS campana + toasts; SQL Realtime script pending apply |
+| **v1.1** | **Wait time** capture / display (legacy row) | TMS API exists | Medium | Superseded by **WT.*** ✅ | See § cobro tiempo excedido |
 | **v1.1** | **Geofencing** (pickup/delivery arrival hints) | Mobile + rules | Large | Live GPS (**S8**) or manual check-in policy | Often paired with background location — legal copy required |
 | **v1.1** | **E2E automated** (Maestro / Detox) | CI | Medium | Stable test driver + staging TMS | Complements manual `docs/QA_DRIVER_UPLOAD_E2E_6_4.md` |
 | **P2** | **Tap-to-call** customer | Mobile only | Small | Phone on load row | `Linking.openURL('tel:…')` |
