@@ -35,7 +35,7 @@ export default function DrawerLayout() {
           borderBottomWidth: 1,
           borderBottomColor: tms.headerBorder,
         },
-        headerTintColor: tms.navActiveText,
+        headerTintColor: tms.headerText,
         headerTitleStyle: { fontWeight: '600' },
       }}>
       <Drawer.Screen

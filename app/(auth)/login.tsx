@@ -64,13 +64,13 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen variant="chrome">
+    <Screen>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}>
         <BrandHeader variant="login" style={styles.header} />
 
-        <Card title={strings.auth.signIn} variant="chrome">
+        <Card title={strings.auth.signIn} elevated>
           <View style={styles.sessionPill}>
             <Text style={styles.sessionHint}>
               {strings.auth.driverSubtitle} ·{' '}
@@ -91,7 +91,6 @@ export default function LoginScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
-            variant="chrome"
           />
           <Input
             label={strings.auth.password}
@@ -99,7 +98,6 @@ export default function LoginScreen() {
             onChangeText={setPassword}
             secureTextEntry
             autoComplete="password"
-            variant="chrome"
           />
           <Button
             title={strings.auth.signInButton}
@@ -149,7 +147,7 @@ const styles = StyleSheet.create({
   redirect: {
     marginTop: PP2Theme.spacing.sm,
     fontSize: 10,
-    color: tms.navItem,
+    color: PP2Theme.colors.textMuted,
     textAlign: 'center',
   },
   info: {

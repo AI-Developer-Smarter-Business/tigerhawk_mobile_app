@@ -2,6 +2,13 @@ import { fetchLoadDocumentsForDriver } from '../fetch-load-documents';
 
 const mockFrom = jest.fn();
 
+jest.mock('@/lib/loads/resolve-load-document-url', () => ({
+  resolveLoadDocumentUrlForDriver: jest.fn(
+    async (_supabase: unknown, _path: unknown, fallback?: string | null) =>
+      fallback?.trim() || null,
+  ),
+}));
+
 jest.mock('@/lib/supabase/client', () => ({
   getSupabase: () => ({ from: mockFrom }),
 }));

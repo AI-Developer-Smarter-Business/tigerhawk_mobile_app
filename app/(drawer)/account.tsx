@@ -41,11 +41,11 @@ export default function AccountScreen() {
   };
 
   return (
-    <Screen scroll variant="chrome">
+    <Screen scroll>
       <Text style={styles.heading}>{strings.account.title}</Text>
       <Text style={styles.subheading}>{strings.app.tagline}</Text>
 
-      <Card variant="chrome">
+      <Card elevated>
         <View style={styles.profileRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{profileInitials(displayName)}</Text>
@@ -73,7 +73,7 @@ export default function AccountScreen() {
         )}
       </Card>
 
-      <Card title={strings.auth.supabaseLabel} variant="chrome">
+      <Card title={strings.auth.supabaseLabel} elevated>
         <Text style={styles.label}>{strings.account.sessionLabel}</Text>
         <Text style={styles.value}>
           {isSupabaseAuthenticated
@@ -103,7 +103,7 @@ export default function AccountScreen() {
         />
       </Card>
 
-      <Card title={strings.account.environment} variant="chrome">
+      <Card title={strings.account.environment} elevated>
         <Text style={styles.envValue}>{supabaseHost}…</Text>
       </Card>
 
@@ -116,12 +116,12 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: PP2Theme.typography.sizes.headline,
     fontWeight: '700',
-    color: tms.navActiveText,
+    color: PP2Theme.colors.text,
     marginBottom: PP2Theme.spacing.xs,
   },
   subheading: {
     fontSize: PP2Theme.typography.sizes.body,
-    color: tms.navItem,
+    color: PP2Theme.colors.textMuted,
     marginBottom: PP2Theme.spacing.lg,
   },
   profileRow: {
@@ -152,11 +152,11 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: PP2Theme.typography.sizes.title,
     fontWeight: '700',
-    color: tms.navActiveText,
+    color: PP2Theme.colors.text,
   },
   rolePill: {
     alignSelf: 'flex-start',
-    backgroundColor: tms.inputBackground,
+    backgroundColor: PP2Theme.colors.accentMuted,
     borderWidth: 1,
     borderColor: tms.navActive,
     borderRadius: PP2Theme.radius.sm,
@@ -171,23 +171,23 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: PP2Theme.typography.sizes.caption,
-    color: tms.navItem,
+    color: PP2Theme.colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   value: {
     fontSize: PP2Theme.typography.sizes.body,
-    color: tms.navActiveText,
+    color: PP2Theme.colors.text,
     marginTop: PP2Theme.spacing.xs,
   },
   envValue: {
     fontSize: PP2Theme.typography.sizes.caption,
-    color: tms.navItem,
+    color: PP2Theme.colors.textMuted,
     fontFamily: 'monospace',
   },
   muted: {
     fontSize: PP2Theme.typography.sizes.body,
-    color: tms.navItem,
+    color: PP2Theme.colors.textMuted,
   },
   error: {
     fontSize: PP2Theme.typography.sizes.body,

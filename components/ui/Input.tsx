@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   labelChrome: {
-    color: tms.navItem,
+    color: PP2Theme.colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -56,9 +56,9 @@ const styles = StyleSheet.create({
     backgroundColor: PP2Theme.colors.surface,
   },
   inputChrome: {
-    borderColor: tms.sidebarBorder,
+    borderColor: tms.inputBorder,
     backgroundColor: tms.inputBackground,
-    color: tms.navActiveText,
+    color: PP2Theme.colors.text,
   },
   inputError: { borderColor: PP2Theme.colors.error },
   error: {

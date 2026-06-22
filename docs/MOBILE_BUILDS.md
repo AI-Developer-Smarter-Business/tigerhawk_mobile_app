@@ -4,6 +4,8 @@
 
 Same **Supabase** and **TMS** as local dev → same `driver_test@test.com`, same loads, same **Realtime** behaviour if configured below.
 
+**Operational (confirmed):** **Expo account is active** on [expo.dev](https://expo.dev). After mobile code changes, rebuild the **Android APK** via EAS (`npm run build:android:preview` or `production`). TMS is **already deployed** on Netlify — see `docs/DEPLOYMENT_STATUS.md` (**WT.19 ✅**).
+
 ---
 
 ## 1. Environment variables (EAS — required for APK/IPA)

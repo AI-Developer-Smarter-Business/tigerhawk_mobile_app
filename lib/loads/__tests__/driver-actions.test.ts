@@ -27,6 +27,17 @@ describe('getDriverActionsForStatus', () => {
     expect(actions).not.toContain('Cancelled');
   });
 
+  it('offers At delivery from In Transit', () => {
+    const actions = getDriverActionsForStatus('In Transit');
+    expect(actions).toContain('Arrived At Delivery');
+  });
+
+  it('allows recovery path Delivered → In Transit → At delivery', () => {
+    expect(getDriverActionsForStatus('Delivered')).toContain('In Transit');
+    expect(canDriverTransition('Delivered', 'In Transit')).toBe(true);
+    expect(canDriverTransition('In Transit', 'Arrived At Delivery')).toBe(true);
+  });
+
   it('does not offer Completed from Delivered', () => {
     const actions = getDriverActionsForStatus('Delivered');
     expect(actions).toContain('Enroute To Return Empty');

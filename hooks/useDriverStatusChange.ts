@@ -5,6 +5,8 @@ import { useLoads } from '@/context/LoadsContext';
 import { useAuth } from '@/hooks/useAuth';
 import { runDriverStatusChange } from '@/lib/driver-status';
 import { canDriverTransition } from '@/lib/loads';
+import { MOCK_LOAD_TRANSITIONS } from '@/lib/loads/constants';
+import type { LoadTransitionMap } from '@/lib/tms/fetch-load-transitions';
 import { assertOnlineForDriverAction } from '@/lib/network/assert-online';
 import { rethrowIfTmsApiUnauthorized, resolveSupabaseAccessToken } from '@/lib/tms';
 import type { LoadDetail, LoadStatus } from '@/types';
@@ -12,7 +14,10 @@ import type { LoadDetail, LoadStatus } from '@/types';
 /**
  * TMS status change handler for load detail (optimistic when safe + telemetry).
  */
-export function useDriverStatusChange(load: LoadDetail | null) {
+export function useDriverStatusChange(
+  load: LoadDetail | null,
+  transitionMap: LoadTransitionMap = MOCK_LOAD_TRANSITIONS,
+) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { updateLoadStatus } = useLoads();
@@ -23,7 +28,7 @@ export function useDriverStatusChange(load: LoadDetail | null) {
       if (!load || !user?.id) return;
       if (inFlightRef.current) return;
       if (status === load.status) return;
-      if (!canDriverTransition(load.status, status)) return;
+      if (!canDriverTransition(load.status, status, transitionMap)) return;
 
       inFlightRef.current = true;
       try {
@@ -38,6 +43,7 @@ export function useDriverStatusChange(load: LoadDetail | null) {
           targetStatus: status,
           accessToken,
           updateLoadStatus,
+          transitionMap,
         });
       } catch (err) {
         rethrowIfTmsApiUnauthorized(err);
@@ -46,6 +52,6 @@ export function useDriverStatusChange(load: LoadDetail | null) {
         inFlightRef.current = false;
       }
     },
-    [load, user?.id, queryClient, updateLoadStatus],
+    [load, user?.id, queryClient, updateLoadStatus, transitionMap],
   );
 }

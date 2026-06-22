@@ -8,6 +8,11 @@ Log of **product-relevant** progress: new features, integrations (login, Supabas
 
 **Format:** one date section per day; under it **Task 1**, **Task 2**, **Task 3**, … in **strict ascending numeric order** (1 before 2, 2 before 3; **never** place Task 7 before Task 4). The new entry for the day is always the **next** free number and goes **right after** the last numbered task for that date—not at the end of the file if that breaks order within the date.
 
+
+**One date = one calendar day:** do not nest another date inside `## [date]` (e.g. no “Monday Jun 15” block under “June 18”). Backfill missing days as separate `## June 15`, `## June 16`, etc.
+
+**Date order in the file:** each `## [date]` section must appear in **ascending chronological order** (oldest at top, newest at bottom). **Do not** append entries with an older date at the end. Day-specific annexes belong **inside** that day’s section (e.g. `### Annex`), not as a misplaced `##` dated earlier than sections below it.
+
 **Spanish version:** [`REPORTES_DIARIOS.md`](REPORTES_DIARIOS.md) (same content, maintained in parallel).
 
 ---
@@ -28,6 +33,8 @@ Checklist before marking work done:
 5. Mirror the entry in Spanish in `REPORTES_DIARIOS.md`.
 6. Do not cite `PROYECTO_MUESTRA/`; use “TMS”, `/api/…`, or `docs/`.
 7. Update the row in `PP2_TAREAS_DEV.md` (✅ / ⏸) when applicable.
+8. Use the **actual calendar date** in the `##` heading (e.g. **June 18, 2026**).
+9. Insert the new day **after** the latest chronological date already in the file. Run `npm run check:daily-reports` (included in CI).
 
 If the change is user-visible or affects QA, **always** document it even for small diffs.
 
@@ -1359,4 +1366,455 @@ Follow **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`** (TMS-ready copy):
 
 ---
 
-*When closing each day, add a `## [date]` section with **Task 1, Task 2, Task 3…** top to bottom (e.g. dev 4.6 → Task 7, dev 4.7 → Task 8). Never Task 8 before Task 7.*
+## June 15, 2026
+
+### Task 1 — TMS patches: dev branch version update and Netlify deploy (~2 h 30 min)
+
+**What was done**
+
+- Consolidated and applied **TMS patches** in the dev repo (`tigerhawk-tms-main`) so the deployed version matches the mobile app:
+  - **`wait-time/route.ts`** — **Bearer JWT** for drivers (`getUserFromRequest`), open POST events, PATCH close, 60 min notifications.
+  - **`sync-load-billing.ts`** — idempotent **`load_billing`** upsert (**Detention**) on close with charge; dedupe tag `[wte:{id}]`.
+  - **`notify-exceeded.ts`** + **NotificationBell** / **useWaitTimeAlerts** — dispatcher bell and toasts.
+  - **`DeliveryWaitTimerPanel`** — sidebar timer in **LoadDetailPanel** + **Waiting Time Audit** link.
+- **Netlify deploy** prep: env vars, Next.js build clean on new routes.
+- Post-deploy smoke: dispatcher sidebar timer; mobile **Arrived At Delivery** → POST visible in TMS.
+
+**What is available**
+
+- Deployable TMS dev with full **wait time Phase B** (not only `?waitMock=1` demo).
+- Automatic **Billing** tab line when a chargeable wait closes.
+
+**How to test**
+
+- TMS dispatcher → active load → sidebar timer; audit after close.
+- Mobile (no mock): **Arrived At Delivery** → timer; TMS event within 60 s.
+
+---
+
+### Task 2 — API route security hardening (~2 h)
+
+**What was done**
+
+- **Bearer JWT** pattern per **`docs/TMS_PATCH_MOBILE_BEARER_AUTH.md`**:
+  - **`get-user-from-request.ts`**, **`server.ts`** with `Authorization` header.
+  - **Middleware** — no premature 401 on `/api/*` when Bearer is present.
+- Mobile routes audited: **status PATCH**, **documents POST**, **wait-time GET/POST/PATCH**.
+- Assigned-driver checks (`driver_id = auth.uid()`); upload limits unchanged.
+
+**What is available**
+
+- Fewer **401 Unauthorized** errors on Field actions and photo upload from APK.
+
+**How to test**
+
+- APK with public `EXPO_PUBLIC_TMS_API_URL` → login → Field actions + photo upload without “Session expired”.
+
+---
+
+### Task 3 — Supabase SQL and `waiting_time_events` schema (~1 h 30 min)
+
+**What was done**
+
+- QA errors: missing `billable`, `duration_minutes`; `event_name` CHECK vs legacy/`delivery_wait`.
+- **`fix_waiting_time_events_billing_columns.sql`** and **`enable_realtime_waiting_time_events.sql`** prepared and documented.
+- RLS review: driver writes via TMS API admin client only.
+
+**How to test**
+
+- SQL Editor → full script → **Arrived At Delivery** → no schema cache errors.
+
+---
+
+### Task 4 — Mobile wait timer hardening (~1 h 30 min)
+
+**What was done**
+
+- **`hydrate-timer-state.ts`** — prefer `waiting_time_events` over `actual_delivery` fallback.
+- **`useDeliveryWaitTimer`** — auto-start on mount, 60 s API sync, focus refresh.
+- **`endOpenDeliveryWaitEvent`** + network error copy.
+- Regression tests: hydrate, timer-math, wait-time contract.
+
+**How to test**
+
+- `npm test -- --testPathPattern="hydrate-timer|wait-time|timer-math"`.
+- Leave and return to load detail → timer continues from DB.
+
+---
+
+### Task 5 — Technical documentation (~30 min)
+
+- Cross-refs: **`TMS_PATCH_WT_DRIVER_WAIT_TIME.md`**, **`QA_WAIT_TIME_OVERAGE.md`**, **`MOBILE_API.md`**.
+- Deploy order: **SQL → TMS Netlify → EAS env**.
+
+---
+
+---
+
+## June 16, 2026
+
+### Task 1 — Real-time mobile ↔ TMS sync: lower latency (~2 h 30 min)
+
+**What was done**
+
+- Improved **mobile ↔ TMS ↔ Supabase** channel so status, documents, and wait time update without manual reload:
+  - **`driver-loads-subscription.ts`** — Postgres subscriptions with optimistic React Query patches; 300 ms debounce.
+  - **`useDriverLoadsRealtime`** — Realtime + **5 s poll fallback** while app is active.
+  - **`foreground-refetch-throttle`** — balance freshness and battery on resume.
+  - **`refetch-active-driver-loads`** — cross-invalidate list / detail / documents.
+  - **`syncSupabaseRealtimeAuth`** — resubscribe on JWT refresh.
+- Wait timer refresh on **focus** of load detail screen.
+
+**What is available**
+
+- TMS status change → mobile updates in **seconds**, not minutes.
+- TMS closes wait → mobile shows **Stopped** without mandatory pull-to-refresh.
+
+**How to test**
+
+- Two devices: dispatcher changes status → mobile detail updates ≤ 5–10 s.
+
+---
+
+### Task 2 — Network error on Field actions: root cause and fix (~1 h 30 min)
+
+**What was done**
+
+- **“Network request failed”** on physical devices traced to **`EXPO_PUBLIC_TMS_API_URL`** pointing at LAN `192.168.x.x:3000`.
+- Fixed to **`https://tigerhawk.netlify.app`**; documented that TMS `NEXT_PUBLIC_APP_URL` does not replace Expo env in mobile builds.
+- **`npm run eas:push-env`** — pushed Supabase + TMS URL to EAS project `@likaon1606/pp2`.
+
+**How to test**
+
+- Correct env → **Arrived At Delivery** → no network error.
+
+---
+
+### Task 3 — EAS Android APK cloud build (~2 h)
+
+**What was done**
+
+- **EAS Build** from Windows: **`eas.json`** preview/production APK profiles, **`build:preflight`**, cloud build, **`app.json`** projectId and scheme.
+
+**What is available**
+
+- Installable Android APK without Expo Go, targeting Supabase + public TMS.
+
+---
+
+### Task 4 — Wait time + anti-double-tap integration QA (~1 h 30 min)
+
+**What was done**
+
+- Regression: cross-lock timer ↔ field actions, **End wait time**, **`QA_WAIT_TIME_OVERAGE.md`** matrix.
+- Tests: `npm test -- --testPathPattern="hydrate-timer|wait-time|driver-status"`.
+
+---
+
+### Task 5 — Samsara API architecture prep (initial spike) (~30 min)
+
+**What was done**
+
+- Client Q2: production **Samsara**; geofence auto check-out interest.
+- Extension points: **`status/route.ts`**, wait-time close hooks, future **`lib/integrations/samsara/`**.
+- **WT.23** scoped in **`PP2_TAREAS_DEV.md`**; aligned with **GPS live tracking** Week 8.
+
+---
+
+## June 17, 2026
+
+### Task 1 — Wait time Q&A analysis + next steps for client (Week 9)
+
+**What was implemented**
+
+- Detailed review of **`PREGUNTAS_CLIENTE.md`** against mobile code and TMS dev (editable repo).
+- Internal doc **`RESPUESTAS_CLIENTE.md`** (**RESPUESTAS EN ESPAÑOL** + **ANSWERS IN ENGLISH**).
+- Reformatted **`PREGUNTAS_CLIENTE.md`** (readability only; wording unchanged).
+- New tasks in **`PP2_TAREAS_DEV.md`** — **Week 9 (WT.16–WT.26, DOC.1–2, UI.1)**.
+
+**What is available**
+
+- No app code change; **documentation and work plan** ready to align with the client before the next iteration.
+
+**How to test**
+
+- Review `RESPUESTAS_CLIENTE.md`, `PREGUNTAS_CLIENTE.md`, and Week 9 table in `PP2_TAREAS_DEV.md`.
+- Get client answers on open questions below before implementing WT.17, WT.22, WT.25, and UI.1.
+
+---
+
+### Task 2 — Client-facing document — Next steps Tigerhawk Mobile + TMS
+
+**Suggested subject:** *Tigerhawk Mobile — wait time summary, next steps, and pending confirmations*
+
+Dear team,
+
+Thank you for your answers in **`PREGUNTAS_CLIENTE.md`**. Below is what we aligned on, what we will build next, and **confirmations we need** to avoid rework.
+
+#### What you already confirmed (and how we read it)
+
+| Topic | Your answer | Technical implication |
+|-------|-------------|------------------------|
+| BOL / POD / In-Gate image | **Photo description when uploading**, not timer trigger | Timer is **not** tied to document type; mobile type picker can follow in a later phase |
+| Wait time scope | **Delivery only** (slow customer unload); port/depot **not billable** | Single `delivery_wait` event per load |
+| Timers | **One only** (delivery) | No parallel pickup/return timers |
+| Free time | **60 minutes** at delivery | Minute 61+ becomes billable (A/R + driver pay via TMS) |
+| Check In | Present for **customer unload** | “Arrived and waiting to unload” |
+| Check Out | **Service complete** | Ends billable wait |
+| Actor | **Driver manual** | In-app buttons; no Samsara automation in v1.1 |
+| Stop timer | **End Wait Time** first; also Delivered, Out-Gate, GPS, etc., with **note** if still running | End wait + Delivered done; Out-Gate/GPS + audit notes pending |
+| Samsara / geofence | Production uses API; interest in auto check-out | **v1.2+** roadmap; does not block current timer delivery |
+| Photo permissions | Agreed to remove frustrating blocks | Clear messages if camera/gallery denied |
+
+**Current product state (~80% of agreed flow):**
+
+- Mobile: timer on load detail, starts on **Arrived At Delivery**, stops with **End wait time** or **Delivered**, alert after 1 h.
+- TMS (dev branch): **Delivery wait time** panel, wait-time API, bell + toasts; **Detention** line on Billing when a chargeable event closes.
+- **Deploy pending:** TMS patches on Netlify + SQL scripts on shared Supabase (`waiting_time_events`).
+
+#### Proposed next steps
+
+| Phase | Target | Deliverable |
+|-------|--------|-------------|
+| **1. Infrastructure** | Immediate | Deploy TMS dev (wait-time + billing sync); run Supabase SQL; verify `EXPO_PUBLIC_TMS_API_URL` on APK builds |
+| **2. Business rules** | After phase 1 | Update written spec (`WAIT_TIME_OVERAGE_SPEC`) with confirmed rules |
+| **3. Closures & audit** | Week 9 | On **Delivered** / **Dropped - Loaded** / **Out-Gate** upload with open timer: close event + **note** in history if still running |
+| **4. Driver UX** | Week 9 | **Check In / Check Out** labels (or confirm **Arrived At Delivery** is enough); read-only **accrued time / pay** on mobile |
+| **5. Documents** | Week 9 | Upload type picker (BOL, POD, In-Gate…); clear camera permission UX |
+| **6. Future** | v1.2+ | **Samsara + geofence** spike for auto check-out and dispatch alert |
+
+#### Confirmations we need from you
+
+Please reply when convenient (a short line per item is enough):
+
+**Q4 — User interface**  
+We proposed TigerHawk branding (dark sidebar, orange accent). For drivers on the road we recommend **light background on lists/detail** and dark chrome only on login/account.  
+→ **Do you confirm this approach or do you want dark theme across the entire app?**
+
+**Q5 — Wait timer and driver pay**  
+We plan timer + TMS billing integration and, optionally, showing **accrued wait time and estimated pay** on mobile to motivate drivers before payday.  
+→ **Do you want that pay summary on the driver app? What exactly should they see (wait time only, base pay, total)?**
+
+**Q7 — What action starts wait time?**  
+The questionnaire had no explicit answer. From Q12–15 we assume **Check In = start**.  
+→ **Which action should start the delivery wait timer?** (see implicit Q7 below)
+
+**Q7 (implicit) — Is “Arrived At Delivery” enough or an explicit “Check In” button?**  
+Today the timer starts when status changes to **Arrived At Delivery**.  
+→ **Is that sufficient or do you prefer an explicit “Check In” button** (same backend effect, different driver-facing label)?
+
+**Q11 — Detention vs Wait Time on customer invoice**  
+In TMS, data lives in `waiting_time_events`; on close with charge, Billing may show **Detention**. The catalog also has “Wait Time” as an accessorial.  
+→ **Should the customer invoice say “Detention”, “Wait time”, or are they one concept with a single name?**  
+→ We confirm: **port/terminal wait is not billed**; only slow customer delivery.
+
+---
+
+**Internal refs:** `RESPUESTAS_CLIENTE.md`, `PP2_TAREAS_DEV.md` (Week 9), `PREGUNTAS_CLIENTE.md`.
+
+---
+
+### Task 3 — Week 9 planning in `PP2_TAREAS_DEV.md` (~1 h)
+
+**What was done**
+
+- Tasks **WT.16–WT.26**, **DOC.1–2**, **UI.1** with suggested order: deploy/SQL → spec → secondary closures → driver UX → documents → Samsara spike.
+- Updated confirmed wait-time business rules.
+
+---
+
+### Task 4 — Mobile + TMS dev prep for Samsara integration (~1 h)
+
+**What was done**
+
+- Future contract design (no prod credentials yet): webhook placeholder, server-only env vars, links to **WT.18** / **WT.23**.
+- Mobile unchanged for now; GPS v1 **share_only** coexists with future live tracking.
+
+**What is available**
+
+- Architecture ready; implementation pending credentials and client confirmation.
+
+---
+
+### Task 5 — Administrative close-out (~30 min)
+
+**What was done**
+
+- Verified consistency across **`REPORTES_DIARIOS.md`**, **`DAILY_REPORTS.md`**, **`RESPUESTAS_CLIENTE.md`**, and **`PP2_TAREAS_DEV.md`**.
+
+---
+
+## June 18, 2026
+
+### Task 1 — Light TigerHawk theme (UI.1) (~2 h)
+
+**What was done**
+
+- Client confirmed **light theme** for driver daytime visibility: *“do a light version of our theme please”*.
+- `constants/theme.ts`: `PP2Theme.colors.tms` updated from dark chrome to light palette (`#F4F6F8` background, white drawer/headers, `#E8700A` accent).
+- Drawer, headers, login, account, `BrandHeader`, and UI primitives aligned to light theme.
+- New `components/ui/AppActionSheet.tsx` — light bottom sheet for POD photo picker and discard confirm (replaces `Alert.alert` in `PodUploadSection`).
+- Updated `.cursor/rules/pp2-ui-style.mdc` and **UI.1** in `PP2_TAREAS_DEV.md`.
+
+**How to test**
+
+1. `npm start` → login: light background, white card, TigerHawk orange primary button.
+2. Drawer: white menu, orange active item; white header with dark title.
+3. Load detail → **Add driver photo** → light sheet (Camera / Gallery / Cancel); cancel preview → discard sheet.
+4. `npm test -- --testPathPattern=PodUploadSection`
+
+---
+
+### Task 2 — Documents without 1h expiry (DOC.3) (~1 h)
+
+**What was done**
+
+- Removed **1-hour** signed URLs for load documents (`load-documents` bucket).
+- **TMS** (`tigerhawk-tms-main`): `lib/load-documents/resolve-document-url.ts`; upload + GET routes use ~10-year TTL from `storage_path`.
+- **Mobile:** `lib/loads/resolve-load-document-url.ts` — list/upload resolve long-lived URLs (no stale DB `url`).
+- Fixes *“This download link has expired”* when tapping **View** on older loads.
+
+**How to test**
+
+1. Deploy TMS dev Netlify with these changes.
+2. Mobile app → load detail with document older than 1 h → **View** opens PDF.
+3. Upload driver photo → visible in TMS Documents and vice versa.
+4. `npm test -- --testPathPattern=fetch-load-documents`
+
+---
+
+### Task 3 — Manual wait time start/stop (WT.27) (~2 h)
+
+**What was done**
+
+- Wait time **manual start only**; **End wait time** as primary stop; no auto-start on status change or auto-stop on **Delivered**.
+- `hooks/useDeliveryWaitTimer.ts`: removed auto-start/stop effects; exposed `startTimer`, `canStart`, `visible`.
+- `components/loads/DeliveryWaitSection.tsx`: **Start wait time** button (accent) before the timer; elapsed shown only after manual start.
+- `lib/wait-time/hydrate-timer-state.ts`: no longer infers start from `actual_delivery` without an API event.
+- `lib/wait-time/constants.ts`: `isDeliveryWaitEligibleStatus`; legacy helpers marked deprecated.
+- `constants/strings.ts`: EN copy `startWaitTime`, `startWaitTimeHint`, `startWaitTimeA11y`.
+- Tests: `hydrate-timer-state`, `DeliveryWaitSection`, `useDeliveryWaitTimer`.
+- **WT.27** marked complete in `PP2_TAREAS_DEV.md`.
+
+**SUPABASE DB REQUIRES NO CHANGES** — uses existing `waiting_time_events` table/API; POST/PATCH via TMS Bearer with no new migrations.
+
+**How to test**
+
+1. `EXPO_PUBLIC_WAIT_TIME_MOCK=1` → load detail at **Arrived At Delivery** → **Delivery wait time** card with **Start wait time** (no timer until tapped).
+2. Tap **Start wait time** → timer runs; **End wait time** stops it without changing load status.
+3. Change status to **Delivered** while timer active → timer **keeps running** (no auto-stop).
+4. `npm test -- --testPathPattern="DeliveryWaitSection|useDeliveryWaitTimer|hydrate-timer"`
+
+---
+
+### Task 4 — Updated wait time spec (WT.34) (~1 h)
+
+**What was done**
+
+- Rewrote **`docs/WAIT_TIME_OVERAGE_SPEC.md`**: delivery-only scope, single timer, 60 min free, Check In/Out semantics, **`opciones_driver.png`** = document types (not timer), rules A–E, mobile/TMS code map, phases and backlog (WT.28–31, DOC.1).
+- **`docs/QA_WAIT_TIME_OVERAGE.md`**: matrix aligned to manual start/stop (**WT.27**); rows 2/2b, 7/7a, 10.
+- **`lib/wait-time/constants.ts`**: spec cross-reference.
+- **WT.34** marked complete in `PP2_TAREAS_DEV.md`.
+
+**SUPABASE DB REQUIRES NO CHANGES** — documentation task; runtime still uses existing `waiting_time_events`.
+
+**How to test**
+
+1. Read `docs/WAIT_TIME_OVERAGE_SPEC.md` and compare with mobile flow at **Arrived At Delivery**.
+2. Run **`docs/QA_WAIT_TIME_OVERAGE.md`** matrix rows 2, 2b, 7, 7a.
+3. `npm test -- --testPathPattern="wait-time|hydrate-timer|DeliveryWaitSection"`
+
+---
+
+## June 19, 2026
+
+### Task 1 — Supabase wait time schema + Realtime (WT.20) (~45 min)
+
+**What was done**
+
+- Applied on shared Supabase (TigerhawkTMS):
+  - `supabase/sql-editor/fix_waiting_time_events_billing_columns.sql` — billing/API columns, `event_name` CHECK (`delivery_wait`), `trg_compute_wait_charges` trigger.
+  - `supabase/sql-editor/enable_realtime_waiting_time_events.sql` — Realtime on `waiting_time_events`.
+- New `supabase/sql-editor/VERIFY_pp2_waiting_time_events.sql` — post-apply verification.
+- New `scripts/apply-wt20-wait-time.mjs` + `npm run db:apply-wt20` (Supabase CLI `--linked` or `--pg` mode).
+- **WT.20** marked complete in `PP2_TAREAS_DEV.md`; absorbs **WT.13**.
+
+**How to test**
+
+1. `npm run db:apply-wt20` (idempotent; requires Supabase CLI login + linked project).
+2. SQL Editor or CLI: `VERIFY_pp2_waiting_time_events.sql` — key columns + Realtime publication.
+3. Mobile → **Start wait time** → TMS dispatcher panel updates without refresh (Phase B).
+4. `npm test -- --testPathPattern="wait-time"`
+
+---
+
+### Task 2 — Driver wait pay panel (WT.22) (~1 h 30 min)
+
+**What was done**
+
+- Read-only **Your wait pay** panel inside **Delivery wait time** on load detail.
+- `lib/wait-time/wait-pay-summary.ts`: sums closed `delivery_wait` `driver_pay_amount` + live estimate for open timer (Postgres trigger formula: minutes × `driver_rate_per_hour`, default $75/h).
+- `components/loads/DeliveryWaitPaySummary.tsx`: accrued time + estimated pay; hint while running / read-only when stopped.
+- `hooks/useDeliveryWaitTimer.ts`: `events` from GET wait-time; exposes `paySummary`; refresh after start/stop/sync.
+- `constants/strings.ts`: EN copy for pay panel labels and hints.
+- Tests: `wait-pay-summary.test.ts`, extended `DeliveryWaitSection.test.tsx`.
+- **WT.22** marked complete in `PP2_TAREAS_DEV.md`; `docs/WAIT_TIME_OVERAGE_SPEC.md` updated.
+
+**Supabase DB: no changes required** — uses `driver_pay_amount` / `driver_rate_per_hour` columns from **WT.20**.
+
+**How to test**
+
+1. Load at **Arrived At Delivery** with prior wait events → card shows **Accrued wait time** + **Estimated wait pay**.
+2. **Start wait time** → pay updates live (mock: `EXPO_PUBLIC_WAIT_TIME_MOCK=1`).
+3. **End wait time** → panel keeps totals; read-only hint.
+4. `npm test -- --testPathPattern="wait-pay|DeliveryWaitSection|useDeliveryWaitTimer"`
+
+---
+
+### Task 3 — Invoice label Detention vs Wait time (WT.25) (~45 min)
+
+**What was done**
+
+- Q11 decision documented: **one concept** — customer invoice **Detention**; driver app **Wait time**.
+- New `docs/WAIT_TIME_INVOICE_LABEL.md` (rationale, audience table, QA, override path).
+- **TMS dev:** `lib/wait-time/invoice-labels.ts`; `sync-load-billing.ts` — **Delivery detention — N min billable…** description; `status/route.ts` aligned; `sync-load-billing.test.ts`.
+- Updated `docs/WAIT_TIME_OVERAGE_SPEC.md`, `docs/QA_WAIT_TIME_OVERAGE.md` §7b, `RESPUESTAS_CLIENTE.md` § Q11; **WT.25** complete in `PP2_TAREAS_DEV.md`.
+
+**Supabase DB: no changes required** — `load_billing` copy only for new/chosed events after TMS deploy.
+
+**How to test**
+
+1. Deploy TMS dev → close billable `delivery_wait` → **Billing** tab: **Detention** + **Delivery detention** description.
+2. Mobile driver copy remains **Wait time** (unchanged).
+3. TMS repo: `npm test -- --testPathPattern=sync-load-billing`
+
+---
+
+### Task 4 — Samsara geofence stub + mock (WT.23) (~1 h 30 min)
+
+**What was done**
+
+- New **`docs/SAMSARA_GEOFENCE_SPIKE.md`** + **`docs/QA_SAMSARA_GEOFENCE_MOCK.md`** — flow, env, mock QA, steps when Samsara credentials arrive.
+- **TMS dev (deploy to Netlify):**
+  - `lib/wait-time/close-open-delivery-wait.ts` — reusable open `delivery_wait` close.
+  - `lib/integrations/samsara/*` — parse, handler, config, optional webhook signature.
+  - `POST /api/integrations/samsara/simulate` — mock geofence exit → closes wait + `activity_log`.
+  - `POST /api/integrations/samsara/webhook` — placeholder (503 until `SAMSARA_ENABLED=true`).
+  - `GET …/webhook` — integration status (`pendingSamsaraApi: true`).
+  - Tests `samsara-geofence.test.ts`.
+- **WT.23** in `PP2_TAREAS_DEV.md`: stub ✅ · **pending live Samsara API** (prod backport + credentials).
+- **Mobile:** no code changes (auto-stop is server-side).
+
+**Supabase DB: no changes required**
+
+**How to test**
+
+1. Deploy TMS dev + optional `SAMSARA_MOCK_ALLOW_SIMULATE=true`.
+2. Mobile → **Start wait time** on an open load.
+3. TMS staff → `POST …/api/integrations/samsara/simulate` with `loadId` → wait closed.
+4. Check TMS panel + `activity_log` `delivery_wait_geofence_auto_stop`.
+5. TMS: `npm test -- lib/integrations/samsara/__tests__/samsara-geofence.test.ts`
+
+---
+
+*When closing each day, add a `## [date]` section **in chronological order** (below the latest date in the file) with **Task 1, Task 2, Task 3…** top to bottom. Never Task 8 before Task 7. Run `npm run check:daily-reports` before commit.*

@@ -21,5 +21,7 @@ Al terminar **cualquier cambio funcional** (feature, fix, tarea `PP2_TAREAS_DEV.
 6. **Cómo probar:** `npm run ci` si aplica; **ruta en la app**; **resultado esperado**.
 7. No citar `PROYECTO_MUESTRA/`; usar «TMS», `/api/…` o `docs/`.
 8. Marcar fila en `PP2_TAREAS_DEV.md` (✅ / ⏸) si corresponde.
+9. **Una fecha = un solo día:** dentro de `## [fecha]` solo actividades de ese día calendario. **Prohibido** subsecciones con otra fecha (p. ej. “Lunes 15 de junio” dentro de “18 de junio”). Días atrasados → `## 15 de junio`, `## 16 de junio`, etc., cada uno aparte.
+10. Ejecutar `npm run check:daily-reports` (incluido en `npm run ci`).
 
-**Comprobación antes de cerrar:** en `## [fecha]`, listar solo los números de `### Tarea N` / `### Task N` de arriba abajo — deben ser 1, 2, 3, … sin inversiones (mal: 1,2,3,4,5,6,8,7 — bien: 1,2,3,4,5,6,7,8).
+**Comprobación antes de cerrar:** en `## [fecha]`, tareas numeradas 1, 2, 3… sin inversiones; **sin fechas distintas anidadas** dentro de la sección del día.

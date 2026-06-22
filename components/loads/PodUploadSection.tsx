@@ -1,8 +1,9 @@
 import type { ImagePickerAsset } from 'expo-image-picker';
 import { useCallback, useState } from 'react';
-import { Alert, Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { useNetwork } from '@/context/NetworkContext';
+import { AppActionSheet } from '@/components/ui/AppActionSheet';
 import { Button } from '@/components/ui/Button';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { strings } from '@/constants/strings';
@@ -12,7 +13,6 @@ import { prepareDriverUploadImage } from '@/lib/media/prepare-driver-upload-imag
 import {
   pickLoadPhotoFromCamera,
   pickLoadPhotoFromLibrary,
-  showLoadPhotoSourcePicker,
 } from '@/lib/media/pick-load-photo';
 import { validateDriverUploadFile } from '@/lib/media/validate-driver-upload-file';
 import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
@@ -34,6 +34,8 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
   const [picking, setPicking] = useState(false);
   const [uploadError, setUploadError] = useState<UserFacingError | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [pickerSheetOpen, setPickerSheetOpen] = useState(false);
+  const [discardSheetOpen, setDiscardSheetOpen] = useState(false);
 
   const clearPending = useCallback(() => {
     setPending(null);
@@ -76,11 +78,16 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
       return;
     }
 
-    showLoadPhotoSourcePicker({
-      onCamera: () => void handlePickResult(pickLoadPhotoFromCamera),
-      onLibrary: () => void handlePickResult(pickLoadPhotoFromLibrary),
-    });
-  }, [handlePickResult, uploadBlockedOffline]);
+    setPickerSheetOpen(true);
+  }, [uploadBlockedOffline]);
+
+  const handlePickFromCamera = useCallback(() => {
+    void handlePickResult(pickLoadPhotoFromCamera);
+  }, [handlePickResult]);
+
+  const handlePickFromLibrary = useCallback(() => {
+    void handlePickResult(pickLoadPhotoFromLibrary);
+  }, [handlePickResult]);
 
   const handleCancel = useCallback(() => {
     if (uploading) return;
@@ -120,19 +127,8 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
   }, [pending, uploading, onUpload, clearPending, uploadBlockedOffline]);
 
   const handleDiscardPress = useCallback(() => {
-    Alert.alert(
-      strings.loadDetail.podDiscardTitle,
-      strings.loadDetail.podDiscardMessage,
-      [
-        { text: strings.loadDetail.podKeepEditing, style: 'cancel' },
-        {
-          text: strings.loadDetail.podDiscardConfirm,
-          style: 'destructive',
-          onPress: handleCancel,
-        },
-      ],
-    );
-  }, [handleCancel]);
+    setDiscardSheetOpen(true);
+  }, []);
 
   return (
     <View accessibilityLabel={strings.loadDetail.podAddPhotoA11y}>
@@ -193,6 +189,33 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
           accessibilityLabel={strings.loadDetail.podAddPhotoA11y}
         />
       )}
+
+      <AppActionSheet
+        visible={pickerSheetOpen}
+        title={strings.loadDetail.podPickTitle}
+        message={strings.loadDetail.podPickMessage}
+        onDismiss={() => setPickerSheetOpen(false)}
+        actions={[
+          { label: strings.loadDetail.podPickCamera, onPress: handlePickFromCamera },
+          { label: strings.loadDetail.podPickGallery, onPress: handlePickFromLibrary },
+          { label: strings.loadDetail.podCancel, onPress: () => undefined, variant: 'cancel' },
+        ]}
+      />
+
+      <AppActionSheet
+        visible={discardSheetOpen}
+        title={strings.loadDetail.podDiscardTitle}
+        message={strings.loadDetail.podDiscardMessage}
+        onDismiss={() => setDiscardSheetOpen(false)}
+        actions={[
+          { label: strings.loadDetail.podKeepEditing, onPress: () => undefined, variant: 'cancel' },
+          {
+            label: strings.loadDetail.podDiscardConfirm,
+            onPress: handleCancel,
+            variant: 'destructive',
+          },
+        ]}
+      />
     </View>
   );
 }

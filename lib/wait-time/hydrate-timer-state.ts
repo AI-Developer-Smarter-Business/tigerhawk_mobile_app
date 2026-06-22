@@ -1,4 +1,3 @@
-import { resolveFallbackWaitStartIso } from './resolve-timer-start';
 import type { LoadDetail } from '@/types';
 
 export type WaitEventSnapshot = {
@@ -25,14 +24,14 @@ export type HydratedTimerState = {
   startTimeIso: string | null;
   stoppedAtIso: string | null;
   eventId: string | null;
-  /** True when UI time comes from load.actual_delivery, not waiting_time_events. */
+  /** Always false after WT.27 — timer starts only via explicit API/mock start. */
   usingFallbackStart: boolean;
 };
 
-/** Prefer Supabase `waiting_time_events`; fallback only when no event exists. */
+/** Prefer Supabase `waiting_time_events`; no implicit start from load status (WT.27). */
 export function resolveHydratedTimerState(
   events: WaitEventSnapshot[],
-  load: LoadDetail | null,
+  _load: LoadDetail | null,
 ): HydratedTimerState {
   const open = findOpenDeliveryWaitEvent(events);
   if (open?.start_time) {
@@ -54,11 +53,10 @@ export function resolveHydratedTimerState(
     };
   }
 
-  const fallback = resolveFallbackWaitStartIso(load);
   return {
-    startTimeIso: fallback,
+    startTimeIso: null,
     stoppedAtIso: null,
     eventId: null,
-    usingFallbackStart: Boolean(fallback),
+    usingFallbackStart: false,
   };
 }

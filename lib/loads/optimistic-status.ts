@@ -1,4 +1,6 @@
 import { canDriverTransition, isDriverFieldStatus } from './driver-actions';
+import { MOCK_LOAD_TRANSITIONS } from './constants';
+import type { LoadTransitionMap } from '@/lib/tms/fetch-load-transitions';
 import type { LoadStatus } from '@/types';
 
 /**
@@ -10,10 +12,11 @@ export function canOptimisticallyUpdateLoadStatus(params: {
   from: LoadStatus;
   to: LoadStatus;
   activeHolds: string[];
+  transitionMap?: LoadTransitionMap;
 }): boolean {
-  const { from, to, activeHolds } = params;
+  const { from, to, activeHolds, transitionMap = MOCK_LOAD_TRANSITIONS } = params;
   if (activeHolds.length > 0) return false;
-  if (!canDriverTransition(from, to)) return false;
+  if (!canDriverTransition(from, to, transitionMap)) return false;
   if (!isDriverFieldStatus(to)) return false;
   return true;
 }

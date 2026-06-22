@@ -1,0 +1,23 @@
+---
+description: TMS Netlify y Expo/EAS ya operativos — no reabrir WT.19 ni pedir deploy inicial
+alwaysApply: true
+---
+
+# Entornos desplegados (confirmado equipo)
+
+Leer **`docs/DEPLOYMENT_STATUS.md`** antes de planificar tareas de deploy.
+
+## TMS Netlify — ✅ hecho (WT.19)
+
+- El **TMS de desarrollo está desplegado con éxito** en Netlify y la **app móvil ya se comunica** con él vía `EXPO_PUBLIC_TMS_API_URL`.
+- **No volver a listar WT.19 como pendiente** ni asumir que falta el primer deploy.
+- Cambios TMS → repo dev (`docs/TMS_DEV_REPOSITORY.md`) → redeploy Netlify; **no** editar `PROYECTO_MUESTRA/`.
+
+## Expo / EAS — ✅ cuenta activa
+
+- Hay **cuenta Expo** configurada; el APK **Android** se actualiza con **EAS build** tras cambios en la app móvil (`docs/MOBILE_BUILDS.md`).
+- Variables `EXPO_PUBLIC_*` deben estar en **EAS**, no solo en `.env.local`.
+
+## Distinto de WT.20
+
+- **WT.20 ✅** — SQL `waiting_time_events` + Realtime ya aplicado en Supabase compartido (`npm run db:apply-wt20`).

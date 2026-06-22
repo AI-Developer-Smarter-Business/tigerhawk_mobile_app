@@ -2,6 +2,8 @@
 
 **Purpose:** single source of truth for **where to change TigerHawk TMS code** when integrating with Tigerhawk Mobile (PP2).
 
+**Deploy status:** TMS is **live on Netlify**; mobile uses it via `EXPO_PUBLIC_TMS_API_URL`. **WT.19 is complete** — see `docs/DEPLOYMENT_STATUS.md`. Do not treat Netlify deploy as pending work.
+
 ---
 
 ## Editable TMS (development deploy)
@@ -18,7 +20,7 @@ C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_1_TigerH
 | Edit Tigerhawk Mobile (Expo) | `proyecto_PP2_app_mobile` (this repo) |
 | Read-only TMS reference (audit, parity) | `PROYECTO_MUESTRA/` inside mobile repo — **do not modify** |
 
-**Agents:** see `.cursor/rules/tms-dev-repository.mdc` and `AGENTS.md` § TMS development repository.
+**Agents:** see `.cursor/rules/tms-dev-repository.mdc`, `.cursor/rules/deployment-status.mdc`, and `AGENTS.md` § Entornos desplegados.
 
 ---
 

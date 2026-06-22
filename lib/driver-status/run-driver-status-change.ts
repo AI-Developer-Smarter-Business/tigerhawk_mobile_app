@@ -8,6 +8,7 @@ import {
 import { setLoadStatusInCache } from '@/lib/query/patch-load-status';
 import { driverStatusTelemetry } from '@/lib/telemetry';
 import { patchLoadStatus } from '@/lib/tms';
+import type { LoadTransitionMap } from '@/lib/tms/fetch-load-transitions';
 import type { LoadDetail, LoadStatus } from '@/types';
 
 export type RunDriverStatusChangeParams = {
@@ -17,6 +18,7 @@ export type RunDriverStatusChangeParams = {
   targetStatus: LoadStatus;
   accessToken: string;
   updateLoadStatus: (id: string, status: LoadStatus) => void;
+  transitionMap?: LoadTransitionMap;
 };
 
 /**
@@ -40,6 +42,7 @@ export async function runDriverStatusChange(
     from: previousStatus,
     to: targetStatus,
     activeHolds: load.active_holds,
+    transitionMap: params.transitionMap,
   });
 
   const telemetryBase = {

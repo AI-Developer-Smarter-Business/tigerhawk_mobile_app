@@ -1,5 +1,5 @@
 ---
-description: PP2 mobile UI must use PP2Theme and TMS chrome tokens for visual consistency
+description: PP2 mobile UI must use PP2Theme light TigerHawk branding for visual consistency
 alwaysApply: true
 ---
 
@@ -13,18 +13,18 @@ alwaysApply: true
 ## Tokens obligatorios
 
 - Fuente única de verdad: `constants/theme.ts` → `PP2Theme`.
-- Navegación / auth / account: paleta **`PP2Theme.colors.tms`** (sidebar oscuro `#111827`, fondo `#0B1120`, acento naranja `#E8700A`, texto `#FFFFFF` / `#9CA3AF`).
+- **Tema claro** (decisión cliente 18 jun 2026): fondo `#F4F6F8`, superficies blancas, drawer/header blancos; acento TigerHawk **`#E8700A`** en botones activos e ítems del menú.
+- Paleta navegación: **`PP2Theme.colors.tms`** — `pageBackground`, `sidebarBackground`, `headerText`, `navActive`.
 - Listados y detalle de cargas: fondo claro `PP2Theme.colors.background` (área de contenido).
+- Modales / action sheets: **`AppActionSheet`** (`components/ui/AppActionSheet.tsx`), no `Alert.alert` salvo errores del sistema.
 
 ## Pantallas nuevas
 
 Al añadir pantallas o componentes UI:
 
 1. Reutilizar `Screen`, `Card`, `Button`, `Input` de `components/ui/`.
-2. Elegir variante según contexto:
-   - **`variant="chrome"`** en `Screen` / `Card` / `Input` → login, account, flujos sin drawer con look TMS.
-   - **`variant="default"`** → listas, detalle, formularios sobre fondo claro.
-3. Botón principal en chrome: **`variant="accent"`** (naranja TMS). Secundario: **`outlineAccent`**.
+2. Preferir **`variant="default"`** en pantallas y formularios. `variant="chrome"` queda como alias claro (login legacy); mismo look que default.
+3. Botón principal: **`variant="accent"`** (naranja TMS). Secundario: **`outlineAccent`**.
 4. No hardcodear colores hex sueltos salvo en `theme.ts`. Usar `PP2Theme.spacing`, `PP2Theme.radius`.
 5. Cabeceras del drawer: `headerStyle` ya definido en `app/(drawer)/_layout.tsx`; no contradecir esos colores.
 

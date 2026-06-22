@@ -12,7 +12,7 @@ type ScreenProps = {
   children: ReactNode;
   scroll?: boolean;
   style?: ViewStyle;
-  /** `chrome` = dark TMS sidebar palette (login, account). `default` = light content area. */
+  /** `chrome` = light TigerHawk chrome (login, account). `default` = light content area. */
   variant?: ScreenVariant;
 };
 

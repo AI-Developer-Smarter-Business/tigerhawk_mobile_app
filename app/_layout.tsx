@@ -90,7 +90,7 @@ export default function RootLayout() {
                     headerStyle: {
                       backgroundColor: PP2Theme.colors.tms.headerBackground,
                     },
-                    headerTintColor: PP2Theme.colors.tms.navActiveText,
+                    headerTintColor: PP2Theme.colors.tms.headerText,
                   }}
                 />
                   </Stack>

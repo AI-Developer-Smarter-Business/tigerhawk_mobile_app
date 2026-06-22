@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { filterDocumentsForExpectedLoad } from '@/lib/loads/document-load-association';
+import { resolveLoadDocumentUrlForDriver } from '@/lib/loads/resolve-load-document-url';
 import type { LoadDocument } from '@/types/load-document';
 
 import {
@@ -34,8 +35,17 @@ export async function fetchLoadDocumentsForDriver(
     return { documents: [], errorMessage: error.message };
   }
 
-  const rows =
-    (data as LoadDocumentRow[] | null)?.map(mapLoadDocumentRow) ?? [];
-  const { documents } = filterDocumentsForExpectedLoad(rows, loadId);
+  const rows = (data as LoadDocumentRow[] | null) ?? [];
+  const withUrls = await Promise.all(
+    rows.map(async (row) => {
+      const url = await resolveLoadDocumentUrlForDriver(
+        supabase,
+        row.storage_path,
+        row.url,
+      );
+      return mapLoadDocumentRow({ ...row, url });
+    }),
+  );
+  const { documents } = filterDocumentsForExpectedLoad(withUrls, loadId);
   return { documents, errorMessage: null };
 }

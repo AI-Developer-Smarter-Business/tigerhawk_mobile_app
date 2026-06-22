@@ -20,6 +20,8 @@ export type WaitTimeEvent = {
   billable: boolean | null;
   charge_amount: number | null;
   driver_pay_amount: number | null;
+  driver_rate_per_hour?: number | null;
+  driver_payable?: boolean | null;
   location: string | null;
 };
 

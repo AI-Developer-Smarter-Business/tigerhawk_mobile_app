@@ -10,4 +10,6 @@ export const queryKeys = {
     documents: (userId: string, loadId: string) =>
       [...queryKeys.loads.all(userId), 'documents', loadId] as const,
   },
+  transitions: (userId: string) =>
+    [...queryKeys.root, 'transitions', userId] as const,
 } as const;

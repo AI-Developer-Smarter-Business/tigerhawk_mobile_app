@@ -1,4 +1,5 @@
 import { filterDocumentsForExpectedLoad } from '@/lib/loads/document-load-association';
+import { resolveLoadDocumentUrlForDriver } from '@/lib/loads/resolve-load-document-url';
 import { validateDriverUploadFile } from '@/lib/media/validate-driver-upload-file';
 import { getSupabase } from '@/lib/supabase/client';
 import { TmsDocumentUploadError } from '@/lib/tms/document-errors';
@@ -61,16 +62,8 @@ export async function uploadDriverLoadDocumentViaSupabase(params: {
     throw mapStorageError(storageError.message);
   }
 
-  const { data: signedData, error: signError } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(storagePath, 3600);
-
-  if (signError) {
-    await supabase.storage.from(BUCKET).remove([storagePath]);
-    throw mapStorageError(signError.message);
-  }
-
-  const url = signedData?.signedUrl ?? '';
+  const url =
+    (await resolveLoadDocumentUrlForDriver(supabase, storagePath, null)) ?? '';
 
   const { data: inserted, error: insertError } = await supabase
     .from('load_documents')

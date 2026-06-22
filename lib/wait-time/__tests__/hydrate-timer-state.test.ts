@@ -8,11 +8,10 @@ const baseLoad = {
 } as LoadDetail;
 
 describe('resolveHydratedTimerState', () => {
-  it('prefers open delivery_wait event over fallback', () => {
+  it('prefers open delivery_wait event over load timestamps', () => {
     const events: WaitEventSnapshot[] = [
       {
         id: 'evt-1',
-        load_id: 'load-1',
         event_name: 'delivery_wait',
         start_time: '2026-06-11T14:50:00Z',
         end_time: null,
@@ -40,10 +39,10 @@ describe('resolveHydratedTimerState', () => {
     expect(state.usingFallbackStart).toBe(false);
   });
 
-  it('falls back to actual_delivery only when API has no events', () => {
+  it('does not infer start from actual_delivery without API event (WT.27)', () => {
     const state = resolveHydratedTimerState([], baseLoad);
-    expect(state.startTimeIso).toBe('2026-06-11T14:43:00Z');
+    expect(state.startTimeIso).toBeNull();
     expect(state.eventId).toBeNull();
-    expect(state.usingFallbackStart).toBe(true);
+    expect(state.usingFallbackStart).toBe(false);
   });
 });

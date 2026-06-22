@@ -1,10 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { isWaitTimeMockMode } from '@/lib/wait-time/config';
-import {
-  DELIVERY_WAIT_START_STATUS,
-  shouldStopDeliveryWait,
-} from '@/lib/wait-time/constants';
+import { isDeliveryWaitEligibleStatus } from '@/lib/wait-time/constants';
 import { resolveHydratedTimerState } from '@/lib/wait-time/hydrate-timer-state';
 import {
   markMockExceededNotified,
@@ -18,6 +15,11 @@ import {
   type WaitTimerSnapshot,
 } from '@/lib/wait-time/timer-math';
 import {
+  computeMockWaitPaySummary,
+  computeWaitPaySummary,
+  type WaitPaySummary,
+} from '@/lib/wait-time/wait-pay-summary';
+import {
   fetchWaitTimeEvents,
   endOpenDeliveryWaitEvent,
   startDeliveryWaitEvent,
@@ -25,21 +27,28 @@ import {
   type WaitTimeEvent,
 } from '@/lib/tms/wait-time';
 import { resolveSupabaseAccessToken } from '@/lib/tms';
-import type { LoadDetail, LoadStatus } from '@/types';
+import type { LoadDetail } from '@/types';
 
 export type DeliveryWaitTimerState = {
+  /** Section visible: eligible to start, running, stopped, or syncing. */
+  visible: boolean;
+  /** Timer running (started, not yet stopped). */
   active: boolean;
+  /** Driver may tap Start wait time (WT.27). */
+  canStart: boolean;
   mockMode: boolean;
   startTimeIso: string | null;
   stoppedAtIso: string | null;
   snapshot: WaitTimerSnapshot;
   formattedElapsed: string;
+  paySummary: WaitPaySummary;
   eventId: string | null;
   usingFallbackStart: boolean;
   exceededNotified: boolean;
   loading: boolean;
   stopping: boolean;
   canStop: boolean;
+  startTimer: () => Promise<void>;
   stopTimer: () => Promise<void>;
   refresh: () => Promise<void>;
   error: string | null;
@@ -63,6 +72,7 @@ function applyHydratedState(
 
 export function useDeliveryWaitTimer(load: LoadDetail | null): DeliveryWaitTimerState {
   const mockMode = isWaitTimeMockMode();
+  const [events, setEvents] = useState<WaitTimeEvent[]>([]);
   const [startTimeIso, setStartTimeIso] = useState<string | null>(null);
   const [stoppedAtIso, setStoppedAtIso] = useState<string | null>(null);
   const [eventId, setEventId] = useState<string | null>(null);
@@ -72,9 +82,7 @@ export function useDeliveryWaitTimer(load: LoadDetail | null): DeliveryWaitTimer
   const [loading, setLoading] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const previousStatusRef = useRef<LoadStatus | null>(load?.status ?? null);
   const syncLockRef = useRef(false);
-  const ensureStartedRef = useRef(false);
   const startingRef = useRef(false);
   const stoppingRef = useRef(false);
 
@@ -94,6 +102,7 @@ export function useDeliveryWaitTimer(load: LoadDetail | null): DeliveryWaitTimer
     try {
       const token = await resolveSupabaseAccessToken();
       const data = await fetchWaitTimeEvents(load.id, token);
+      setEvents(data.events);
       return applyHydrated(resolveHydratedTimerState(data.events, load));
     } catch {
       return false;
@@ -108,6 +117,8 @@ export function useDeliveryWaitTimer(load: LoadDetail | null): DeliveryWaitTimer
   const startTimer = useCallback(async () => {
     if (!load || startingRef.current || stoppingRef.current) return;
     if (eventId && !stoppedAtIso) return;
+    if (startTimeIso && !stoppedAtIso) return;
+
     startingRef.current = true;
     setLoading(true);
     setError(null);
@@ -130,6 +141,7 @@ export function useDeliveryWaitTimer(load: LoadDetail | null): DeliveryWaitTimer
       setStoppedAtIso(event.end_time);
       setEventId(event.id);
       setUsingFallbackStart(false);
+      await hydrateFromApi();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not start wait timer');
       await hydrateFromApi();
@@ -137,7 +149,7 @@ export function useDeliveryWaitTimer(load: LoadDetail | null): DeliveryWaitTimer
       setLoading(false);
       startingRef.current = false;
     }
-  }, [eventId, hydrateFromApi, load, mockMode, stoppedAtIso]);
+  }, [eventId, hydrateFromApi, load, mockMode, startTimeIso, stoppedAtIso]);
 
   const stopTimer = useCallback(async () => {
     if (!load || stoppingRef.current || stoppedAtIso) return;
@@ -154,54 +166,45 @@ export function useDeliveryWaitTimer(load: LoadDetail | null): DeliveryWaitTimer
         return;
       }
       const token = await resolveSupabaseAccessToken();
-      const event = await endOpenDeliveryWaitEvent({
+      await endOpenDeliveryWaitEvent({
         loadId: load.id,
         accessToken: token,
         eventId,
         startTimeIso: effectiveStart,
         location: load.delivery_location,
       });
-      applyHydrated(
-        resolveHydratedTimerState([event], load),
-      );
+      await hydrateFromApi();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not stop wait timer');
     } finally {
       setStopping(false);
       stoppingRef.current = false;
     }
-  }, [applyHydrated, eventId, load, mockMode, startTimeIso, stoppedAtIso]);
+  }, [applyHydrated, eventId, hydrateFromApi, load, mockMode, startTimeIso, stoppedAtIso]);
 
   useEffect(() => {
-    ensureStartedRef.current = false;
-    void (async () => {
-      const hasEvent = await hydrateFromApi();
-      if (
-        !mockMode &&
-        load?.status === DELIVERY_WAIT_START_STATUS &&
-        !hasEvent &&
-        !ensureStartedRef.current &&
-        !stoppedAtIso
-      ) {
-        ensureStartedRef.current = true;
-        void startTimer();
-      }
-    })();
-  }, [hydrateFromApi, load?.id, load?.status, mockMode, startTimer, stoppedAtIso]);
+    setEvents([]);
+    setStartTimeIso(null);
+    setStoppedAtIso(null);
+    setEventId(null);
+    setUsingFallbackStart(false);
+    setExceededNotified(false);
+    setError(null);
 
-  useEffect(() => {
     if (!load) return;
-    const prev = previousStatusRef.current;
-    const next = load.status;
-    if (next === DELIVERY_WAIT_START_STATUS && prev !== DELIVERY_WAIT_START_STATUS) {
-      ensureStartedRef.current = true;
-      void startTimer();
+
+    if (mockMode) {
+      void readMockWaitRecord(load.id).then((record) => {
+        if (!record) return;
+        setStartTimeIso(record.startTimeIso);
+        setStoppedAtIso(record.stoppedAtIso);
+        setExceededNotified(record.exceededNotified);
+      });
+      return;
     }
-    if (shouldStopDeliveryWait(next) && startTimeIso && !stoppedAtIso) {
-      void stopTimer();
-    }
-    previousStatusRef.current = next;
-  }, [load, load?.status, startTimeIso, stoppedAtIso, startTimer, stopTimer]);
+
+    void hydrateFromApi();
+  }, [hydrateFromApi, load?.id, mockMode]);
 
   const effectiveStartIso = startTimeIso;
   const effectiveSnapshot = computeWaitTimerSnapshot(
@@ -231,6 +234,8 @@ export function useDeliveryWaitTimer(load: LoadDetail | null): DeliveryWaitTimer
             accessToken: token,
             startTimeIso,
           });
+          const data = await fetchWaitTimeEvents(load.id, token);
+          setEvents(data.events);
         } catch {
           // ignore periodic sync errors
         } finally {
@@ -241,9 +246,15 @@ export function useDeliveryWaitTimer(load: LoadDetail | null): DeliveryWaitTimer
     return () => clearInterval(id);
   }, [load, mockMode, eventId, startTimeIso, stoppedAtIso]);
 
-  const active =
-    load?.status === DELIVERY_WAIT_START_STATUS ||
-    Boolean(effectiveStartIso && !stoppedAtIso);
+  const running = Boolean(effectiveStartIso && !stoppedAtIso);
+  const active = running;
+  const eligible =
+    Boolean(load) && isDeliveryWaitEligibleStatus(load!.status);
+  const canStart = eligible && !running && !loading && !stopping;
+  const visible = Boolean(
+    load &&
+      (canStart || effectiveStartIso || loading || Boolean(error)),
+  );
 
   useEffect(() => {
     if (!load || !effectiveSnapshot.exceededThreshold || exceededNotified) return;
@@ -262,23 +273,47 @@ export function useDeliveryWaitTimer(load: LoadDetail | null): DeliveryWaitTimer
 
   const canStop = Boolean(effectiveStartIso && !stoppedAtIso && !stopping);
 
+  const paySummary = useMemo(() => {
+    if (mockMode) {
+      return computeMockWaitPaySummary(
+        effectiveStartIso,
+        stoppedAtIso,
+        effectiveSnapshot.elapsedMinutes,
+      );
+    }
+    return computeWaitPaySummary(events, {
+      activeElapsedMinutes: running ? effectiveSnapshot.elapsedMinutes : undefined,
+    });
+  }, [
+    mockMode,
+    events,
+    running,
+    effectiveStartIso,
+    stoppedAtIso,
+    effectiveSnapshot.elapsedMinutes,
+  ]);
+
   return {
+    visible,
     active,
+    canStart,
     mockMode,
     startTimeIso: effectiveStartIso,
     stoppedAtIso,
     snapshot: effectiveSnapshot,
     formattedElapsed: formatWaitElapsed(effectiveSnapshot.elapsedMs),
+    paySummary,
     eventId,
     usingFallbackStart,
     exceededNotified,
     loading,
     stopping,
     canStop,
+    startTimer,
     stopTimer,
     refresh,
     error,
   };
 }
 
-export type { WaitTimeEvent, WaitTimerSnapshot };
+export type { WaitPaySummary, WaitTimeEvent, WaitTimerSnapshot };

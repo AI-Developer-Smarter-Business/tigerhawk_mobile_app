@@ -12,12 +12,14 @@ import {
 } from '@/lib/errors';
 import { errorStrings } from '@/lib/errors/strings';
 import { canDriverTransition, formatLoadStatus, getDriverActionsForStatus } from '@/lib/loads';
+import type { LoadTransitionMap } from '@/lib/tms/fetch-load-transitions';
 import type { LoadStatus } from '@/types';
 
 type DriverActionBarProps = {
   currentStatus: LoadStatus;
   activeHolds: string[];
   onStatusChange: (status: LoadStatus) => Promise<void>;
+  transitionMap?: LoadTransitionMap;
   /** Blocks all actions while wait timer or another flow is in flight. */
   locked?: boolean;
 };
@@ -26,6 +28,7 @@ export function DriverActionBar({
   currentStatus,
   activeHolds,
   onStatusChange,
+  transitionMap,
   locked = false,
 }: DriverActionBarProps) {
   const [pending, setPending] = useState<LoadStatus | null>(null);
@@ -33,7 +36,7 @@ export function DriverActionBar({
   const [lastChange, setLastChange] = useState<string | null>(null);
   const submittingRef = useRef(false);
 
-  const actions = getDriverActionsForStatus(currentStatus);
+  const actions = getDriverActionsForStatus(currentStatus, transitionMap);
   const blocked = activeHolds.length > 0;
   const actionsDisabled = blocked || locked || pending !== null;
 
@@ -48,7 +51,7 @@ export function DriverActionBar({
       setActionError(mapActiveHoldsPreview(activeHolds));
       return;
     }
-    if (!canDriverTransition(currentStatus, next)) {
+    if (!canDriverTransition(currentStatus, next, transitionMap)) {
       setActionError({
         kind: 'validation',
         title: errorStrings.validationTitle,

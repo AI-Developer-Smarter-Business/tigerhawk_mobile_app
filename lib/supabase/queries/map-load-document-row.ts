@@ -7,6 +7,7 @@ export type LoadDocumentRow = {
   document_type: string | null;
   file_size: number | null;
   url: string | null;
+  storage_path?: string | null;
   uploaded_at: string | null;
 };
 

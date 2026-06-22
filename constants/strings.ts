@@ -222,10 +222,21 @@ export const strings = {
     exceededBanner:
       'Waiting time exceeded — dispatch has been notified. Billable time may apply.',
     mockHint: 'Demo mode — timer stored locally (Phase A).',
+    startWaitTime: 'Start wait time',
+    startWaitTimeHint:
+      'Tap when you are present for unloading. This starts the wait timer and billing clock.',
+    startWaitTimeA11y: 'Start delivery wait timer when present for unloading',
     endWaitTime: 'End wait time',
     endWaitTimeHint: 'Stops the timer only. Load status stays the same.',
     endWaitTimeA11y: 'Stop the delivery wait timer without changing load status',
     syncHint: 'Syncing wait time with the server…',
+    paySummaryTitle: 'Your wait pay',
+    accruedTimeLabel: 'Accrued wait time',
+    estimatedPayLabel: 'Estimated wait pay',
+    payEstimateHint:
+      'Estimate while the timer runs. Final pay is confirmed when the load is completed.',
+    payReadOnlyHint: 'Read-only. Contact dispatch with questions about your pay.',
+    paySummaryA11y: 'Read-only summary of accrued wait time and estimated pay',
   },
   driverActions: {
     title: 'Field actions',

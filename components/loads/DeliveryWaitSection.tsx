@@ -1,5 +1,6 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { DeliveryWaitPaySummary } from '@/components/loads/DeliveryWaitPaySummary';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { strings } from '@/constants/strings';
@@ -15,7 +16,7 @@ export function DeliveryWaitSection({
   timer,
   fieldActionPending = false,
 }: DeliveryWaitSectionProps) {
-  if (!timer.active && timer.snapshot.phase === 'idle') {
+  if (!timer.visible) {
     return null;
   }
 
@@ -35,27 +36,46 @@ export function DeliveryWaitSection({
         ? PP2Theme.colors.tms.navActive
         : PP2Theme.colors.textMuted;
 
+  const showElapsed = Boolean(timer.startTimeIso);
+
   return (
     <Card title={strings.waitTime.sectionTitle} elevated>
       {timer.loading ? (
         <ActivityIndicator color={PP2Theme.colors.tms.navActive} />
       ) : null}
       {timer.error ? <Text style={styles.error}>{timer.error}</Text> : null}
-      <View style={styles.row}>
-        <Text style={styles.elapsed}>{timer.formattedElapsed}</Text>
-        <View style={[styles.phasePill, { borderColor: phaseColor }]}>
-          <Text style={[styles.phaseText, { color: phaseColor }]}>{phaseLabel}</Text>
+      {timer.canStart ? (
+        <View style={styles.startWrap}>
+          <Button
+            title={strings.waitTime.startWaitTime}
+            variant="accent"
+            loading={timer.loading}
+            disabled={timer.loading || fieldActionPending}
+            onPress={() => void timer.startTimer()}
+            accessibilityLabel={strings.waitTime.startWaitTimeA11y}
+          />
+          <Text style={styles.startHint}>{strings.waitTime.startWaitTimeHint}</Text>
         </View>
-      </View>
-      {timer.snapshot.phase === 'free' ? (
-        <Text style={styles.meta}>
-          {strings.waitTime.freeRemaining(timer.snapshot.freeMinutesRemaining)}
-        </Text>
       ) : null}
-      {timer.exceededNotified || timer.snapshot.phase === 'billable' ? (
-        <View style={styles.alertBox}>
-          <Text style={styles.alertText}>{strings.waitTime.exceededBanner}</Text>
-        </View>
+      {showElapsed ? (
+        <>
+          <View style={styles.row}>
+            <Text style={styles.elapsed}>{timer.formattedElapsed}</Text>
+            <View style={[styles.phasePill, { borderColor: phaseColor }]}>
+              <Text style={[styles.phaseText, { color: phaseColor }]}>{phaseLabel}</Text>
+            </View>
+          </View>
+          {timer.snapshot.phase === 'free' ? (
+            <Text style={styles.meta}>
+              {strings.waitTime.freeRemaining(timer.snapshot.freeMinutesRemaining)}
+            </Text>
+          ) : null}
+          {timer.exceededNotified || timer.snapshot.phase === 'billable' ? (
+            <View style={styles.alertBox}>
+              <Text style={styles.alertText}>{strings.waitTime.exceededBanner}</Text>
+            </View>
+          ) : null}
+        </>
       ) : null}
       {timer.usingFallbackStart && !timer.eventId ? (
         <Text style={styles.syncHint}>{strings.waitTime.syncHint}</Text>
@@ -76,11 +96,21 @@ export function DeliveryWaitSection({
           <Text style={styles.stopHint}>{strings.waitTime.endWaitTimeHint}</Text>
         </View>
       ) : null}
+      <DeliveryWaitPaySummary summary={timer.paySummary} />
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
+  startWrap: {
+    gap: PP2Theme.spacing.xs,
+    marginBottom: PP2Theme.spacing.sm,
+  },
+  startHint: {
+    fontSize: PP2Theme.typography.sizes.caption,
+    color: PP2Theme.colors.textMuted,
+    textAlign: 'center',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -11,6 +11,7 @@ import { useLoads } from '@/context/LoadsContext';
 import { useDeliveryWaitTimer } from '@/hooks/useDeliveryWaitTimer';
 import { useDriverStatusChange } from '@/hooks/useDriverStatusChange';
 import { useLoadDetailQuery } from '@/hooks/useLoadDetailQuery';
+import { useLoadTransitionsQuery } from '@/hooks/useLoadTransitionsQuery';
 import { useLoadDocumentUpload } from '@/hooks/useLoadDocumentUpload';
 import { useLoadDocumentsQuery } from '@/hooks/useLoadDocumentsQuery';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -37,7 +38,8 @@ export default function LoadDetailScreen() {
     refetch: refetchDocuments,
     retry: retryDocuments,
   } = documentsQuery;
-  const handleStatusChangeRaw = useDriverStatusChange(load);
+  const { transitionMap } = useLoadTransitionsQuery();
+  const handleStatusChangeRaw = useDriverStatusChange(load, transitionMap);
   const [fieldActionPending, setFieldActionPending] = useState(false);
   const handleStatusChange = useCallback(
     async (status: LoadStatus) => {
@@ -146,6 +148,7 @@ export default function LoadDetailScreen() {
             currentStatus={load.status}
             activeHolds={load.active_holds}
             onStatusChange={handleStatusChange}
+            transitionMap={transitionMap}
             locked={waitTimer.loading || waitTimer.stopping || fieldActionPending}
           />
         </View>

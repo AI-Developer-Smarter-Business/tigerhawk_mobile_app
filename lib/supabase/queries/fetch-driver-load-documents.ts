@@ -14,7 +14,7 @@ import {
 } from './fetch-load-documents';
 
 /**
- * Driver document list: Supabase metadata + optional TMS GET for fresh signed URLs
+ * Driver document list: Supabase metadata + optional TMS GET for long-lived URLs
  * and authoritative list when dispatch deletes a file in TMS.
  */
 export async function fetchDriverLoadDocuments(

@@ -8,7 +8,7 @@ export type FetchTmsLoadDocumentsResult = {
 };
 
 /**
- * GET `/api/dispatcher/loads/[id]/documents` — fresh signed URLs (1h), same as TMS web.
+ * GET `/api/dispatcher/loads/[id]/documents` — long-lived URLs from `storage_path`, same as TMS web.
  * Requires Bearer patch on TMS; returns `ok: false` when TMS is unreachable or unauthorized.
  */
 export async function fetchTmsLoadDocuments(

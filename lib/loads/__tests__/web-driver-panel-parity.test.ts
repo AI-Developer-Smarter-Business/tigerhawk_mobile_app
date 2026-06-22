@@ -28,7 +28,7 @@ describe('web DriverActionPanel parity (task 3.7)', () => {
     const statuses = Object.keys(MOCK_LOAD_TRANSITIONS) as LoadStatus[];
     for (const status of statuses) {
       const next = MOCK_LOAD_TRANSITIONS[status] ?? [];
-      const mobile = getDriverActionsForStatus(status);
+      const mobile = getDriverActionsForStatus(status, MOCK_LOAD_TRANSITIONS);
       const web = filterWebDriverPanelActions(next);
       expect(mobile).toEqual(web);
       expect(filterDriverFieldActions(next)).toEqual(web);

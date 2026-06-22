@@ -1,10 +1,11 @@
 /**
- * Visual tokens — aligned to TigerHawk TMS (`PROYECTO_MUESTRA/components/layout/DashboardLayout.tsx`).
- * Reference layout: `nav_lateral.png` (repo root).
+ * Visual tokens — TigerHawk brand (orange #E8700A) on **light** surfaces for driver daytime use.
+ * Client confirmed (18 jun 2026): light theme, not full TMS dark chrome.
+ * Reference: TMS dispatcher content areas (white/gray), not sidebar-only dark.
  */
 export const PP2Theme = {
   colors: {
-    /** Legacy mobile primary (headers); prefer TMS sidebar tokens for nav. */
+    /** Legacy mobile primary (links, outline buttons). */
     primary: '#0B3D6E',
     primaryDark: '#082847',
     secondary: '#E8A317',
@@ -22,24 +23,27 @@ export const PP2Theme = {
     hotSurface: '#FEF3C7',
     hotBorder: '#FCD34D',
     hotText: '#B45309',
-    overlay: 'rgba(0,0,0,0.6)',
-    /** TMS dashboard / sidebar (read-only reference) */
+    overlay: 'rgba(17,24,39,0.4)',
+    /** TigerHawk brand accent (TMS orange) + light chrome for nav, headers, drawer */
     tms: {
-      pageBackground: '#0B1120',
-      sidebarBackground: '#111827',
-      sidebarBorder: 'rgba(255,255,255,0.05)',
-      navItem: '#9CA3AF',
-      navItemHover: '#E5E7EB',
+      pageBackground: '#F4F6F8',
+      sidebarBackground: '#FFFFFF',
+      sidebarBorder: '#E5E7EB',
+      navItem: '#6B7280',
+      navItemHover: '#374151',
       navActive: '#E8700A',
+      /** Text on orange active pill / accent buttons */
       navActiveText: '#FFFFFF',
-      headerBackground: '#111827',
-      headerBorder: 'rgba(255,255,255,0.05)',
-      /** Slightly elevated surface on dark chrome screens (login, account) */
-      cardBackground: '#1F2937',
-      inputBackground: 'rgba(255,255,255,0.06)',
-      pressOverlay: 'rgba(255,255,255,0.05)',
-      logoPlateBackground: 'rgba(255,255,255,0.03)',
-      logoPlateBorder: 'rgba(255,255,255,0.08)',
+      /** Titles on light headers and chrome screens */
+      headerText: '#1A2332',
+      headerBackground: '#FFFFFF',
+      headerBorder: '#E5E7EB',
+      cardBackground: '#FFFFFF',
+      inputBackground: '#FFFFFF',
+      inputBorder: '#D8DEE6',
+      pressOverlay: 'rgba(17,24,39,0.06)',
+      logoPlateBackground: '#FFFFFF',
+      logoPlateBorder: '#E5E7EB',
     },
     /** Light-surface accent derived from TMS orange */
     accentMuted: 'rgba(232,112,10,0.12)',

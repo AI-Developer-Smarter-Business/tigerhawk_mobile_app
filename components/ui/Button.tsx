@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     borderColor: PP2Theme.colors.primary,
   },
   outlineAccent: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: PP2Theme.colors.accentMuted,
     borderWidth: 1,
     borderColor: tms.navActive,
   },

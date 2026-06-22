@@ -5,6 +5,7 @@ import {
   FINAL_LOAD_STATUSES,
   MOCK_LOAD_TRANSITIONS,
 } from './constants';
+import type { LoadTransitionMap } from '@/lib/tms/fetch-load-transitions';
 
 /**
  * Keeps only driver-field transitions (excludes dispatcher-only and terminal statuses).
@@ -18,8 +19,11 @@ export function filterDriverFieldActions(nextStatuses: LoadStatus[]): LoadStatus
 }
 
 /** Field actions visible for the current status (no dispatch/final buttons). */
-export function getDriverActionsForStatus(status: LoadStatus): LoadStatus[] {
-  const next = MOCK_LOAD_TRANSITIONS[status] ?? [];
+export function getDriverActionsForStatus(
+  status: LoadStatus,
+  transitionMap: LoadTransitionMap = MOCK_LOAD_TRANSITIONS,
+): LoadStatus[] {
+  const next = transitionMap[status] ?? [];
   return filterDriverFieldActions(next);
 }
 
@@ -31,6 +35,10 @@ export function isFinalLoadStatus(status: LoadStatus): boolean {
   return FINAL_LOAD_STATUSES.has(status);
 }
 
-export function canDriverTransition(from: LoadStatus, to: LoadStatus): boolean {
-  return getDriverActionsForStatus(from).includes(to);
+export function canDriverTransition(
+  from: LoadStatus,
+  to: LoadStatus,
+  transitionMap: LoadTransitionMap = MOCK_LOAD_TRANSITIONS,
+): boolean {
+  return getDriverActionsForStatus(from, transitionMap).includes(to);
 }

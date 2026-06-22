@@ -67,13 +67,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: '700',
-    color: tms.navActiveText,
+    color: tms.headerText,
     letterSpacing: 0.5,
     textAlign: 'center',
   },
   tagline: {
     fontSize: PP2Theme.typography.sizes.body,
-    color: tms.navItem,
+    color: PP2Theme.colors.textMuted,
     textAlign: 'center',
   },
 });

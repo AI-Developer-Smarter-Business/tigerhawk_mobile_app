@@ -1,13 +1,9 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
 
 import { PodUploadSection } from '@/components/loads/PodUploadSection';
 import { strings } from '@/constants/strings';
 import { prepareDriverUploadImage } from '@/lib/media/prepare-driver-upload-image';
-import {
-  pickLoadPhotoFromCamera,
-  showLoadPhotoSourcePicker,
-} from '@/lib/media/pick-load-photo';
+import { pickLoadPhotoFromCamera } from '@/lib/media/pick-load-photo';
 import { validateDriverUploadFile } from '@/lib/media/validate-driver-upload-file';
 
 jest.mock('@/context/NetworkContext', () => ({
@@ -17,7 +13,6 @@ jest.mock('@/context/NetworkContext', () => ({
 jest.mock('@/lib/media/pick-load-photo', () => ({
   pickLoadPhotoFromCamera: jest.fn(),
   pickLoadPhotoFromLibrary: jest.fn(),
-  showLoadPhotoSourcePicker: jest.fn(),
 }));
 
 jest.mock('@/lib/media/prepare-driver-upload-image', () => ({
@@ -29,9 +24,6 @@ jest.mock('@/lib/media/validate-driver-upload-file', () => ({
 }));
 
 const mockUseNetwork = jest.requireMock('@/context/NetworkContext').useNetwork as jest.Mock;
-const mockShowPicker = showLoadPhotoSourcePicker as jest.MockedFunction<
-  typeof showLoadPhotoSourcePicker
->;
 const mockPickCamera = pickLoadPhotoFromCamera as jest.MockedFunction<
   typeof pickLoadPhotoFromCamera
 >;
@@ -51,9 +43,6 @@ describe('PodUploadSection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseNetwork.mockReturnValue({ isOffline: false, isReady: true });
-    mockShowPicker.mockImplementation(({ onCamera }) => {
-      onCamera();
-    });
     mockPickCamera.mockResolvedValue({
       uri: 'file:///picked.jpg',
       fileName: 'picked.jpg',
@@ -63,11 +52,6 @@ describe('PodUploadSection', () => {
     } as never);
     mockPrepare.mockResolvedValue(mappedFile);
     mockValidate.mockImplementation(() => undefined);
-    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   it('renders Add driver photo when online', () => {
@@ -85,7 +69,6 @@ describe('PodUploadSection', () => {
     expect(addButtons.some((node) => node.props.accessibilityState?.disabled === true)).toBe(
       true,
     );
-    expect(mockShowPicker).not.toHaveBeenCalled();
   });
 
   it('uploads after preview confirm', async () => {
@@ -94,6 +77,7 @@ describe('PodUploadSection', () => {
     render(<PodUploadSection onUpload={onUpload} />);
 
     fireEvent.press(screen.getByText(strings.loadDetail.podAddPhoto));
+    fireEvent.press(screen.getByText(strings.loadDetail.podPickCamera));
 
     await waitFor(() => {
       expect(screen.getByText(strings.loadDetail.podUpload)).toBeTruthy();
@@ -108,10 +92,11 @@ describe('PodUploadSection', () => {
     expect(screen.getByText(strings.loadDetail.podUploadSuccess)).toBeTruthy();
   });
 
-  it('discards pending photo when user confirms discard alert', async () => {
+  it('discards pending photo when user confirms discard sheet', async () => {
     render(<PodUploadSection onUpload={jest.fn()} />);
 
     fireEvent.press(screen.getByText(strings.loadDetail.podAddPhoto));
+    fireEvent.press(screen.getByText(strings.loadDetail.podPickCamera));
 
     await waitFor(() => {
       expect(screen.getByText(strings.loadDetail.podCancel)).toBeTruthy();
@@ -119,14 +104,11 @@ describe('PodUploadSection', () => {
 
     fireEvent.press(screen.getByText(strings.loadDetail.podCancel));
 
-    expect(Alert.alert).toHaveBeenCalled();
-    const discardButton = (Alert.alert as jest.Mock).mock.calls[0][2].find(
-      (btn: { text: string }) => btn.text === strings.loadDetail.podDiscardConfirm,
-    );
-
-    await act(async () => {
-      discardButton.onPress();
+    await waitFor(() => {
+      expect(screen.getByText(strings.loadDetail.podDiscardConfirm)).toBeTruthy();
     });
+
+    fireEvent.press(screen.getByText(strings.loadDetail.podDiscardConfirm));
 
     await waitFor(() => {
       expect(screen.getByText(strings.loadDetail.podAddPhoto)).toBeTruthy();

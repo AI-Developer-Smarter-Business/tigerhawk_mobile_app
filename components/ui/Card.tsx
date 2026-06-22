@@ -76,6 +76,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   titleChrome: {
-    color: tms.navActiveText,
+    color: PP2Theme.colors.text,
   },
 });
