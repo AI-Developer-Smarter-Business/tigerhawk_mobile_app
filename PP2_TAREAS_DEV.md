@@ -142,17 +142,19 @@ Bloques posteriores al deadline **9 jun** ya entregados. Tareas abiertas → **�
 
 ### Wait time — post feedback (11 jun 2026)
 
-| #         | Tarea                                                                                                                                                                                            |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **WT.21** | ✅ **Completada (11 jun 2026).** Móvil: anti-regresión timer — `hydrate-timer-state.ts` prioriza `waiting_time_events` > `actual_delivery`; tests `hydrate-timer-state`, `useDeliveryWaitTimer`. |
-| **WT.24** | ✅ **Completada (11 jun 2026).** TMS: `sync-load-billing.ts` upsert **Detention** en `load_billing` al cerrar evento; QA § billing en `docs/QA_WAIT_TIME_OVERAGE.md`.                            |
-| **WT.27** | ✅ **Completada (18 jun 2026).** Móvil: **Start wait time** manual; sin auto-start en **Arrived At Delivery** ni cierre por **Delivered**; timer visible solo tras start; strings EN.              |
-| **WT.34** | ✅ **Completada (18 jun 2026).** `docs/WAIT_TIME_OVERAGE_SPEC.md` — delivery-only, un timer, 60 min, Check In/Out, `opciones_driver.png` ≠ timer, reglas A–D + mapa código; QA alineado.        |
-| **WT.19** | ✅ **Completada (jun 2026).** TMS dev desplegado en **Netlify**; móvil operativo vía `EXPO_PUBLIC_TMS_API_URL` + Bearer (wait-time, documentos, billing). Ver `docs/DEPLOYMENT_STATUS.md`.          |
-| **WT.20** | ✅ **Completada (19 jun 2026).** Supabase: `fix_waiting_time_events_billing_columns.sql` + `enable_realtime_waiting_time_events.sql` aplicados (`npm run db:apply-wt20`). Ver `VERIFY_pp2_waiting_time_events.sql`. |
-| **WT.22** | ✅ **Completada (19 jun 2026).** Móvil: panel read-only **Your wait pay** en detalle de carga — suma `driver_pay_amount` de eventos cerrados + estimado en timer activo (`lib/wait-time/wait-pay-summary.ts`, `DeliveryWaitPaySummary`). |
-| **WT.25** | ✅ **Completada (19 jun 2026).** Q11: factura cliente = **Detention** (`load_billing.charge_type`); descripción **Delivery detention**; conductor = **Wait time**. TMS `invoice-labels.ts` + `sync-load-billing.ts`; doc `docs/WAIT_TIME_INVOICE_LABEL.md`. |
-| **WT.23** | ⏳ **Stub (19 jun 2026).** TMS dev: mock geofence → auto-close `delivery_wait` (`/api/integrations/samsara/simulate`); doc `docs/SAMSARA_GEOFENCE_SPIKE.md`. **Pendiente integrar API Samsara real** (prod backport + credenciales). |
+| #         | Tarea                                                                                                                                                                                                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **WT.21** | ✅ **Completada (11 jun 2026).** Móvil: anti-regresión timer — `hydrate-timer-state.ts` prioriza `waiting_time_events` > `actual_delivery`; tests `hydrate-timer-state`, `useDeliveryWaitTimer`.                                                                         |
+| **WT.24** | ✅ **Completada (11 jun 2026).** TMS: `sync-load-billing.ts` upsert **Detention** en `load_billing` al cerrar evento; QA § billing en `docs/QA_WAIT_TIME_OVERAGE.md`.                                                                                                    |
+| **WT.27** | ✅ **Completada (22 jun 2026).** Móvil: **Check In** / **Check Out** explícitos (detention billing manual); footer sobre Field actions; sin auto-start en **Arrived At Delivery** ni cierre por **Delivered**; panel pay WT.22. _(Antes “Start/End wait time”, 18 jun.)_ |
+| **WT.28** | ✅ **Completada (24 jun 2026).** TMS dev: POD firmado/enviado → cierra `delivery_wait` abierto — `handle-pod-signed-submitted.ts`, hook en upload `document_type=POD`, `POST …/pod-signed`, `activity_log` `pod_signed_submitted`. Sin cambios Supabase. |
+| **WT.29** | ✅ **Completada (24 jun 2026).** TMS dev: plantilla `detention_warning_45` + envío idempotente al ≥ **45 min** (`maybeNotifyDetentionWarning45` en PATCH wait-time); SQL seed `seed_detention_warning_45_email_template.sql`. |
+| **WT.34** | ✅ **Completada (18 jun 2026).** `docs/WAIT_TIME_OVERAGE_SPEC.md` — delivery-only, un timer, 60 min, Check In/Out, `opciones_driver.png` ≠ timer, reglas A–D + mapa código; QA alineado.                                                                                 |
+| **WT.19** | ✅ **Completada (jun 2026).** TMS dev desplegado en **Netlify**; móvil operativo vía `EXPO_PUBLIC_TMS_API_URL` + Bearer (wait-time, documentos, billing). Ver `docs/DEPLOYMENT_STATUS.md`.                                                                               |
+| **WT.20** | ✅ **Completada (19 jun 2026).** Supabase: `fix_waiting_time_events_billing_columns.sql` + `enable_realtime_waiting_time_events.sql` aplicados (`npm run db:apply-wt20`). Ver `VERIFY_pp2_waiting_time_events.sql`.                                                      |
+| **WT.22** | ✅ **Completada (19 jun 2026).** Móvil: panel read-only **Your wait pay** en detalle de carga — suma `driver_pay_amount` de eventos cerrados + estimado en timer activo (`lib/wait-time/wait-pay-summary.ts`, `DeliveryWaitPaySummary`).                                 |
+| **WT.25** | ✅ **Completada (19 jun 2026).** Q11: factura cliente = **Detention** (`load_billing.charge_type`); descripción **Delivery detention**; conductor = **Wait time**. TMS `invoice-labels.ts` + `sync-load-billing.ts`; doc `docs/WAIT_TIME_INVOICE_LABEL.md`.              |
+| **WT.23** | ⏳ **Stub (19 jun 2026).** TMS dev: mock geofence → auto-close `delivery_wait` (`/api/integrations/samsara/simulate`); doc `docs/SAMSARA_GEOFENCE_SPIKE.md`. **Pendiente live Samsara** — ver **§ Pendientes → WT.23** (≠ GPS Supabase 8.x).                             |
 
 ### GPS en vivo (Semana 8 — arquitectura)
 
@@ -162,10 +164,10 @@ Bloques posteriores al deadline **9 jun** ya entregados. Tareas abiertas → **�
 
 ### Documentos y UI (feedback cliente)
 
-| #         | Tarea                                                                                                                                                                                       |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **DOC.3** | ✅ **Completada (18 jun 2026).** URLs documentos sin caducidad 1h — `resolve-document-url.ts` TMS + móvil; TTL ~10 años desde `storage_path`. TMS en Netlify operativo. |
-| **UI.1**  | ✅ **Completada (18 jun 2026).** Tema **claro** TigerHawk — `PP2Theme.colors.tms` light, drawer/header blancos, acento `#E8700A`; `AppActionSheet` en lugar de `Alert` para picker POD.     |
+| #         | Tarea                                                                                                                                                                                   |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **DOC.3** | ✅ **Completada (18 jun 2026).** URLs documentos sin caducidad 1h — `resolve-document-url.ts` TMS + móvil; TTL ~10 años desde `storage_path`. TMS en Netlify operativo.                 |
+| **UI.1**  | ✅ **Completada (18 jun 2026).** Tema **claro** TigerHawk — `PP2Theme.colors.tms` light, drawer/header blancos, acento `#E8700A`; `AppActionSheet` en lugar de `Alert` para picker POD. |
 
 **Repos wait time / TMS:**
 
@@ -179,13 +181,13 @@ Bloques posteriores al deadline **9 jun** ya entregados. Tareas abiertas → **�
 
 ## Pendientes
 
-Orden sugerido de trabajo. **Tareas absorbidas / eliminadas:** **8.2** → **8.7**; **WT.13** → **WT.20**; **WT.16** → **WT.34**; **WT.17** → **WT.27**; **WT.18** (cierre Delivered) fuera de scope; **WT.26** → **WT.35**.
+Orden sugerido de trabajo. **Tareas absorbidas / eliminadas:** **8.2** → **8.7**; **8.10–8.11, 8.14–8.15** → notas fase 0 (fuera de tabla activa); **WT.13** → **WT.20**; **WT.16** → **WT.34**; **WT.17** → **WT.27**; **WT.18** (GPS stop wait) → **WT.23** Samsara; **WT.26** → **WT.35**.
 
 ### Release / handoff
 
-| #   | Tarea                                                                                                                                          |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7.8 | **Handoff** al cliente: APK/build, env, este archivo actualizado. Deadline original **9 jun** — margen imprevistos.                          |
+| #   | Tarea                                                                                                               |
+| --- | ------------------------------------------------------------------------------------------------------------------- |
+| 7.8 | **Handoff** al cliente: APK/build, env, este archivo actualizado. Deadline original **9 jun** — margen imprevistos. |
 
 ### GPS en vivo (Semana 8 · v1.1 · prioridad #1)
 
@@ -193,28 +195,29 @@ Orden sugerido de trabajo. **Tareas absorbidas / eliminadas:** **8.2** → **8.7
 
 **Docs:** `docs/GPS_LIVE_TRACKING_ARCHITECTURE.md` · `docs/TMS_DEV_REPOSITORY.md` · `docs/BACKLOG_V1_1_7_7.md`
 
-**Orden:** **8.4–8.6** (SQL) → móvil **8.7–8.9** → TMS **8.12–8.13** → **8.16**.
+**Orden:** **8.4–8.6** (SQL) ✅ → móvil **8.7–8.9** ✅ → TMS **8.12–8.13** ✅ → **8.16** ✅ · **8.17**.
 
-| #    | Tarea                                                                                                                                                                             |
-| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 8.4  | ⏳ **Scripts listos (5 jun 2026).** `supabase/sql-editor/20260605120000_pp2_driver_live_location_loads.sql` — columnas nullable en `loads`. **Aplicar** en SQL Editor.            |
-| 8.5  | ⏳ **Incluido en el mismo script** — política `Drivers update live location…` + trigger (solo `current_*`); **sin DROP** Staff. Verificar: `VERIFY_pp2_driver_live_location.sql`. |
-| 8.6  | ⏳ `enable_realtime_driver_tracking.sql` (idempotente; suele bastar con `enable_realtime_pp2_driver_sync.sql`).                                                                   |
-| 8.7  | Móvil: `lib/location/tracking-policy.ts` — intervalo 30–60 s, **estados “en curso”** (alcance ex **8.2**), umbral metros; superficie mapa TMS (detalle / dispatcher).             |
-| 8.8  | Móvil: `useDriverLocationTracking` — `expo-location` primer plano, `UPDATE` Supabase, offline/retry.                                                                              |
-| 8.9  | Móvil: UI “Sharing location with dispatch” + copy `strings`.                                                                                                                      |
-| 8.10 | **N/A fase 0** — background / jornada completa (`docs/QA_DRIVER_TRACKING_BACKGROUND.md`).                                                                                         |
-| 8.11 | **Opcional** — ruta TMS `PATCH …/location`; si no, Supabase-only (recomendado fase 0).                                                                                            |
-| 8.12 | TMS (repo dev): marcador conductor en `LoadSidebarMap` / `LoadDetailPanel` + Realtime.                                                                                            |
-| 8.13 | TMS (repo dev): dispatcher — última posición en lista o mapa; enlace a detalle.                                                                                                   |
-| 8.14 | **Pospuesto** — historial de ruta (modelo C).                                                                                                                                     |
-| 8.15 | **Pospuesto** — retención/costes historial.                                                                                                                                       |
-| 8.16 | QA: `docs/QA_DRIVER_LIVE_TRACKING.md` (punto en TMS en menos de 60 s con carga activa).                                                                                           |
-| 8.17 | Reportes diarios el día de SQL o entrega mapa TMS.                                                                                                                                |
+**Separación WT:** estas tareas son **rastreo GPS Supabase** (mapa dispatch). **No** son wait time. **WT.23** = geofence Samsara → auto-stop `delivery_wait` (distinto). **WT.28–31** = emails detention (TMS). Fuera de fase 0: **8.10** background, **8.14–8.15** historial; **8.11** opcional (TMS PATCH location).
 
-### Wait time — deploy, spec y gaps
+| #    | Tarea                                                                                                                                                                                                         |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 8.4  | ✅ **Completada (22 jun 2026).** Columnas nullable `current_*` / `last_seen_at` en `loads` — aplicado en Supabase compartido (`20260605120000_pp2_driver_live_location_loads.sql`).                           |
+| 8.5  | ✅ **Completada (22 jun 2026).** Política `Drivers update live location…` + trigger `pp2_enforce_driver_location_update` (solo GPS; Staff intacto). Verificado: `VERIFY_pp2_driver_live_location.sql`.        |
+| 8.6  | ✅ **Completada (22 jun 2026).** `enable_realtime_driver_tracking.sql` — `loads` en `supabase_realtime` (idempotente).                                                                                        |
+| 8.7  | ✅ **Completada (22 jun 2026).** Móvil: `lib/location/tracking-policy.ts` — intervalo 30–60 s, estados viaje activo (8.2), umbral metros, payload Supabase, superficies TMS; tests `tracking-policy.test.ts`. |
+| 8.8  | ✅ **Completada (22 jun 2026).** Móvil: `useDriverLocationTracking` + `update-load-live-location.ts` — primer plano, UPDATE Supabase, offline/retry, integrado en `app/load/[id].tsx`.                        |
+| 8.9  | ✅ **Completada (22 jun 2026).** Móvil: `LiveLocationTrackingBanner` + copy `strings.location.liveTracking*`; `last_sent` en banner; integrado en `LoadDetailContent`.                                        |
+| 8.12 | ✅ **Completada (22 jun 2026).** TMS dev: marcador **Driver** azul en `LoadSidebarMap` + Realtime (`useLoadLiveLocation`); leyenda _Last seen_ en `LoadDetailPanel`.                                          |
+| 8.13 | ✅ **Completada (22 jun 2026).** TMS dev: columna **Driver Last Seen** en `LoadsTable` (clic → detalle + mapa); Realtime vía `router.refresh()` existente.                                                    |
+| 8.16 | ✅ **Completada (22 jun 2026).** `docs/QA_DRIVER_LIVE_TRACKING.md` — E2E ≤60 s móvil → Supabase → TMS mapa + columna.                                                                                                                       |
 
-**WT.23 stub** en TMS dev ✅ — ver **Completadas** · **Pendiente:** credenciales Samsara + backport prod (`docs/SAMSARA_GEOFENCE_SPIKE.md` § Next steps).
+### Wait time — Samsara geofence (WT.23)
+
+**Distinto de GPS 8.x:** WT.23 usa **webhook Samsara** para cerrar wait al salir de geocerca; **no** sustituye el rastreo Supabase 8.9–8.17.
+
+| #         | Tarea                                                                                                                                                                                                                                                                                                                              |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **WT.23** | ⏳ **Stub ✅ (19 jun).** Mock `/api/integrations/samsara/simulate` + docs. **Pendiente live:** credenciales + backport prod, webhook geofence exit → auto-close `delivery_wait`, `activity_log`. **Fallback** (sin Samsara/señal): Share location manual — `LoadLocationSection` (Semana 5). Ver `docs/SAMSARA_GEOFENCE_SPIKE.md`. |
 
 ### Documentos (móvil)
 
@@ -229,26 +232,24 @@ Orden sugerido de trabajo. **Tareas absorbidas / eliminadas:** **8.2** → **8.7
 
 **Reglas confirmadas:**
 
-| #   | Regla                                                                     |
-| --- | ------------------------------------------------------------------------- |
-| A   | Wait time: **solo inicio manual** (no auto al cambiar status) → **WT.27** ✅ |
-| B   | **Fin manual** = **End wait time** (método principal)                     |
-| C   | **Único auto-stop:** e-POD TMS **firmado y enviado** → **WT.28**          |
-| D   | Emails a **`customers.email`:** 45 min, 60 min, cierre → **WT.29–WT.31**  |
-| E   | Sync offline: cola local → **OFF.2**                                      |
+| #   | Regla                                                                                       |
+| --- | ------------------------------------------------------------------------------------------- |
+| A   | Wait time: **solo inicio manual** (no auto al cambiar status) → **WT.27** ✅ (**Check In**) |
+| B   | **Fin manual** = **Check Out** (método principal) → **WT.27** ✅                            |
+| C   | **Único auto-stop:** e-POD TMS **firmado y enviado** → **WT.28** ✅                            |
+| D   | Emails a **`customers.email`:** 45 min ✅ **WT.29**, 60 min, cierre → **WT.30–WT.31**                    |
+| E   | Sync offline: cola local → **OFF.2**                                                        |
 
-**Orden sugerido:** **WT.33** (copy cliente) → **WT.29–WT.32** (emails + cron) → **WT.28** (e-POD, tras confirmar prod) → **OFF.2** (fase aparte) → **WT.35** (reportes).
+**Orden sugerido:** **WT.33** (copy cliente) → **WT.29–WT.32** (emails + cron) → **OFF.2** (fase aparte) → **WT.35** (reportes).
 
-| #         | Tarea                                                                                                                                                                                                                                              |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **WT.28** | **TMS (+ móvil si aplica):** e-POD **firmado y enviado** → cerrar `delivery_wait` abierto. Hook: evento/API `pod_signed_submitted` → `PATCH …/wait-time` con `end_time`.                                                                           |
-| **WT.29** | **TMS:** plantilla `detention_warning_45` + envío idempotente wait ≥ **45 min**.                                                                                                                                                                   |
-| **WT.30** | **TMS:** plantilla `detention_started` + envío idempotente al cruzar **60 min** gratis.                                                                                                                                                            |
-| **WT.31** | **TMS:** plantilla `detention_completed` + envío al cerrar wait — resumen minutos/cargo + validez billing.                                                                                                                                         |
-| **WT.32** | **TMS:** cron / job server-side — emails 45/60 si móvil offline; no depender solo del PATCH ~60 s.                                                                                                                                                 |
-| **WT.33** | **Follow-up cliente:** tope si timer olvidado; destinatarios email; timezone/monto en aviso 60; copy “detention”. Bloquea copy final WT.29–31.                                                                                                     |
-| **OFF.2** | **Cola offline** (~1–2 sem): encolar status, notas, POD, fotos; reintentar al recuperar señal (`docs/OFFLINE_V1.md`).                                                                                                                              |
-| **WT.35** | Reportes diarios + `CHANGELOG` al cerrar WT.27–WT.32 _(incluye ex **WT.26**)_.                                                                                                                                                                     |
+| #         | Tarea                                                                                                                                                                                                  |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **WT.29** | **TMS:** plantilla `detention_started` + envío idempotente al cruzar **60 min** gratis.                                                                                                                |
+| **WT.31** | **TMS:** plantilla `detention_completed` + envío al cerrar wait — resumen minutos/cargo + validez billing.                                                                                             |
+| **WT.32** | **TMS:** cron / job server-side — emails 45/60 si móvil offline; no depender solo del PATCH ~60 s.                                                                                                     |
+| **WT.33** | **Follow-up cliente:** tope si timer olvidado; destinatarios email; timezone/monto en aviso 60; copy emails detention (WT.29–31). **UI Check In/Out ✅ (22 jun, WT.27).** Bloquea copy final WT.29–31. |
+| **OFF.2** | **Cola offline** (~1–2 sem): encolar status, notas, POD, fotos; reintentar al recuperar señal (`docs/OFFLINE_V1.md`).                                                                                  |
+| **WT.35** | Reportes diarios + `CHANGELOG` al cerrar WT.27–WT.32 _(incluye ex **WT.26**)_.                                                                                                                         |
 
 **Dependencias:** Resend + `email_templates`; paridad Bearer TMS (**7.1** ✅); estados **`Arrived At Delivery`** en `DriverActionBar`. Wait time **no depende** de GPS Semana 8.
 
@@ -256,15 +257,16 @@ Orden sugerido de trabajo. **Tareas absorbidas / eliminadas:** **8.2** → **8.7
 
 ## Referencia rápida (post–9 jun)
 
-| Tema                                  | Dónde                                                                                             |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Backlog v1.1 (push, mensajes, E2E, …) | `docs/BACKLOG_V1_1_7_7.md`                                                                        |
-| GPS en vivo (pendiente)               | **§ Pendientes → GPS** (8.4–8.17)                                                                 |
-| **Cobro tiempo excedido (wait time)** | **Completadas WT.1–15, WT.19–22, WT.24–25, WT.27, WT.34** · **WT.23 stub ✅ / API Samsara ⏳** · **Pendientes WT.28–35, OFF.2** |
-| Entornos desplegados                  | **`docs/DEPLOYMENT_STATUS.md`** — TMS Netlify ✅ · Expo/EAS ✅ · no reabrir WT.19                                      |
-| Wait time manual + emails (cliente)   | `RESPUESTAS_CLIENTE.md` §287+ · **WT.27–WT.35**                                                   |
-| Paridad conductor ↔ TMS               | `docs/DRIVER_TMS_CAPABILITIES_5_7.md`                                                             |
-| Subida evidencia (decisión)           | **OPC.1** TMS POST tipo **Driver** — ver `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md`                 |
+| Tema                                  | Dónde                                                                                                                            |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Backlog v1.1 (push, mensajes, E2E, …) | `docs/BACKLOG_V1_1_7_7.md`                                                                                                       |
+| GPS en vivo (pendiente)               | **§ Pendientes → GPS** (8.4–8.17)                                                                                                |
+| **Cobro tiempo excedido (wait time)** | **Completadas WT.1–15, WT.19–22, WT.24–25, WT.27–29, WT.34** · **WT.23 stub ✅ / live Samsara ⏳** · **Pendientes WT.30–35, OFF.2** |
+| **Rastreo GPS en vivo (Supabase)**    | **Completadas 8.3–8.9, 8.12–8.13, 8.16** · **Pendiente 8.17** (≠ WT.23 Samsara geofence)                                         |
+| Entornos desplegados                  | **`docs/DEPLOYMENT_STATUS.md`** — TMS Netlify ✅ · Expo/EAS ✅ · no reabrir WT.19                                                |
+| Wait time manual + emails (cliente)   | `RESPUESTAS_CLIENTE.md` §287+ · **WT.27–WT.35** · geofence **WT.23**                                                             |
+| Paridad conductor ↔ TMS               | `docs/DRIVER_TMS_CAPABILITIES_5_7.md`                                                                                            |
+| Subida evidencia (decisión)           | **OPC.1** TMS POST tipo **Driver** — ver `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md`                                                |
 
 ---
 

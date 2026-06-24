@@ -1,3 +1,5 @@
+import { strings } from '@/constants/strings';
+
 import { errorStrings } from './strings';
 import type { UserFacingError } from './types';
 
@@ -48,6 +50,13 @@ export function mapSupabaseError(error: unknown): UserFacingError {
     lower.includes('row-level security') ||
     lower.includes('violates row-level security')
   ) {
+    if (lower.includes('live location columns')) {
+      return {
+        kind: 'permission',
+        title: strings.location.liveTrackingSettingsTitle,
+        message: strings.location.liveTrackingServerBlocked,
+      };
+    }
     return {
       kind: 'permission',
       title: errorStrings.permissionTitle,

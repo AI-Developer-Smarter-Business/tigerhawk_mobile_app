@@ -1975,4 +1975,242 @@ En TMS, los datos viven en `waiting_time_events`; al cerrar con cobro, la línea
 
 ---
 
+## 22 de junio de 2026
+
+### Tarea 1 — Supabase GPS en vivo aplicado + revisión 8.4 / 8.5 / 8.6 (~45 min)
+
+**Qué se hizo**
+
+- **Aplicado en Supabase compartido** (prod TMS + móvil), en orden:
+  1. `supabase/sql-editor/20260605120000_pp2_driver_live_location_loads.sql` — **8.4 + 8.5**
+  2. `supabase/sql-editor/VERIFY_pp2_driver_live_location.sql` — verificación
+  3. `supabase/sql-editor/enable_realtime_driver_tracking.sql` — **8.6**
+- **Revisión de buenas prácticas:** script aditivo (`IF NOT EXISTS`), política RLS nueva sin DROP Staff, trigger `SECURITY DEFINER` + `search_path`, índice parcial en `last_seen_at`, copia idéntica en `supabase/migrations/`.
+- **Corrección preventiva:** trigger `pp2_enforce_driver_location_update` excluye también `updated_at` (evita bloqueo si la BD auto-actualiza timestamp en UPDATE). Patch opcional: `fix_pp2_driver_location_trigger_updated_at.sql`.
+- **8.4, 8.5, 8.6** marcadas ✅ en `PP2_TAREAS_DEV.md`; actualizados `docs/GPS_LIVE_TRACKING_ARCHITECTURE.md`, `docs/TMS_DEV_REPOSITORY.md`, `docs/ROLLBACK_PP2.md`.
+
+**Funcionalidad disponible**
+
+- Esquema listo para GPS fase 0; columnas `current_*` en `NULL` hasta **8.7–8.8** (móvil). TMS prod **sin cambio visible** (mapa live = **8.12**).
+
+**Impacto prod**
+
+- Aditivo: no rompe TMS ni app actual. Status del conductor sigue vía API TMS (no UPDATE directo a `loads` salvo GPS futuro).
+
+**Cómo probar**
+
+1. SQL Editor → `VERIFY_pp2_driver_live_location.sql`: 4 columnas nullable, política `Drivers update live location on assigned loads`, trigger guard, `loads` en Realtime.
+2. Opcional: re-ejecutar `fix_pp2_driver_location_trigger_updated_at.sql` si el trigger se aplicó antes del parche `updated_at`.
+3. Smoke TMS: login dispatcher → **My Loads** / detalle carga → comportamiento igual que antes.
+4. `npm test -- --testPathPattern="release-handoff-docs"`.
+5. `npm run check:daily-reports`.
+
+**Siguiente tarea de código:** **8.8** — `useDriverLocationTracking` (móvil).
+
+---
+
+### Tarea 2 — Política GPS en vivo móvil (8.7) (~45 min)
+
+**Qué se hizo**
+
+- Nuevo **`lib/location/tracking-policy.ts`**: intervalo 30–60 s (default 45 s), estados viaje activo (`Dispatched` + `DRIVER_FIELD_STATUSES`; excluye `Assigned` / `Completed` / `Cancelled`), umbral **25 m** para omitir pings redundantes, heartbeat a 60 s, payload `buildLiveTrackingLoadUpdate` → columnas Supabase `loads.current_*`.
+- Superficies TMS documentadas: `load_detail` + `dispatcher_board` (implementación **8.12–8.13**).
+- Export en `lib/location/index.ts`; constante `LOAD_LIVE_LOCATION_COLUMNS` en `lib/supabase/schema/driver-loads.ts`.
+- Tests **`lib/location/__tests__/tracking-policy.test.ts`**; **8.7** ✅ en `PP2_TAREAS_DEV.md`.
+
+**Funcionalidad disponible**
+
+- Sin cambio visible en UI aún; reglas listas para el hook **8.8** y banner **8.9**.
+
+**DB SUPABASE NO REQUIERE CAMBIOS** — usa columnas de **8.4–8.6** ya aplicadas.
+
+**Cómo probar**
+
+1. `npm test -- --testPathPattern="tracking-policy"`.
+2. `npm run lint`.
+3. Revisar `LIVE_TRACKING_ACTIVE_STATUSES` incluye **In Transit** / **Arrived At Delivery** y excluye **Assigned**.
+
+**Siguiente:** **8.8** — `useDriverLocationTracking`.
+
+---
+
+### Tarea 3 — Hook GPS en vivo + persistencia Supabase (8.8) (~1 h)
+
+**Qué se hizo**
+
+- **`lib/supabase/queries/update-load-live-location.ts`** — `UPDATE` en `loads.current_*` vía RLS conductor (solo columnas GPS).
+- **`hooks/useDriverLocationTracking.ts`** — loop cada 45 s en detalle de carga con foco; para en background/offline; reintenta al volver online; usa `tracking-policy` (umbral 25 m, estados activos).
+- Integrado en **`app/load/[id].tsx`** (side-effect al abrir detalle).
+- Tests: `update-load-live-location.test.ts`, `useDriverLocationTracking.test.ts`.
+- **8.8** ✅ en `PP2_TAREAS_DEV.md`.
+
+**Funcionalidad disponible**
+
+- Con carga en viaje activo (**In Transit**, **Arrived At Delivery**, etc.) y permiso GPS, la app envía pings a Supabase mientras el detalle está abierto. Sin banner visible aún (**8.9**). TMS mapa aún sin marcador (**8.12**).
+
+**DB SUPABASE:** usa columnas **8.4–8.6** (ya aplicadas).
+
+**Cómo probar**
+
+1. `npm test -- --testPathPattern="useDriverLocationTracking|update-load-live-location"`.
+2. **Mobile:** login → **My Loads** → carga **In Transit** → conceder ubicación → dejar detalle abierto ~1 min → Supabase Table Editor `loads` → `current_latitude` / `last_seen_at` actualizados.
+3. Salir de la app (background) → pings se detienen; volver → reanudan.
+
+**Siguiente:** **8.9** — banner “Sharing location with dispatch”.
+
+---
+
+### Tarea 4 — Detention: botones Check In / Check Out explícitos (feedback cliente)
+
+**Qué se hizo**
+
+- Copy alineado a feedback Lucas/Nico (**Q12–15**): botones **`Check In`** (inicia wait + **detention billing**) y **`Check Out`** (fin de servicio en cliente).
+- Sección renombrada **Delivery wait & detention**; fase billable **Billable detention**; banner menciona detention.
+- **Ubicación:** `DeliveryWaitSection` movida al **footer sticky** sobre **Field actions** (`app/load/[id].tsx`) — flujo: **Arrived At Delivery** → **Check In** → trabajo → **Check Out**.
+- Actualizados `docs/WAIT_TIME_OVERAGE_SPEC.md`, tests `DeliveryWaitSection.test.tsx`.
+
+**Funcionalidad disponible**
+
+- En **Arrived At Delivery**, el conductor ve **Check In** naranja arriba de field actions; tras check-in, cronómetro + **Check Out**. Sin auto-start al cambiar status (WT.27).
+
+**Cómo probar**
+
+1. `npm test -- --testPathPattern="DeliveryWaitSection"`.
+2. **Mobile:** carga en **Arrived At Delivery** → footer muestra **Check In** → pulsar → timer corre → **Check Out** detiene sin cambiar status.
+3. Verificar TMS: POST wait-time solo tras **Check In**; Billing **Detention** al cerrar evento billable (WT.24/25).
+
+---
+
+### Tarea 5 — Banner GPS en vivo (8.9) (~30 min)
+
+**Qué se hizo**
+
+- **`components/loads/LiveLocationTrackingBanner.tsx`** — banner *Sharing location with dispatch* + *Last sent* / offline / permisos; arriba del detalle de carga.
+- **`lib/location/format-last-sent-at.ts`** — formato *Just now* / *N min ago*.
+- Copy en **`strings.location.liveTracking*`**; hint manual share actualizado (`tmsShareOnlyHint`).
+- Cableado con **`useDriverLocationTracking`** en `LoadDetailContent`.
+- Tests: `LiveLocationTrackingBanner.test.tsx`, `format-last-sent-at.test.ts`.
+- **8.9** ✅ en `PP2_TAREAS_DEV.md`.
+
+**Cómo probar**
+
+1. `npm test -- --testPathPattern="LiveLocationTrackingBanner|format-last-sent"`.
+2. **Mobile:** carga **In Transit** → abrir detalle → banner naranja *Sharing location with dispatch* → *Last sent: Just now* tras ~45 s.
+3. Denegar GPS → banner *Location needed for dispatch* + **Open Settings**.
+
+**Siguiente:** **8.12** — marcador conductor en mapa TMS.
+
+---
+
+### Tarea 6 — Marcador GPS en mapa TMS (8.12) (~45 min)
+
+**Qué se hizo** (repo TMS dev, no móvil)
+
+- **`lib/live-tracking/driver-location.ts`** — parseo `current_*`, `formatLastSeenAt`, estados activos.
+- **`hooks/useLoadLiveLocation.ts`** — suscripción Realtime `loads` UPDATE filtrada por `load_id`.
+- **`components/maps/LoadSidebarMap.tsx`** — marcador azul **Driver** + tooltip *Last seen*.
+- **`components/dispatcher/LoadDetailPanel.tsx`** — cableado + leyenda bajo el mapa.
+- **`types/dispatcher.ts`** — columnas `current_latitude`, `current_longitude`, `last_seen_at`, `location_accuracy_m`.
+- Tests: `lib/live-tracking/__tests__/driver-location.test.ts`.
+- **8.12** ✅ en `PP2_TAREAS_DEV.md`.
+
+**Cómo probar**
+
+1. TMS dev: `npm test -- lib/live-tracking/__tests__/driver-location.test.ts` + `npm run lint`.
+2. **Mobile:** conductor en carga **In Transit** con detalle abierto (pings ~45 s).
+3. **TMS:** dispatcher → abrir misma carga → mapa lateral → punto azul **Driver** que se mueve; leyenda *Just now* / *N min ago*.
+4. Supabase: verificar `loads.current_latitude` / `last_seen_at` actualizándose.
+
+**Siguiente:** **8.13** — última posición visible en tablero dispatcher.
+
+---
+
+### Tarea 7 — Columna Driver Last Seen + fixes build TMS (8.13) (~30 min)
+
+**Qué se hizo** (repo TMS dev)
+
+- **Fix 8.12:** `LoadSidebarMap` — tipado explícito `dynamic<InnerMapProps>` para `boundsPoints` (evita error TS en deploy).
+- **Fix build Netlify:** `parse-geofence-event.ts` — acceso seguro a `geofence.name` / `vehicle.id`.
+- **8.13:** columna **Driver Last Seen** en `LoadsTable` + `column-config.ts`; clic abre detalle (mapa live).
+- **`getDriverLastSeenLabel`** en `lib/live-tracking/driver-location.ts`.
+- **8.13** ✅ en `PP2_TAREAS_DEV.md`.
+
+**Cómo probar**
+
+1. TMS: `npm run build` (debe pasar TypeScript completo).
+2. Dispatcher → tabla → columna **Driver Last Seen** en cargas **In Transit** con pings móvil.
+3. Clic en *Just now* → panel detalle con mapa y marcador azul.
+
+**Siguiente:** **8.16** — QA marker &lt; 60 s.
+
+---
+
+### Tarea 8 — QA GPS en vivo (8.16) (~30 min)
+
+**Qué se hizo**
+
+- **`docs/QA_DRIVER_LIVE_TRACKING.md`** — checklist E2E: móvil (teléfono) → Supabase → TMS mapa + **Driver Last Seen** en **≤ 60 s**; matriz G1–G9, query SQL, regresión, sign-off.
+- **8.16** ✅ en `PP2_TAREAS_DEV.md`.
+
+**Cómo probar**
+
+1. Seguir matriz **G1** en `docs/QA_DRIVER_LIVE_TRACKING.md`.
+2. `npm test -- --testPathPattern="tracking-policy|LiveLocationTrackingBanner|driver-location"`.
+
+**Siguiente:** **8.17** — reporte diario cierre fase 0 GPS.
+
+---
+
+## 24 de junio de 2026
+
+### Tarea 1 — e-POD auto-stop wait timer (WT.28) (~45 min)
+
+**Qué se hizo** (TMS dev repo)
+
+- **`lib/wait-time/handle-pod-signed-submitted.ts`** — cierra el `delivery_wait` abierto vía `closeOpenDeliveryWaitEvent`; registra `activity_log` con acción `pod_signed_submitted` (idempotente por evento).
+- **Hook en upload:** `process-load-document-upload.ts` invoca el handler cuando el formulario envía `document_type=POD` (incluye móvil si en el futuro envía POD antes de normalizar a `Driver`).
+- **API:** `POST /api/dispatcher/loads/[id]/pod-signed` — auth Bearer/cookie; staff o conductor asignado (`resolveWaitTimeAccess`).
+- Tests **`lib/wait-time/__tests__/handle-pod-signed-submitted.test.ts`** (5 casos).
+- Docs: `docs/WAIT_TIME_OVERAGE_SPEC.md` regla **C** ✅, `docs/QA_WAIT_TIME_OVERAGE.md` fila **7c**, `docs/TMS_PATCH_WT_DRIVER_WAIT_TIME.md` § WT.28, **WT.28** ✅ en `PP2_TAREAS_DEV.md`.
+
+**Supabase:** SUPABASE no requiere cambios
+
+**Cómo probar**
+
+1. TMS dev: `npm test -- lib/wait-time/__tests__/handle-pod-signed-submitted.test.ts`.
+2. Móvil o TMS → carga con **Check In** activo (timer corriendo).
+3. TMS dispatcher → **Documents** → subir archivo con tipo **POD** → verificar `waiting_time_events.end_time` poblado y panel wait detenido.
+4. Opcional: `POST …/api/dispatcher/loads/{id}/pod-signed` con Bearer del conductor → `{ "closed": true, "event_id": "…" }`.
+5. Supabase → `activity_log` fila `pod_signed_submitted` en el evento de wait cerrado.
+6. Regresión: subir foto tipo **Driver** desde móvil **no** debe cerrar el timer (solo POD / API pod-signed).
+
+**Siguiente:** **WT.29** — email aviso 45 min detention.
+
+---
+
+### Tarea 2 — Email cliente 45 min detention (WT.29) (~45 min)
+
+**Qué se hizo** (TMS dev repo)
+
+- **`lib/wait-time/notify-detention-warning-45.ts`** — al ≥ **45 min** de `delivery_wait` abierto, envía plantilla **`detention_warning_45`** a `customers.email` vía Resend (`sendTemplateEmail`).
+- **Idempotencia:** `activity_log` en el evento (`detention_warning_45_email_sent` / `_failed` / `_skipped_no_recipient` / `_skipped_inactive_template`).
+- **Disparo:** `PATCH`/`POST` `…/api/dispatcher/loads/[id]/wait-time` (sync ~60 s del móvil); duración = `max(duration_minutes, now − start_time)` para eventos abiertos.
+- **SQL:** `supabase/sql-editor/seed_detention_warning_45_email_template.sql` — sembrar plantilla en Supabase.
+- Tests **`notify-detention-warning-45.test.ts`** (7 casos); **WT.29** ✅ en `PP2_TAREAS_DEV.md`.
+
+**Supabase:** aplicar `seed_detention_warning_45_email_template.sql` en SQL Editor (tabla `email_templates` existente).
+
+**Cómo probar**
+
+1. SQL Editor → ejecutar seed → `SELECT template_key FROM email_templates WHERE template_key = 'detention_warning_45'`.
+2. TMS dev desplegado con `RESEND_API_KEY`; carga con `customers.email` poblado.
+3. Móvil → **Check In** → esperar o simular ≥ 45 min → PATCH wait-time (automático cada ~60 s).
+4. Ver email en bandeja cliente + `activity_log` `detention_warning_45_email_sent`.
+5. Segundo PATCH → **no** reenvía (idempotente).
+6. `npm test -- lib/wait-time/__tests__/notify-detention-warning-45.test.ts`.
+
+**Siguiente:** **WT.30** — email `detention_started` al cruzar 60 min.
+
+---
+
 _Al cerrar cada día, añadir sección `## [fecha]` **en orden cronológico** (debajo de la última fecha del archivo) con **Tarea 1, Tarea 2, Tarea 3…** de arriba abajo. Nunca Tarea 8 antes de Tarea 7. Ejecutar `npm run check:daily-reports` antes de commit._

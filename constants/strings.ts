@@ -74,7 +74,17 @@ export const strings = {
     openInMaps: 'Open in Maps',
     mapsLinkA11y: 'Open coordinates in maps app',
     tmsShareOnlyHint:
-      'Share location sends load, driver, and GPS details to WhatsApp or other apps. Dispatch is not notified automatically in TMS.',
+      'Live tracking updates dispatch while this load detail is open. Share location below sends coordinates manually (WhatsApp, etc.).',
+    liveTrackingBanner: 'Sharing location with dispatch',
+    liveTrackingLastSent: (label: string) => `Last sent: ${label}`,
+    liveTrackingSending: 'Sending first location update…',
+    liveTrackingPausedOffline: 'Location sharing paused — waiting for connection.',
+    liveTrackingSettingsTitle: 'Location needed for dispatch',
+    liveTrackingSettingsHint:
+      'Turn on location access so dispatch can see your position on this load.',
+    liveTrackingBannerA11y: 'Live location sharing with dispatch is active',
+    liveTrackingServerBlocked:
+      'Location could not be saved. Ask dispatch to apply the PP2 GPS database fix in Supabase.',
   },
   tabs: {
     loads: 'Loads',
@@ -212,23 +222,34 @@ export const strings = {
     emDash: '—',
   },
   waitTime: {
-    sectionTitle: 'Delivery wait time',
+    sectionTitle: 'Delivery wait & detention',
     phaseIdle: 'Not started',
     phaseFree: 'Free waiting time',
-    phaseBillable: 'Billable wait',
+    phaseBillable: 'Billable detention',
     phaseStopped: 'Stopped',
     freeRemaining: (minutes: number) =>
       `${minutes} min free time remaining`,
     exceededBanner:
-      'Waiting time exceeded — dispatch has been notified. Billable time may apply.',
+      'Detention billing may apply — dispatch has been notified. Billable time after 60 minutes free.',
     mockHint: 'Demo mode — timer stored locally (Phase A).',
-    startWaitTime: 'Start wait time',
+    checkIn: 'Check In',
+    checkInHint:
+      'Tap when you are present for unloading at the customer. Required to start wait time and detention billing.',
+    checkInA11y: 'Check in for delivery wait and detention billing',
+    checkOut: 'Check Out',
+    checkOutHint:
+      'Ends the wait timer (service complete at customer). Load status stays the same unless you change it below.',
+    checkOutA11y: 'Check out and stop delivery wait timer',
+    /** @deprecated Use checkIn — kept for doc references */
+    startWaitTime: 'Check In',
     startWaitTimeHint:
-      'Tap when you are present for unloading. This starts the wait timer and billing clock.',
-    startWaitTimeA11y: 'Start delivery wait timer when present for unloading',
-    endWaitTime: 'End wait time',
-    endWaitTimeHint: 'Stops the timer only. Load status stays the same.',
-    endWaitTimeA11y: 'Stop the delivery wait timer without changing load status',
+      'Tap when you are present for unloading at the customer. Required to start wait time and detention billing.',
+    startWaitTimeA11y: 'Check in for delivery wait and detention billing',
+    /** @deprecated Use checkOut */
+    endWaitTime: 'Check Out',
+    endWaitTimeHint:
+      'Ends the wait timer (service complete at customer). Load status stays the same unless you change it below.',
+    endWaitTimeA11y: 'Check out and stop delivery wait timer',
     syncHint: 'Syncing wait time with the server…',
     paySummaryTitle: 'Your wait pay',
     accruedTimeLabel: 'Accrued wait time',

@@ -263,6 +263,8 @@ Mobile may use **Supabase SELECT** on `load_documents` (RLS: driver scoped to as
 
 **Task 4.1 decision:** option **(A)** — extend this POST (see `docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md`). PP2 mobile: `uploadLoadDocument`, `assertDriverUploadDocumentType`, client validation before upload. **Deploy TMS patch** before end-to-end POD in the app (task 4.2).
 
+**WT.28 side effect (TMS):** when `document_type` in the multipart form is **`POD`**, TMS auto-closes an open `delivery_wait` on that load (`docs/TMS_PATCH_WT_DRIVER_WAIT_TIME.md`). Mobile today uploads as **`Driver`** — that does **not** trigger auto-stop. Optional explicit hook: `POST /api/dispatcher/loads/{id}/pod-signed` (Bearer).
+
 ---
 
 ## 6. Critical model: `loads.driver_id`

@@ -31,7 +31,9 @@ Manual matrix for **Fase A (mock)** and **Fase B (production API)** across mobil
 | 5 | Dispatcher bell | — | Notification: load ref + billable minutes; Realtime refresh |
 | 6 | Dispatcher toast (WT.12) | — | Floating toast: *Waiting time exceeded — N min billable* |
 | 7 | Tap **End wait time** | Timer **Stopped**; load status **unchanged**; API closes event (Phase B) | Panel shows stopped; event has `end_time` |
-| 7a | Change status → **Delivered** while timer **running** (do not tap End) | Timer **keeps running** — no auto-stop (**WT.27**) | Open event remains until PATCH / e-POD (**WT.28**) |
+| 7a | Change status → **Delivered** while timer **running** (do not tap End) | Timer **keeps running** — no auto-stop (**WT.27**) | Open event remains until PATCH / POD submit (**WT.28**) |
+| 7c | Upload **POD** document (TMS Documents tab) while timer **running** | — (mobile Driver photo does **not** auto-stop) | Open `delivery_wait` closes; `activity_log` `pod_signed_submitted` (**WT.28**) |
+| 7d | Open wait ≥ **45 min** (Phase B; mobile PATCH ~60 s) | — | Customer receives **`detention_warning_45`** email once; `activity_log` `detention_warning_45_email_sent` (**WT.29**) |
 | 7b | Stop after **>60 min** billable | — | **Billing** tab: **charge_type** = **Detention**, description **Delivery detention — N min billable…** (**WT.25**); **Waiting Time Audit** |
 | 8 | **Waiting Time Audit** (A/R) | — | Event listed; `charge_amount` / `driver_pay_amount` populated when billable |
 | 9 | Driver Bearer (Phase B) | POST/PATCH wait-time without TMS cookie session | API 201/200; `logged_by: driver` |

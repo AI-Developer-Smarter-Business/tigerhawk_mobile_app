@@ -46,9 +46,23 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  location_changed boolean;
 BEGIN
   IF (SELECT get_user_role()) IS DISTINCT FROM 'driver' THEN
     RETURN NEW;
+  END IF;
+
+  location_changed := (
+    NEW.current_latitude IS DISTINCT FROM OLD.current_latitude
+    OR NEW.current_longitude IS DISTINCT FROM OLD.current_longitude
+    OR NEW.last_seen_at IS DISTINCT FROM OLD.last_seen_at
+    OR NEW.location_accuracy_m IS DISTINCT FROM OLD.location_accuracy_m
+  );
+
+  IF NOT location_changed THEN
+    RAISE EXCEPTION 'Drivers cannot update load fields directly; use Tigerhawk Mobile status actions (PP2 Semana 8)'
+      USING ERRCODE = '42501';
   END IF;
 
   IF (
@@ -57,12 +71,16 @@ BEGIN
       - 'current_longitude'
       - 'last_seen_at'
       - 'location_accuracy_m'
+      - 'updated_at'
+      - 'last_tracked'
   ) IS DISTINCT FROM (
     to_jsonb(OLD)
       - 'current_latitude'
       - 'current_longitude'
       - 'last_seen_at'
       - 'location_accuracy_m'
+      - 'updated_at'
+      - 'last_tracked'
   ) THEN
     RAISE EXCEPTION 'Driver may only update live location columns on loads (PP2 Semana 8)'
       USING ERRCODE = '42501';

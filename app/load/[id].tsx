@@ -3,12 +3,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { DriverActionBar } from '@/components/loads/DriverActionBar';
+import { DeliveryWaitSection } from '@/components/loads/DeliveryWaitSection';
 import { LoadDetailContent } from '@/components/loads/LoadDetailContent';
 import { ErrorState, LoadingState } from '@/components/ui/ScreenState';
 import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { useLoads } from '@/context/LoadsContext';
 import { useDeliveryWaitTimer } from '@/hooks/useDeliveryWaitTimer';
+import { useDriverLocationTracking } from '@/hooks/useDriverLocationTracking';
 import { useDriverStatusChange } from '@/hooks/useDriverStatusChange';
 import { useLoadDetailQuery } from '@/hooks/useLoadDetailQuery';
 import { useLoadTransitionsQuery } from '@/hooks/useLoadTransitionsQuery';
@@ -53,6 +55,7 @@ export default function LoadDetailScreen() {
     [handleStatusChangeRaw],
   );
   const waitTimer = useDeliveryWaitTimer(load);
+  const locationTracking = useDriverLocationTracking(load);
   const uploadDocument = useLoadDocumentUpload(load);
   const refreshDocumentsList = useCallback(
     () => refetchDocuments(),
@@ -116,34 +119,36 @@ export default function LoadDetailScreen() {
       <Stack.Screen
         options={{ title: formatReference(load.reference_number) }}
       />
-      <View style={styles.page}>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.content}
-          refreshControl={
-            <RefreshControl
-              refreshing={pullRefreshing}
-              onRefresh={onPullRefresh}
-              tintColor={PP2Theme.colors.tms.navActive}
-              colors={[PP2Theme.colors.tms.navActive]}
-            />
-          }
-        >
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={pullRefreshing}
+            onRefresh={onPullRefresh}
+            tintColor={PP2Theme.colors.tms.navActive}
+            colors={[PP2Theme.colors.tms.navActive]}
+          />
+        }
+      >
         <LoadDetailContent
           load={load}
-          waitTimer={waitTimer}
-          fieldActionPending={fieldActionPending}
+          locationTracking={locationTracking}
           error={error}
-            onRetry={() => void retry()}
-            documents={documents}
-            documentsLoading={documentsLoading}
-            documentsError={documentsError}
-            onDocumentsRetry={() => void retryDocuments()}
-            onRefreshDocuments={refreshDocumentsList}
-            onUploadDocument={uploadDocument}
+          onRetry={() => void retry()}
+          documents={documents}
+          documentsLoading={documentsLoading}
+          documentsError={documentsError}
+          onDocumentsRetry={() => void retryDocuments()}
+          onRefreshDocuments={refreshDocumentsList}
+          onUploadDocument={uploadDocument}
+        />
+        <View style={styles.actionsSection}>
+          <DeliveryWaitSection
+            timer={waitTimer}
+            fieldActionPending={fieldActionPending}
           />
-        </ScrollView>
-        <View style={styles.actionFooter}>
           <DriverActionBar
             currentStatus={load.status}
             activeHolds={load.active_holds}
@@ -152,28 +157,23 @@ export default function LoadDetailScreen() {
             locked={waitTimer.loading || waitTimer.stopping || fieldActionPending}
           />
         </View>
-      </View>
+      </ScrollView>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  page: {
+  scroll: {
     flex: 1,
     backgroundColor: PP2Theme.colors.background,
   },
-  scroll: { flex: 1 },
   content: {
     padding: PP2Theme.spacing.md,
-    paddingBottom: PP2Theme.spacing.md,
+    paddingBottom: PP2Theme.spacing.xl,
+    gap: PP2Theme.spacing.sm,
   },
-  actionFooter: {
-    backgroundColor: PP2Theme.colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: PP2Theme.colors.border,
-    paddingHorizontal: PP2Theme.spacing.md,
-    paddingTop: PP2Theme.spacing.md,
-    paddingBottom: PP2Theme.spacing.lg,
-    ...PP2Theme.shadow.md,
+  actionsSection: {
+    marginTop: PP2Theme.spacing.md,
+    gap: PP2Theme.spacing.md,
   },
 });

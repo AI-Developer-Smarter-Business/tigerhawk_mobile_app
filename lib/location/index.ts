@@ -12,6 +12,23 @@ export {
   type GpsV1Mode,
 } from './gps-v1-policy';
 export {
+  LIVE_TRACKING_ACTIVE_STATUSES,
+  LIVE_TRACKING_POLICY,
+  buildLiveTrackingLoadUpdate,
+  canStartLiveTracking,
+  isAcceptableTrackingAccuracy,
+  isLiveTrackingActiveStatus,
+  isLiveTrackingEnabled,
+  resolveLiveTrackingIntervalMs,
+  resolveLiveTrackingIntervalMsWithJitter,
+  shouldSendLocationPing,
+  type LastLocationPing,
+  type LiveTrackingLoadUpdate,
+  type LiveTrackingPersistMode,
+  type LiveTrackingTmsSurface,
+  type ShouldSendLocationPingInput,
+} from './tracking-policy';
+export {
   buildLoadLocationShareMessage,
   formatAccuracyMeters,
   formatCoordinates,

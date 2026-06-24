@@ -58,7 +58,7 @@ describe('DeliveryWaitSection', () => {
     expect(screen.queryByText(strings.waitTime.sectionTitle)).toBeNull();
   });
 
-  it('shows Start wait time when eligible and not running (WT.27)', () => {
+  it('shows Check In when eligible and not running (WT.27)', () => {
     render(
       <DeliveryWaitSection
         timer={buildTimer({
@@ -67,12 +67,12 @@ describe('DeliveryWaitSection', () => {
         })}
       />,
     );
-    expect(screen.getByText(strings.waitTime.startWaitTime)).toBeTruthy();
-    expect(screen.getByText(strings.waitTime.startWaitTimeHint)).toBeTruthy();
+    expect(screen.getByText(strings.waitTime.checkIn)).toBeTruthy();
+    expect(screen.getByText(strings.waitTime.checkInHint)).toBeTruthy();
     expect(screen.queryByText('0:00')).toBeNull();
   });
 
-  it('shows elapsed time and End wait time when running', () => {
+  it('shows elapsed time and Check Out when running', () => {
     render(
       <DeliveryWaitSection
         timer={buildTimer({
@@ -90,8 +90,8 @@ describe('DeliveryWaitSection', () => {
       />,
     );
     expect(screen.getByText('5:00')).toBeTruthy();
-    expect(screen.getByText(strings.waitTime.endWaitTime)).toBeTruthy();
-    expect(screen.queryByText(strings.waitTime.startWaitTime)).toBeNull();
+    expect(screen.getByText(strings.waitTime.checkOut)).toBeTruthy();
+    expect(screen.queryByText(strings.waitTime.checkIn)).toBeNull();
   });
 
   it('shows wait pay summary when accrued (WT.22)', () => {

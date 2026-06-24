@@ -47,14 +47,14 @@ export function DeliveryWaitSection({
       {timer.canStart ? (
         <View style={styles.startWrap}>
           <Button
-            title={strings.waitTime.startWaitTime}
+            title={strings.waitTime.checkIn}
             variant="accent"
             loading={timer.loading}
             disabled={timer.loading || fieldActionPending}
             onPress={() => void timer.startTimer()}
-            accessibilityLabel={strings.waitTime.startWaitTimeA11y}
+            accessibilityLabel={strings.waitTime.checkInA11y}
           />
-          <Text style={styles.startHint}>{strings.waitTime.startWaitTimeHint}</Text>
+          <Text style={styles.startHint}>{strings.waitTime.checkInHint}</Text>
         </View>
       ) : null}
       {showElapsed ? (
@@ -86,14 +86,14 @@ export function DeliveryWaitSection({
       {timer.canStop ? (
         <View style={styles.stopWrap}>
           <Button
-            title={strings.waitTime.endWaitTime}
+            title={strings.waitTime.checkOut}
             variant="outlineAccent"
             loading={timer.stopping}
             disabled={timer.stopping || fieldActionPending}
             onPress={() => void timer.stopTimer()}
-            accessibilityLabel={strings.waitTime.endWaitTimeA11y}
+            accessibilityLabel={strings.waitTime.checkOutA11y}
           />
-          <Text style={styles.stopHint}>{strings.waitTime.endWaitTimeHint}</Text>
+          <Text style={styles.stopHint}>{strings.waitTime.checkOutHint}</Text>
         </View>
       ) : null}
       <DeliveryWaitPaySummary summary={timer.paySummary} />

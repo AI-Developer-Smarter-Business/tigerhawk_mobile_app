@@ -55,6 +55,14 @@ export const LOAD_RELATED_TABLES = {
 /** Default page size for driver load list (task 2.2). */
 export const LOAD_LIST_PAGE_SIZE = 20;
 
+/** Columns for live GPS on load detail / Supabase UPDATE (Semana 8 — task 8.4). */
+export const LOAD_LIVE_LOCATION_COLUMNS = [
+  'current_latitude',
+  'current_longitude',
+  'last_seen_at',
+  'location_accuracy_m',
+] as const;
+
 /** Filter for mobile driver list (must match RLS). */
 export function driverLoadsFilter(driverUserId: string) {
   return {

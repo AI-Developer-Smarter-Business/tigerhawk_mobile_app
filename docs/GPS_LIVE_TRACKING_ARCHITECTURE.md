@@ -72,6 +72,9 @@ On table **`loads`** (per-load marker for dispatch):
 1. `supabase/sql-editor/20260605120000_pp2_driver_live_location_loads.sql` — **8.4 + 8.5** (columns, RLS, trigger guard).
 2. `supabase/sql-editor/VERIFY_pp2_driver_live_location.sql` — smoke.
 3. `supabase/sql-editor/enable_realtime_driver_tracking.sql` — **8.6** if `loads` not yet in Realtime.
+4. Optional (if 8.5 applied before 22 Jun 2026): `fix_pp2_driver_location_trigger_updated_at.sql` — exclude auto `updated_at` from driver guard.
+
+**Status:** **Applied 22 Jun 2026** on shared Supabase (prod TMS + mobile). Mobile send + TMS map UI still pending **8.7–8.13**.
 
 **RLS (8.5):** new policy `Drivers update live location on assigned loads` only — **does not** replace Staff policies. Trigger `pp2_enforce_driver_location_update` blocks drivers from changing `status` or other fields.
 
@@ -83,9 +86,9 @@ On table **`loads`** (per-load marker for dispatch):
 
 | Piece | Path / action |
 |-------|----------------|
-| Policy | `lib/location/tracking-policy.ts` — interval 30–60 s, active statuses, distance threshold optional |
-| Sender | `useDriverLocationTracking(loadId)` — start on load detail focus, stop on blur/unmount |
-| UI | Banner on load detail: “Sharing location with dispatch” + `last_sent_at` |
+| Policy | `lib/location/tracking-policy.ts` — interval 30–60 s, active statuses, distance threshold optional | ✅ **8.7** |
+| Sender | `useDriverLocationTracking(loadId)` — start on load detail focus, stop on blur/unmount | ✅ **8.8** |
+| UI | Banner on load detail: “Sharing location with dispatch” + `last_sent_at` | ✅ **8.9** |
 | Existing share | Keep **Share location** WhatsApp/manual (`LoadLocationSection`) — complementary |
 
 Replaces need to call stub `postDriverLocationToTms()` if using **Supabase-only** path (flip `canPersistLocationToTms` only when TMS route 8.11 is added).
@@ -96,8 +99,8 @@ Replaces need to call stub `postDriverLocationToTms()` if using **Supabase-only*
 
 | Piece | Action |
 |-------|--------|
-| Load detail map | Extend map component: second marker at `current_latitude/longitude`, tooltip `last_seen_at` |
-| Dispatcher board | Optional list column “Last seen” or mini-map; click → load detail |
+| Load detail map | Extend map component: second marker at `current_latitude/longitude`, tooltip `last_seen_at` | ✅ **8.12** |
+| Dispatcher board | Optional list column “Last seen” or mini-map; click → load detail | ✅ **8.13** |
 | Fetch | `cache: 'no-store'` or Realtime-only patch state — avoid stale marker |
 
 Implement in **TMS development repository** only:
@@ -128,7 +131,7 @@ Do **not** edit `PROYECTO_MUESTRA/`. See `docs/TMS_DEV_REPOSITORY.md`.
 | 8.11 | **Optional** — Supabase direct is enough |
 | 8.12–8.13 | **Yes** — TMS map + dispatcher visibility |
 | 8.14–8.15 | **No** — later |
-| 8.16 | **Yes** — QA “marker &lt; 60 s” |
+| QA checklist | `docs/QA_DRIVER_LIVE_TRACKING.md` — marker in TMS ≤ 60 s | ✅ **8.16** |
 | 8.17 | **Yes** — daily reports when shipped |
 
 ---

@@ -71,6 +71,7 @@ describe('release handoff docs (7.6–7.7)', () => {
     expect(sql).toContain('ADD COLUMN IF NOT EXISTS current_latitude');
     expect(sql).toContain('Drivers update live location on assigned loads');
     expect(sql).toContain('pp2_enforce_driver_location_update');
+    expect(sql).toContain("- 'updated_at'");
     expect(sql).not.toMatch(/DROP POLICY.*Staff update shipments/i);
 
     const verify = read('supabase/sql-editor/VERIFY_pp2_driver_live_location.sql');

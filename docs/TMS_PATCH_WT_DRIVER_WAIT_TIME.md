@@ -28,3 +28,38 @@ Deploy TMS dev → Netlify staging; mobile `EXPO_PUBLIC_TMS_API_URL` must point 
 ## Rollback
 
 Revert `wait-time/route.ts` and `NotificationBell.tsx` changes; no Supabase schema rollback required.
+
+## WT.28 — POD signed/submitted auto-stop (24 Jun 2026)
+
+**Apply in:** TMS dev repo (`docs/TMS_DEV_REPOSITORY.md`).
+
+| Asset | Path |
+|-------|------|
+| Handler | `lib/wait-time/handle-pod-signed-submitted.ts` |
+| Shared close | `lib/wait-time/close-open-delivery-wait.ts` |
+| Upload hook | `lib/load-documents/process-load-document-upload.ts` — when `document_type=POD` (incl. mobile form before driver normalization) |
+| API | `POST /api/dispatcher/loads/[id]/pod-signed` — Bearer/cookie; staff or assigned driver |
+| Audit | `activity_log.action = pod_signed_submitted` on `waiting_time_events` |
+
+**Supabase:** no schema changes — reuses `waiting_time_events` + `activity_log`.
+
+**Deploy:** TMS dev → Netlify staging (same as WT.8).
+
+**Rollback:** Revert handler + route + upload hook; open wait events unaffected.
+
+## WT.29 — Customer email at 45 minutes (24 Jun 2026)
+
+| Asset | Path |
+|-------|------|
+| Handler | `lib/wait-time/notify-detention-warning-45.ts` |
+| Constants | `lib/wait-time/constants.ts` |
+| Trigger | `PATCH` (and `POST`) `…/wait-time` after duration sync (~60 s from mobile) |
+| Template | `email_templates.template_key = detention_warning_45` |
+| Idempotency | `activity_log` on `waiting_time_event`: `detention_warning_45_email_sent` / `_failed` / `_skipped_*` |
+| SQL seed | `supabase/sql-editor/seed_detention_warning_45_email_template.sql` |
+
+**Supabase:** apply SQL seed only (no new tables). Idempotency uses existing `activity_log`.
+
+**Limitation:** relies on mobile PATCH or TMS updates while wait is open; **WT.32** cron covers offline gaps.
+
+**Deploy:** TMS dev + run SQL seed in Supabase SQL Editor.

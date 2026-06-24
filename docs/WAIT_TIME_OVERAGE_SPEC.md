@@ -14,6 +14,8 @@
 | 19 Jun 2026 | WT.20 | Supabase schema + Realtime on `waiting_time_events` applied. |
 | 19 Jun 2026 | WT.22 | Driver read-only wait pay panel on load detail. |
 | 19 Jun 2026 | WT.25 | Invoice label Q11: **Detention** on customer billing; **Wait time** driver UX. |
+| 24 Jun 2026 | WT.28 | TMS: POD signed/submitted auto-closes open `delivery_wait` (`pod_signed_submitted`). |
+| 24 Jun 2026 | WT.29 | TMS: customer email `detention_warning_45` at ≥ 45 min open wait (idempotent `activity_log`). |
 
 **Related docs:** `docs/QA_WAIT_TIME_OVERAGE.md` · `docs/WAIT_TIME_INVOICE_LABEL.md` · `docs/TMS_PATCH_WT_DRIVER_WAIT_TIME.md` · `RESPUESTAS_CLIENTE.md` · `PP2_TAREAS_DEV.md`
 
@@ -35,9 +37,9 @@
 
 | Term | Meaning | Mobile action | TMS / API |
 |------|---------|---------------|-----------|
-| **Check In** | Driver is **present for unloading** at delivery | Tap **Start wait time** (manual). Load should be **`Arrived At Delivery`** (recommended; not auto-started by status change). | `POST …/api/dispatcher/loads/[id]/wait-time` with `event_name: delivery_wait`, `start_time`, `logged_by: driver`. |
-| **Check Out** | **End of wait** (primary) | Tap **End wait time** — **does not** change load status. | `PATCH …/wait-time` with `end_time`. |
-| **Check Out** (future auto) | e-POD signed and submitted in TMS | — | Closes open `delivery_wait` (**WT.28**, not implemented). |
+| **Check In** | Driver is **present for unloading** at delivery | Tap **Check In** (manual). Load should be **`Arrived At Delivery`** (recommended; not auto-started by status change). | `POST …/api/dispatcher/loads/[id]/wait-time` with `event_name: delivery_wait`, `start_time`, `logged_by: driver`. |
+| **Check Out** | **End of wait** (primary) | Tap **Check Out** — **does not** change load status. | `PATCH …/wait-time` with `end_time`. |
+| **Check Out** (auto) | e-POD / POD signed and submitted | TMS upload type **POD** or `POST …/pod-signed` | Closes open `delivery_wait` (**WT.28** ✅). |
 
 **Important:** Changing status to **`Delivered`** (or other field statuses) **does not** start or stop the wait timer on mobile (**WT.27**).
 
@@ -61,8 +63,8 @@ The client image **`opciones_driver.png`** (repo root) shows **document type lab
 |---|------|----------------|
 | **A** | **Manual start only** — no auto-start when status changes | ✅ Mobile **WT.27** — `useDeliveryWaitTimer.startTimer()`; eligible at **`Arrived At Delivery`**. |
 | **B** | **Manual stop (primary)** — **End wait time** | ✅ Mobile **WT.27** — `stopTimer()`; copy in `strings.waitTime.endWaitTime*`. |
-| **C** | **Only auto-stop:** TMS **e-POD signed and submitted** | ⏳ **WT.28** — hook `pod_signed_submitted` → PATCH wait-time `end_time`. |
-| **D** | **Customer emails** at 45 min, 60 min (detention start), and close summary | ⏳ **WT.29–WT.31** — Resend + `email_templates`; recipient `customers.email`. |
+| **C** | **Only auto-stop:** TMS **e-POD signed and submitted** | ✅ **WT.28** — `handle-pod-signed-submitted` → `closeOpenDeliveryWaitEvent`; `activity_log` `pod_signed_submitted`; upload hook when `document_type=POD`; API `POST …/pod-signed`. |
+| **D** | **Customer emails** at 45 min, 60 min (detention start), and close summary | **45 min ✅ WT.29** · **60 min + close ⏳ WT.30–WT.31** — Resend + `email_templates`; recipient `customers.email`. |
 | **E** | Offline queue for status, notes, POD, photos | ⏳ **OFF.2** — separate phase (`docs/OFFLINE_V1.md`). |
 
 ### Billing and notifications (unchanged from WT.1–15)
@@ -81,7 +83,7 @@ The client image **`opciones_driver.png`** (repo root) shows **document type lab
 | File | Role |
 |------|------|
 | `hooks/useDeliveryWaitTimer.ts` | Hydrate from API; manual `startTimer` / `stopTimer`; 60 s PATCH sync while open; **`paySummary`** (WT.22) |
-| `components/loads/DeliveryWaitSection.tsx` | **Start wait time** + elapsed + **End wait time** + read-only pay panel |
+| `components/loads/DeliveryWaitSection.tsx` | **Check In** + elapsed + **Check Out** + read-only pay panel (scrolls with load detail, above field actions) |
 | `components/loads/DeliveryWaitPaySummary.tsx` | Accrued wait time + estimated driver pay (WT.22) |
 | `lib/wait-time/wait-pay-summary.ts` | Sum closed `driver_pay_amount` + live estimate for open timer |
 | `lib/wait-time/constants.ts` | `DELIVERY_WAIT_ELIGIBLE_STATUS`, `DEFAULT_FREE_WAIT_MINUTES` |
@@ -101,7 +103,7 @@ The client image **`opciones_driver.png`** (repo root) shows **document type lab
 |-------|--------|-----|----------|
 | **A (WT.3–WT.4)** | Local mock timer | Sidebar demo panel (`?waitMock=1`) | No changes |
 | **B (WT.5–WT.15, WT.21, WT.24–25, WT.27, WT.20, WT.22)** | Bearer API + manual start/stop | Live panel, bell, billing sync (Detention label) | `waiting_time_events` + Realtime ✅ (**WT.20**) |
-| **C (WT.28–WT.31)** | Optional e-POD hook | Customer email templates + cron | Optional email log columns (**WT.20** / new migration TBD) |
+| **C (WT.28–WT.31)** | e-POD hook ✅ (**WT.28**) | Customer emails: **45 min ✅ WT.29** · 60 min + close (**WT.30–31**) + cron (**WT.32**) | Email template seed (**WT.29** SQL); optional log columns TBD |
 
 ---
 
@@ -109,14 +111,14 @@ The client image **`opciones_driver.png`** (repo root) shows **document type lab
 
 | Key | Text |
 |-----|------|
-| `sectionTitle` | Delivery wait time |
-| `startWaitTime` | Start wait time |
-| `startWaitTimeHint` | Tap when you are present for unloading. This starts the wait timer and billing clock. |
+| `sectionTitle` | Delivery wait & detention |
+| `checkIn` | Check In |
+| `checkInHint` | Tap when present for unloading at the customer. Required to start wait time and detention billing. |
 | `phaseFree` | Free waiting time |
-| `phaseBillable` | Billable wait |
-| `exceededBanner` | Waiting time exceeded — dispatch has been notified. Billable time may apply. |
-| `endWaitTime` | End wait time |
-| `endWaitTimeHint` | Stops the timer only. Load status stays the same. |
+| `phaseBillable` | Billable detention |
+| `exceededBanner` | Detention billing may apply — dispatch notified. Billable after 60 min free. |
+| `checkOut` | Check Out |
+| `checkOutHint` | Ends wait timer (service complete). Load status unchanged unless you update field actions. |
 | `paySummaryTitle` | Your wait pay |
 | `accruedTimeLabel` | Accrued wait time |
 | `estimatedPayLabel` | Estimated wait pay |
@@ -142,7 +144,7 @@ See `docs/TMS_PATCH_WT_DRIVER_WAIT_TIME.md` for audit checklist.
 
 | Task | Description |
 |------|-------------|
-| WT.28–WT.32 | e-POD auto-stop + customer emails + server cron |
+| WT.28–WT.32 | e-POD auto-stop ✅ + customer emails (45 min ✅) + server cron |
 | **WT.23 API** | Integrar Samsara real (credenciales + backport prod) — stub mock ya en TMS dev |
 | DOC.1 | Document type picker on mobile upload |
 

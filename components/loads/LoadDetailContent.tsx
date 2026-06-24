@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { DeliveryWaitSection } from '@/components/loads/DeliveryWaitSection';
+import { LiveLocationTrackingBanner } from '@/components/loads/LiveLocationTrackingBanner';
 import { LoadDetailHero } from '@/components/loads/LoadDetailHero';
 import { LoadDocumentsSection } from '@/components/loads/LoadDocumentsSection';
 import { LoadLocationSection } from '@/components/loads/LoadLocationSection';
@@ -24,12 +24,11 @@ import {
 import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
 import type { LoadDetail } from '@/types';
 import type { LoadDocument } from '@/types/load-document';
-import type { DeliveryWaitTimerState } from '@/hooks/useDeliveryWaitTimer';
+import type { DriverLocationTrackingState } from '@/hooks/useDriverLocationTracking';
 
 type LoadDetailContentProps = {
   load: LoadDetail;
-  waitTimer: DeliveryWaitTimerState;
-  fieldActionPending?: boolean;
+  locationTracking: DriverLocationTrackingState;
   error: string | null;
   onRetry: () => void;
   documents: LoadDocument[];
@@ -42,8 +41,7 @@ type LoadDetailContentProps = {
 
 export function LoadDetailContent({
   load,
-  waitTimer,
-  fieldActionPending = false,
+  locationTracking,
   error,
   onRetry,
   documents,
@@ -63,9 +61,12 @@ export function LoadDetailContent({
         />
       ) : null}
 
-      <LoadDetailHero load={load} />
+      <LiveLocationTrackingBanner
+        tracking={locationTracking}
+        loadStatus={load.status}
+      />
 
-      <DeliveryWaitSection timer={waitTimer} fieldActionPending={fieldActionPending} />
+      <LoadDetailHero load={load} />
 
       {load.active_holds.length > 0 ? (
         <Card title={strings.loadDetail.holds} elevated>
