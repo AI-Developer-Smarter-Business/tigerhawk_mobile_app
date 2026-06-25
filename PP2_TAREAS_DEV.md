@@ -149,6 +149,11 @@ Bloques posteriores al deadline **9 jun** ya entregados. Tareas abiertas → **�
 | **WT.27** | ✅ **Completada (22 jun 2026).** Móvil: **Check In** / **Check Out** explícitos (detention billing manual); footer sobre Field actions; sin auto-start en **Arrived At Delivery** ni cierre por **Delivered**; panel pay WT.22. _(Antes “Start/End wait time”, 18 jun.)_ |
 | **WT.28** | ✅ **Completada (24 jun 2026).** TMS dev: POD firmado/enviado → cierra `delivery_wait` abierto — `handle-pod-signed-submitted.ts`, hook en upload `document_type=POD`, `POST …/pod-signed`, `activity_log` `pod_signed_submitted`. Sin cambios Supabase. |
 | **WT.29** | ✅ **Completada (24 jun 2026).** TMS dev: plantilla `detention_warning_45` + envío idempotente al ≥ **45 min** (`maybeNotifyDetentionWarning45` en PATCH wait-time); SQL seed `seed_detention_warning_45_email_template.sql`. |
+| **WT.30** | ✅ **Completada (25 jun 2026).** TMS dev: plantilla `detention_started` + envío idempotente al cruzar **60 min** gratis (`maybeNotifyDetentionStarted`). |
+| **WT.31** | ✅ **Completada (25 jun 2026).** TMS dev: plantilla `detention_completed` + resumen al cerrar wait (`maybeNotifyDetentionCompleted`); hook en cierre wait + PATCH. |
+| **WT.32** | ✅ **Completada (25 jun 2026).** TMS dev: cron `POST /api/cron/wait-time-detention-emails` (cada 5 min) — sync duración servidor + emails 45/60 offline-safe. |
+| **WT.33** | ✅ **Completada (25 jun 2026).** Config cliente: `DETENTION_EMAIL_TIMEZONE`, `DETENTION_EMAIL_CC`, tope timer olvidado (`DETENTION_FORGOTTEN_TIMER_MAX_MINUTES`); doc `docs/DETENTION_EMAIL_CLIENT_CONFIG.md`. |
+| **WT.35** | ✅ **Completada (25 jun 2026).** Reportes diarios + `CHANGELOG` bloque WT.27–32; specs/QA actualizados. |
 | **WT.34** | ✅ **Completada (18 jun 2026).** `docs/WAIT_TIME_OVERAGE_SPEC.md` — delivery-only, un timer, 60 min, Check In/Out, `opciones_driver.png` ≠ timer, reglas A–D + mapa código; QA alineado.                                                                                 |
 | **WT.19** | ✅ **Completada (jun 2026).** TMS dev desplegado en **Netlify**; móvil operativo vía `EXPO_PUBLIC_TMS_API_URL` + Bearer (wait-time, documentos, billing). Ver `docs/DEPLOYMENT_STATUS.md`.                                                                               |
 | **WT.20** | ✅ **Completada (19 jun 2026).** Supabase: `fix_waiting_time_events_billing_columns.sql` + `enable_realtime_waiting_time_events.sql` aplicados (`npm run db:apply-wt20`). Ver `VERIFY_pp2_waiting_time_events.sql`.                                                      |
@@ -197,7 +202,7 @@ Orden sugerido de trabajo. **Tareas absorbidas / eliminadas:** **8.2** → **8.7
 
 **Orden:** **8.4–8.6** (SQL) ✅ → móvil **8.7–8.9** ✅ → TMS **8.12–8.13** ✅ → **8.16** ✅ · **8.17**.
 
-**Separación WT:** estas tareas son **rastreo GPS Supabase** (mapa dispatch). **No** son wait time. **WT.23** = geofence Samsara → auto-stop `delivery_wait` (distinto). **WT.28–31** = emails detention (TMS). Fuera de fase 0: **8.10** background, **8.14–8.15** historial; **8.11** opcional (TMS PATCH location).
+**Separación WT:** estas tareas son **rastreo GPS Supabase** (mapa dispatch). **No** son wait time. **WT.23** = geofence Samsara → auto-stop `delivery_wait` (distinto). Emails detention **WT.29–32 ✅**. Fuera de fase 0: **8.10** background, **8.14–8.15** historial; **8.11** opcional (TMS PATCH location).
 
 | #    | Tarea                                                                                                                                                                                                         |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -237,19 +242,14 @@ Orden sugerido de trabajo. **Tareas absorbidas / eliminadas:** **8.2** → **8.7
 | A   | Wait time: **solo inicio manual** (no auto al cambiar status) → **WT.27** ✅ (**Check In**) |
 | B   | **Fin manual** = **Check Out** (método principal) → **WT.27** ✅                            |
 | C   | **Único auto-stop:** e-POD TMS **firmado y enviado** → **WT.28** ✅                            |
-| D   | Emails a **`customers.email`:** 45 min ✅ **WT.29**, 60 min, cierre → **WT.30–WT.31**                    |
+| D   | Emails a **`customers.email`:** 45 min ✅ **WT.29**, 60 min ✅ **WT.30**, cierre ✅ **WT.31** · cron ✅ **WT.32**                    |
 | E   | Sync offline: cola local → **OFF.2**                                                        |
 
-**Orden sugerido:** **WT.33** (copy cliente) → **WT.29–WT.32** (emails + cron) → **OFF.2** (fase aparte) → **WT.35** (reportes).
+**Orden sugerido:** **OFF.2** (fase aparte) · **WT.23** live Samsara · **DOC.1–2** · **7.8** handoff.
 
 | #         | Tarea                                                                                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **WT.29** | **TMS:** plantilla `detention_started` + envío idempotente al cruzar **60 min** gratis.                                                                                                                |
-| **WT.31** | **TMS:** plantilla `detention_completed` + envío al cerrar wait — resumen minutos/cargo + validez billing.                                                                                             |
-| **WT.32** | **TMS:** cron / job server-side — emails 45/60 si móvil offline; no depender solo del PATCH ~60 s.                                                                                                     |
-| **WT.33** | **Follow-up cliente:** tope si timer olvidado; destinatarios email; timezone/monto en aviso 60; copy emails detention (WT.29–31). **UI Check In/Out ✅ (22 jun, WT.27).** Bloquea copy final WT.29–31. |
 | **OFF.2** | **Cola offline** (~1–2 sem): encolar status, notas, POD, fotos; reintentar al recuperar señal (`docs/OFFLINE_V1.md`).                                                                                  |
-| **WT.35** | Reportes diarios + `CHANGELOG` al cerrar WT.27–WT.32 _(incluye ex **WT.26**)_.                                                                                                                         |
 
 **Dependencias:** Resend + `email_templates`; paridad Bearer TMS (**7.1** ✅); estados **`Arrived At Delivery`** en `DriverActionBar`. Wait time **no depende** de GPS Semana 8.
 
@@ -261,7 +261,7 @@ Orden sugerido de trabajo. **Tareas absorbidas / eliminadas:** **8.2** → **8.7
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | Backlog v1.1 (push, mensajes, E2E, …) | `docs/BACKLOG_V1_1_7_7.md`                                                                                                       |
 | GPS en vivo (pendiente)               | **§ Pendientes → GPS** (8.4–8.17)                                                                                                |
-| **Cobro tiempo excedido (wait time)** | **Completadas WT.1–15, WT.19–22, WT.24–25, WT.27–29, WT.34** · **WT.23 stub ✅ / live Samsara ⏳** · **Pendientes WT.30–35, OFF.2** |
+| **Cobro tiempo excedido (wait time)** | **Completadas WT.1–15, WT.19–22, WT.24–25, WT.27–35, WT.34** · **WT.23 stub ✅ / live Samsara ⏳** · **Pendientes OFF.2** |
 | **Rastreo GPS en vivo (Supabase)**    | **Completadas 8.3–8.9, 8.12–8.13, 8.16** · **Pendiente 8.17** (≠ WT.23 Samsara geofence)                                         |
 | Entornos desplegados                  | **`docs/DEPLOYMENT_STATUS.md`** — TMS Netlify ✅ · Expo/EAS ✅ · no reabrir WT.19                                                |
 | Wait time manual + emails (cliente)   | `RESPUESTAS_CLIENTE.md` §287+ · **WT.27–WT.35** · geofence **WT.23**                                                             |

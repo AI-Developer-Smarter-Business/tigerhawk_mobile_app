@@ -16,6 +16,8 @@
 | 19 Jun 2026 | WT.25 | Invoice label Q11: **Detention** on customer billing; **Wait time** driver UX. |
 | 24 Jun 2026 | WT.28 | TMS: POD signed/submitted auto-closes open `delivery_wait` (`pod_signed_submitted`). |
 | 24 Jun 2026 | WT.29 | TMS: customer email `detention_warning_45` at ≥ 45 min open wait (idempotent `activity_log`). |
+| 25 Jun 2026 | WT.30–32 | TMS: `detention_started`, `detention_completed`, cron `/api/cron/wait-time-detention-emails`. |
+| 25 Jun 2026 | WT.33 | Client config: timezone, CC, forgotten-timer alert — `docs/DETENTION_EMAIL_CLIENT_CONFIG.md`. |
 
 **Related docs:** `docs/QA_WAIT_TIME_OVERAGE.md` · `docs/WAIT_TIME_INVOICE_LABEL.md` · `docs/TMS_PATCH_WT_DRIVER_WAIT_TIME.md` · `RESPUESTAS_CLIENTE.md` · `PP2_TAREAS_DEV.md`
 
@@ -64,7 +66,7 @@ The client image **`opciones_driver.png`** (repo root) shows **document type lab
 | **A** | **Manual start only** — no auto-start when status changes | ✅ Mobile **WT.27** — `useDeliveryWaitTimer.startTimer()`; eligible at **`Arrived At Delivery`**. |
 | **B** | **Manual stop (primary)** — **End wait time** | ✅ Mobile **WT.27** — `stopTimer()`; copy in `strings.waitTime.endWaitTime*`. |
 | **C** | **Only auto-stop:** TMS **e-POD signed and submitted** | ✅ **WT.28** — `handle-pod-signed-submitted` → `closeOpenDeliveryWaitEvent`; `activity_log` `pod_signed_submitted`; upload hook when `document_type=POD`; API `POST …/pod-signed`. |
-| **D** | **Customer emails** at 45 min, 60 min (detention start), and close summary | **45 min ✅ WT.29** · **60 min + close ⏳ WT.30–WT.31** — Resend + `email_templates`; recipient `customers.email`. |
+| **D** | **Customer emails** at 45 min, 60 min (detention start), and close summary | ✅ **WT.29–31** — Resend + `email_templates`; recipient `customers.email`; cron backup **WT.32**. Config **WT.33**. |
 | **E** | Offline queue for status, notes, POD, photos | ⏳ **OFF.2** — separate phase (`docs/OFFLINE_V1.md`). |
 
 ### Billing and notifications (unchanged from WT.1–15)
@@ -103,7 +105,7 @@ The client image **`opciones_driver.png`** (repo root) shows **document type lab
 |-------|--------|-----|----------|
 | **A (WT.3–WT.4)** | Local mock timer | Sidebar demo panel (`?waitMock=1`) | No changes |
 | **B (WT.5–WT.15, WT.21, WT.24–25, WT.27, WT.20, WT.22)** | Bearer API + manual start/stop | Live panel, bell, billing sync (Detention label) | `waiting_time_events` + Realtime ✅ (**WT.20**) |
-| **C (WT.28–WT.31)** | e-POD hook ✅ (**WT.28**) | Customer emails: **45 min ✅ WT.29** · 60 min + close (**WT.30–31**) + cron (**WT.32**) | Email template seed (**WT.29** SQL); optional log columns TBD |
+| **C (WT.28–WT.32)** | e-POD hook ✅ (**WT.28**) | Customer emails ✅ (**WT.29–32**) · config **WT.33** | Template seeds (**WT.29–31** SQL); `activity_log` idempotency |
 
 ---
 
@@ -144,7 +146,7 @@ See `docs/TMS_PATCH_WT_DRIVER_WAIT_TIME.md` for audit checklist.
 
 | Task | Description |
 |------|-------------|
-| WT.28–WT.32 | e-POD auto-stop ✅ + customer emails (45 min ✅) + server cron |
+| WT.28–WT.32 | e-POD auto-stop ✅ + customer emails ✅ + server cron ✅ |
 | **WT.23 API** | Integrar Samsara real (credenciales + backport prod) — stub mock ya en TMS dev |
 | DOC.1 | Document type picker on mobile upload |
 

@@ -6,6 +6,13 @@ Version alignment: `package.json`, `app.json` → `expo.version`, and `docs/RELE
 
 ## [Unreleased]
 
+### Added (TMS — wait time emails WT.27–32)
+
+- Customer detention emails at **45 min**, **60 min**, and **wait close** (`detention_warning_45`, `detention_started`, `detention_completed`)
+- e-POD / POD upload auto-stop for open delivery wait (WT.28)
+- Server cron for offline-safe email delivery (WT.32)
+- Client config doc: `docs/DETENTION_EMAIL_CLIENT_CONFIG.md` (WT.33)
+
 ### Planned (v1.1)
 
 - Live GPS tracking + TMS map (Semana 8)

@@ -2213,4 +2213,62 @@ En TMS, los datos viven en `waiting_time_events`; al cerrar con cobro, la línea
 
 ---
 
+## 25 de junio de 2026
+
+### Tarea 1 — Emails detention 60 min + cierre + cron (WT.30–WT.32) (~2 h)
+
+**Qué se hizo** (TMS dev repo)
+
+- **WT.30:** `notify-detention-started.ts` — plantilla **`detention_started`** al cruzar **60 min** gratis; idempotente vía `activity_log`.
+- **WT.31:** `notify-detention-completed.ts` — plantilla **`detention_completed`** al cerrar wait (resumen minutos/cargo + texto validez billing); hook en `close-open-delivery-wait.ts` y PATCH wait-time.
+- **WT.32:** `process-open-delivery-wait-emails.ts` + **`POST /api/cron/wait-time-detention-emails`** (cada 5 min en `vercel.json`); sync `duration_minutes` desde reloj servidor cuando móvil offline.
+- Módulo compartido **`detention-email-shared.ts`** + orquestador **`notify-delivery-wait-customer-emails.ts`**.
+- Tests **`detention-emails-wt30-33.test.ts`** (22 tests wait-time total).
+
+**Supabase:** aplicar `supabase/sql-editor/seed_detention_started_completed_email_templates.sql` (tabla `email_templates` existente).
+
+**Cómo probar**
+
+1. SQL Editor → seed WT.30–31 → verificar `detention_started` y `detention_completed`.
+2. TMS con `RESEND_API_KEY` + carga con `customers.email`.
+3. Check In → simular ≥ 60 min → email **detention_started** + log `detention_started_email_sent`.
+4. Check Out → email **detention_completed** + log `detention_completed_email_sent`.
+5. Cron: `POST /api/cron/wait-time-detention-emails` con `Authorization: Bearer $CRON_SECRET`.
+6. `npm test -- lib/wait-time/__tests__/`
+
+---
+
+### Tarea 2 — Config cliente detention emails (WT.33) (~30 min)
+
+**Qué se hizo**
+
+- Env TMS: `DETENTION_EMAIL_TIMEZONE` (default `America/New_York`), `DETENTION_EMAIL_CC`, `DETENTION_FORGOTTEN_TIMER_MAX_MINUTES` (default 480).
+- Alerta timer olvidado: `activity_log` `delivery_wait_forgotten_timer_alert` (una vez por evento).
+- **`docs/DETENTION_EMAIL_CLIENT_CONFIG.md`** — destinatarios, timezone, cron, SQL.
+
+**Supabase:** SUPABASE no requiere cambios (solo plantillas SQL de Tarea 1 si aún no aplicadas).
+
+**Cómo probar**
+
+1. Abrir wait > 8 h (o bajar `DETENTION_FORGOTTEN_TIMER_MAX_MINUTES` en dev) → ver alerta en `activity_log`.
+2. Opcional: `DETENTION_EMAIL_CC=dispatch@example.com` → CC en emails Resend.
+
+---
+
+### Tarea 3 — Cierre documentación bloque wait time (WT.35) (~20 min)
+
+**Qué se hizo**
+
+- **WT.30–35** ✅ en `PP2_TAREAS_DEV.md`.
+- `docs/WAIT_TIME_OVERAGE_SPEC.md`, `docs/QA_WAIT_TIME_OVERAGE.md`, `docs/TMS_PATCH_WT_DRIVER_WAIT_TIME.md`, `CHANGELOG.md` actualizados.
+
+**Cómo probar**
+
+1. `npm run check:daily-reports`.
+2. Revisar matriz QA filas **7e–7g** en `docs/QA_WAIT_TIME_OVERAGE.md`.
+
+**Siguiente:** **OFF.2** cola offline · **WT.23** live Samsara · **DOC.1–2**.
+
+---
+
 _Al cerrar cada día, añadir sección `## [fecha]` **en orden cronológico** (debajo de la última fecha del archivo) con **Tarea 1, Tarea 2, Tarea 3…** de arriba abajo. Nunca Tarea 8 antes de Tarea 7. Ejecutar `npm run check:daily-reports` antes de commit._

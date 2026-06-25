@@ -63,3 +63,20 @@ Revert `wait-time/route.ts` and `NotificationBell.tsx` changes; no Supabase sche
 **Limitation:** relies on mobile PATCH or TMS updates while wait is open; **WT.32** cron covers offline gaps.
 
 **Deploy:** TMS dev + run SQL seed in Supabase SQL Editor.
+
+## WT.30–32 — Customer emails 60 min, close summary, cron (25 Jun 2026)
+
+| Asset | Path |
+|-------|------|
+| 60 min email | `lib/wait-time/notify-detention-started.ts` → template `detention_started` |
+| Close summary | `lib/wait-time/notify-detention-completed.ts` → template `detention_completed` |
+| Orchestrator | `lib/wait-time/notify-delivery-wait-customer-emails.ts` |
+| Shared send/log | `lib/wait-time/detention-email-shared.ts` |
+| Cron (WT.32) | `POST /api/cron/wait-time-detention-emails` — `vercel.json` */5 min; auth `CRON_SECRET` |
+| Close hooks | `close-open-delivery-wait.ts`, `wait-time/route.ts` PATCH/POST |
+
+**SQL:** `supabase/sql-editor/seed_detention_started_completed_email_templates.sql`
+
+## WT.33 — Client config (25 Jun 2026)
+
+See **`docs/DETENTION_EMAIL_CLIENT_CONFIG.md`** — `DETENTION_EMAIL_TIMEZONE`, `DETENTION_EMAIL_CC`, `DETENTION_FORGOTTEN_TIMER_MAX_MINUTES`, forgotten-timer `activity_log`.
