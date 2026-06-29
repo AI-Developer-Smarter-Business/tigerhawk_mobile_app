@@ -34,11 +34,11 @@ describe('load detail routes (5.6 / 6.4)', () => {
     expect(source).not.toContain('driverUploadTmsRequired');
   });
 
-  it('upload hook chains online assert, validation, and invalidation', () => {
+  it('upload hook chains queue, validation, document type, and invalidation', () => {
     const hookPath = path.join(root, 'hooks', 'useLoadDocumentUpload.ts');
     const source = fs.readFileSync(hookPath, 'utf8');
-    expect(source).toContain('assertOnlineForDocumentUpload');
+    expect(source).toContain('enqueueDocumentUpload');
     expect(source).toContain('validateDriverUploadFile');
-    expect(source).toContain("documentType: 'Driver'");
+    expect(source).toContain('documentType: DriverUploadDocumentType');
   });
 });

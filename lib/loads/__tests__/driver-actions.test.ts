@@ -27,8 +27,11 @@ describe('getDriverActionsForStatus', () => {
     expect(actions).not.toContain('Cancelled');
   });
 
-  it('offers At delivery from In Transit', () => {
+  it('offers pickup, hook, and return arrivals from In Transit', () => {
     const actions = getDriverActionsForStatus('In Transit');
+    expect(actions).toContain('Arrived At Pickup');
+    expect(actions).toContain('Arrived To Hook Container');
+    expect(actions).toContain('Arrived At Return Empty');
     expect(actions).toContain('Arrived At Delivery');
   });
 

@@ -1,6 +1,6 @@
 import type { ImagePickerAsset } from 'expo-image-picker';
 import { useCallback, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useNetwork } from '@/context/NetworkContext';
 import { AppActionSheet } from '@/components/ui/AppActionSheet';
@@ -9,16 +9,27 @@ import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { mapErrorToUserFacing, type UserFacingError } from '@/lib/errors';
+import { openAppSettings } from '@/lib/media/media-permission';
 import { prepareDriverUploadImage } from '@/lib/media/prepare-driver-upload-image';
 import {
   pickLoadPhotoFromCamera,
   pickLoadPhotoFromLibrary,
+  type PickLoadPhotoResult,
 } from '@/lib/media/pick-load-photo';
 import { validateDriverUploadFile } from '@/lib/media/validate-driver-upload-file';
+import { isOfflineQueuedError } from '@/lib/offline/offline-queued-error';
+import type { DriverUploadDocumentType } from '@/lib/tms/assert-driver-document-type';
+import {
+  DEFAULT_DRIVER_DOCUMENT_TYPE,
+  DRIVER_DOCUMENT_TYPE_OPTIONS,
+} from '@/lib/tms/driver-document-types';
 import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
 
 type PodUploadSectionProps = {
-  onUpload: (file: TmsUploadFileDescriptor) => Promise<void>;
+  onUpload: (
+    file: TmsUploadFileDescriptor,
+    documentType: DriverUploadDocumentType,
+  ) => Promise<void>;
 };
 
 type PendingPhoto = TmsUploadFileDescriptor & {
@@ -27,13 +38,16 @@ type PendingPhoto = TmsUploadFileDescriptor & {
 
 export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
   const { isOffline, isReady: networkReady } = useNetwork();
-  const uploadBlockedOffline = networkReady && isOffline;
+  const isOfflineReady = networkReady && isOffline;
 
+  const [documentType, setDocumentType] =
+    useState<DriverUploadDocumentType>(DEFAULT_DRIVER_DOCUMENT_TYPE);
   const [pending, setPending] = useState<PendingPhoto | null>(null);
   const [uploading, setUploading] = useState(false);
   const [picking, setPicking] = useState(false);
   const [uploadError, setUploadError] = useState<UserFacingError | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [needsMediaSettings, setNeedsMediaSettings] = useState(false);
   const [pickerSheetOpen, setPickerSheetOpen] = useState(false);
   const [discardSheetOpen, setDiscardSheetOpen] = useState(false);
 
@@ -41,45 +55,42 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
     setPending(null);
   }, []);
 
-  const handlePickResult = useCallback(async (pick: () => Promise<ImagePickerAsset | null>) => {
-    if (uploadBlockedOffline) {
-      setUploadError({
-        kind: 'network',
-        title: strings.network.offlineTitle,
-        message: strings.network.offlineUploadBlocked,
-      });
-      return;
-    }
+  const handlePickResult = useCallback(
+    async (pick: () => Promise<PickLoadPhotoResult>) => {
+      setPicking(true);
+      setUploadError(null);
+      setSuccessMessage(null);
+      setNeedsMediaSettings(false);
 
-    setPicking(true);
-    setUploadError(null);
-    setSuccessMessage(null);
-    try {
-      const asset = await pick();
-      if (!asset) return;
+      try {
+        const result = await pick();
+        if (!result.ok) {
+          if (result.reason === 'permission_denied') {
+            setNeedsMediaSettings(true);
+            setUploadError({
+              kind: 'validation',
+              title: strings.loadDetail.mediaPermissionDeniedTitle,
+              message: strings.loadDetail.mediaPermissionDeniedMessage,
+            });
+          }
+          return;
+        }
 
-      const prepared = await prepareDriverUploadImage(asset);
-      validateDriverUploadFile(prepared);
-      setPending({ ...prepared, previewUri: prepared.uri });
-    } catch (err) {
-      setUploadError(mapErrorToUserFacing(err));
-    } finally {
-      setPicking(false);
-    }
-  }, [uploadBlockedOffline]);
+        const prepared = await prepareDriverUploadImage(result.asset as ImagePickerAsset);
+        validateDriverUploadFile(prepared);
+        setPending({ ...prepared, previewUri: prepared.uri });
+      } catch (err) {
+        setUploadError(mapErrorToUserFacing(err));
+      } finally {
+        setPicking(false);
+      }
+    },
+    [],
+  );
 
   const startPick = useCallback(() => {
-    if (uploadBlockedOffline) {
-      setUploadError({
-        kind: 'network',
-        title: strings.network.offlineTitle,
-        message: strings.network.offlineUploadBlocked,
-      });
-      return;
-    }
-
     setPickerSheetOpen(true);
-  }, [uploadBlockedOffline]);
+  }, []);
 
   const handlePickFromCamera = useCallback(() => {
     void handlePickResult(pickLoadPhotoFromCamera);
@@ -98,33 +109,32 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
   const handleConfirm = useCallback(async () => {
     if (!pending || uploading) return;
 
-    if (uploadBlockedOffline) {
-      setUploadError({
-        kind: 'network',
-        title: strings.network.offlineTitle,
-        message: strings.network.offlineUploadBlocked,
-      });
-      return;
-    }
-
     setUploading(true);
     setUploadError(null);
     setSuccessMessage(null);
     try {
-      await onUpload({
-        uri: pending.uri,
-        name: pending.name,
-        type: pending.type,
-        size: pending.size,
-      });
+      await onUpload(
+        {
+          uri: pending.uri,
+          name: pending.name,
+          type: pending.type,
+          size: pending.size,
+        },
+        documentType,
+      );
       clearPending();
       setSuccessMessage(strings.loadDetail.podUploadSuccess);
     } catch (err) {
+      if (isOfflineQueuedError(err)) {
+        clearPending();
+        setSuccessMessage(err.message);
+        return;
+      }
       setUploadError(mapErrorToUserFacing(err));
     } finally {
       setUploading(false);
     }
-  }, [pending, uploading, onUpload, clearPending, uploadBlockedOffline]);
+  }, [clearPending, documentType, onUpload, pending, uploading]);
 
   const handleDiscardPress = useCallback(() => {
     setDiscardSheetOpen(true);
@@ -137,6 +147,10 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
           title={uploadError.title}
           message={uploadError.message}
           details={uploadError.details}
+          actionLabel={
+            needsMediaSettings ? strings.loadDetail.mediaPermissionOpenSettings : undefined
+          }
+          onAction={needsMediaSettings ? openAppSettings : undefined}
         />
       ) : null}
 
@@ -146,9 +160,37 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
         </Text>
       ) : null}
 
-      {uploadBlockedOffline ? (
-        <Text style={styles.offlineHint}>{strings.loadDetail.podOfflineHint}</Text>
+      {isOfflineReady ? (
+        <Text style={styles.offlineHint}>{strings.loadDetail.podOfflineQueueHint}</Text>
       ) : null}
+
+      <Text style={styles.typeLabel}>{strings.loadDetail.documentTypeLabel}</Text>
+      <View style={styles.typeRow}>
+        {DRIVER_DOCUMENT_TYPE_OPTIONS.map((option) => {
+          const selected = documentType === option.value;
+          return (
+            <Pressable
+              key={option.value}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              accessibilityLabel={strings.loadDetail[option.labelKey]}
+              onPress={() => setDocumentType(option.value)}
+              style={[styles.typeChip, selected ? styles.typeChipSelected : null]}>
+              <Text style={[styles.typeChipText, selected ? styles.typeChipTextSelected : null]}>
+                {strings.loadDetail[option.labelKey]}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text style={styles.typeHint}>
+        {
+          strings.loadDetail[
+            DRIVER_DOCUMENT_TYPE_OPTIONS.find((option) => option.value === documentType)
+              ?.hintKey ?? 'documentTypeDriverHint'
+          ]
+        }
+      </Text>
 
       {pending ? (
         <View style={styles.previewBlock}>
@@ -165,7 +207,7 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
             title={strings.loadDetail.podUpload}
             variant="accent"
             loading={uploading}
-            disabled={uploading || uploadBlockedOffline}
+            disabled={uploading}
             onPress={() => void handleConfirm()}
             style={styles.actionBtn}
             accessibilityLabel={strings.loadDetail.podUploadA11y}
@@ -184,7 +226,7 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
           title={strings.loadDetail.podAddPhoto}
           variant="accent"
           loading={picking}
-          disabled={picking || uploading || uploadBlockedOffline}
+          disabled={picking || uploading}
           onPress={startPick}
           accessibilityLabel={strings.loadDetail.podAddPhotoA11y}
         />
@@ -254,5 +296,43 @@ const styles = StyleSheet.create({
     fontSize: PP2Theme.typography.sizes.caption,
     color: PP2Theme.colors.textMuted,
     marginBottom: PP2Theme.spacing.sm,
+  },
+  typeLabel: {
+    fontSize: PP2Theme.typography.sizes.caption,
+    fontWeight: '600',
+    color: PP2Theme.colors.text,
+    marginBottom: PP2Theme.spacing.xs,
+  },
+  typeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: PP2Theme.spacing.xs,
+    marginBottom: PP2Theme.spacing.xs,
+  },
+  typeChip: {
+    borderWidth: 1,
+    borderColor: PP2Theme.colors.border,
+    borderRadius: PP2Theme.radius.sm,
+    paddingHorizontal: PP2Theme.spacing.sm,
+    paddingVertical: PP2Theme.spacing.xs,
+    backgroundColor: PP2Theme.colors.surface,
+  },
+  typeChipSelected: {
+    borderColor: PP2Theme.colors.tms.navActive,
+    backgroundColor: 'rgba(232, 112, 10, 0.1)',
+  },
+  typeChipText: {
+    fontSize: PP2Theme.typography.sizes.caption,
+    color: PP2Theme.colors.textMuted,
+    fontWeight: '600',
+  },
+  typeChipTextSelected: {
+    color: PP2Theme.colors.tms.navActive,
+  },
+  typeHint: {
+    fontSize: PP2Theme.typography.sizes.caption,
+    color: PP2Theme.colors.textMuted,
+    marginBottom: PP2Theme.spacing.md,
+    lineHeight: 18,
   },
 });

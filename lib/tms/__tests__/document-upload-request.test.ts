@@ -79,7 +79,7 @@ describe('assertDriverUploadDocumentType', () => {
 
   it('rejects staff-only types before network', () => {
     expect(() => assertDriverUploadDocumentType('Invoice')).toThrow(
-      /Driver-type/,
+      /Driver, POD, or Photo/,
     );
   });
 });

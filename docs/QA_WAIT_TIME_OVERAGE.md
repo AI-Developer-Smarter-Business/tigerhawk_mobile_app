@@ -32,7 +32,8 @@ Manual matrix for **Fase A (mock)** and **Fase B (production API)** across mobil
 | 6 | Dispatcher toast (WT.12) | — | Floating toast: *Waiting time exceeded — N min billable* |
 | 7 | Tap **End wait time** | Timer **Stopped**; load status **unchanged**; API closes event (Phase B) | Panel shows stopped; event has `end_time` |
 | 7a | Change status → **Delivered** while timer **running** (do not tap End) | Timer **keeps running** — no auto-stop (**WT.27**) | Open event remains until PATCH / POD submit (**WT.28**) |
-| 7c | Upload **POD** document (TMS Documents tab) while timer **running** | — (mobile Driver photo does **not** auto-stop) | Open `delivery_wait` closes; `activity_log` `pod_signed_submitted` (**WT.28**) |
+| 7c | Upload **POD** from mobile (chip **POD** → upload) while timer **running** | Open wait closes after upload; timer **Stopped** on refresh | `activity_log` `pod_signed_submitted` (**WT.28**) |
+| 7d | Upload **Driver** / **Photo** from mobile while timer **running** | Timer **keeps running** | No `pod_signed_submitted` |
 | 7d | Open wait ≥ **45 min** (Phase B; mobile PATCH ~60 s) | — | Customer receives **`detention_warning_45`** email once; `activity_log` `detention_warning_45_email_sent` (**WT.29**) |
 | 7e | Open wait ≥ **60 min** billable | — | Customer receives **`detention_started`** once (**WT.30**) |
 | 7f | **Check Out** or e-POD closes wait | Timer stopped | Customer receives **`detention_completed`** summary (**WT.31**) |

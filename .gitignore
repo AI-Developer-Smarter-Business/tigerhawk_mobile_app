@@ -36,6 +36,23 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# test coverage (local / CI artifact)
+coverage/
+
 # generated native folders
 /ios
 /android
+
+# .md files
+PP2_DOCUMENTACION.md
+PP2_TAREAS_CLIENTE.md
+PP2_TAREAS_DEV.md
+PP2_TASKS.md
+DAILY_REPORTS.md
+REPORTES_DIARIOS.md
+PROXIMOS_PASOS.md
+PROYECTO_MUESTRA.md
+RESPUESTAS_CLIENTE.md
+
+# .png files
+*.png

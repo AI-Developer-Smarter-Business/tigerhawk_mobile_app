@@ -1,26 +1,33 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
+import { useNetwork } from '@/context/NetworkContext';
+import { useOfflineQueue } from '@/context/OfflineQueueContext';
 import { useAuth } from '@/hooks/useAuth';
+import { uploadDriverLoadDocument } from '@/lib/loads/upload-driver-load-document';
 import { validateDriverUploadFile } from '@/lib/media/validate-driver-upload-file';
-import { assertOnlineForDocumentUpload } from '@/lib/network/assert-online';
+import { enqueueDocumentUpload } from '@/lib/offline/enqueue';
+import { OfflineQueuedError } from '@/lib/offline/offline-queued-error';
+import { strings } from '@/constants/strings';
 import { invalidateLoadDocuments } from '@/lib/query/invalidate-loads';
-import { uploadDriverLoadDocumentViaSupabase } from '@/lib/supabase/upload-driver-load-document';
-import { getTmsApiUrl, resolveSupabaseAccessToken, uploadLoadDocument } from '@/lib/tms';
+import type { DriverUploadDocumentType } from '@/lib/tms/assert-driver-document-type';
 import { TmsDocumentUploadError } from '@/lib/tms/document-errors';
 import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
 import type { LoadDetail } from '@/types';
 
 /**
- * Uploads a driver photo for the current load (Supabase first, TMS fallback; type Driver).
+ * Uploads a driver document for the current load.
+ * POD → TMS only (WT.28 auto-stop); Driver/Photo → Supabase with TMS fallback.
  */
 export function useLoadDocumentUpload(load: LoadDetail | null) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { isOffline, isReady: networkReady } = useNetwork();
+  const { refreshPendingCount } = useOfflineQueue();
   const userId = user?.id ?? '';
 
   return useCallback(
-    async (file: TmsUploadFileDescriptor) => {
+    async (file: TmsUploadFileDescriptor, documentType: DriverUploadDocumentType = 'Driver') => {
       if (!load?.id) return;
 
       try {
@@ -28,36 +35,31 @@ export function useLoadDocumentUpload(load: LoadDetail | null) {
           throw new TmsDocumentUploadError('Session expired. Sign in again.', 'UNAUTHORIZED');
         }
 
-        await assertOnlineForDocumentUpload();
         validateDriverUploadFile(file);
 
-        try {
-          await uploadDriverLoadDocumentViaSupabase({
+        if (networkReady && isOffline) {
+          await enqueueDocumentUpload({
             loadId: load.id,
-            file,
             userId,
-          });
-        } catch (supabaseErr) {
-          const tryTms =
-            getTmsApiUrl().length > 0 &&
-            supabaseErr instanceof TmsDocumentUploadError &&
-            (supabaseErr.code === 'FORBIDDEN' || supabaseErr.code === 'UNKNOWN');
-
-          if (!tryTms) {
-            throw supabaseErr;
-          }
-
-          const accessToken = await resolveSupabaseAccessToken();
-          await uploadLoadDocument({
-            loadId: load.id,
+            documentType,
             file,
-            documentType: 'Driver',
-            accessToken,
           });
+          await refreshPendingCount();
+          throw new OfflineQueuedError(strings.network.offlineUploadQueued);
         }
+
+        await uploadDriverLoadDocument({
+          loadId: load.id,
+          file,
+          userId,
+          documentType,
+        });
 
         await invalidateLoadDocuments(queryClient, userId, load.id);
       } catch (err) {
+        if (err instanceof OfflineQueuedError) {
+          throw err;
+        }
         if (err instanceof TmsDocumentUploadError) {
           throw err;
         }
@@ -67,6 +69,6 @@ export function useLoadDocumentUpload(load: LoadDetail | null) {
         );
       }
     },
-    [load?.id, queryClient, userId],
+    [isOffline, load?.id, networkReady, queryClient, refreshPendingCount, userId],
   );
 }

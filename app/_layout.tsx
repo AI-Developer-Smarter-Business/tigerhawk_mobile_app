@@ -11,11 +11,14 @@ import 'react-native-reanimated';
 
 import { AuthBootstrapGate } from '@/components/auth/AuthBootstrapGate';
 import { AuthDeepLinkHandler } from '@/components/auth/AuthDeepLinkHandler';
+import { OfflineQueueProcessor } from '@/components/offline/OfflineQueueProcessor';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
+import { OfflineQueueBanner } from '@/components/ui/OfflineQueueBanner';
 import { strings } from '@/constants/strings';
 import { AuthProvider } from '@/context/AuthContext';
 import { LoadsProvider } from '@/context/LoadsContext';
 import { NetworkProvider } from '@/context/NetworkContext';
+import { OfflineQueueProvider } from '@/context/OfflineQueueContext';
 import { ProfileProvider } from '@/context/ProfileContext';
 import { PP2Theme } from '@/constants/theme';
 import { DriverLoadsRealtimeBridge } from '@/components/query/DriverLoadsRealtimeBridge';
@@ -66,15 +69,18 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <NetworkProvider>
+        <OfflineQueueProvider>
         <ProfileProvider>
           <QueryProvider>
             <LoadsProvider>
             <AuthBootstrapGate>
               <DriverLoadsRealtimeBridge />
               <AuthDeepLinkHandler />
+              <OfflineQueueProcessor />
               <ThemeProvider value={PP2NavigationTheme}>
                 <View style={{ flex: 1 }}>
                   <OfflineBanner />
+                  <OfflineQueueBanner />
                   <Stack>
                 <Stack.Screen name="index" options={{ headerShown: false }} />
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -100,6 +106,7 @@ export default function RootLayout() {
             </LoadsProvider>
           </QueryProvider>
         </ProfileProvider>
+        </OfflineQueueProvider>
       </NetworkProvider>
     </AuthProvider>
   );

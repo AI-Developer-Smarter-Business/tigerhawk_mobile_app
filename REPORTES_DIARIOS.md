@@ -2267,7 +2267,151 @@ En TMS, los datos viven en `waiting_time_events`; al cerrar con cobro, la línea
 1. `npm run check:daily-reports`.
 2. Revisar matriz QA filas **7e–7g** en `docs/QA_WAIT_TIME_OVERAGE.md`.
 
-**Siguiente:** **OFF.2** cola offline · **WT.23** live Samsara · **DOC.1–2**.
+**Siguiente:** **9.5** WT.23 live Samsara · **9.6** cierre GPS · **9.7** handoff.
+
+---
+
+## 26 de junio de 2026
+
+### Tarea 1 — Paridad transiciones In Transit (9.1 · feedback Lucas)
+
+**Qué se implementó**
+
+- Fallback `MOCK_LOAD_TRANSITIONS["In Transit"]` alineado al TMS: **Arrived At Pickup**, **Arrived To Hook Container**, **Arrived At Return Empty** (además de delivery-side existentes).
+- Online: sin cambios — `fetchLoadTransitions` → `/api/dispatcher/transitions`.
+- Tests ampliados en `driver-actions.test.ts` y paridad `web-driver-panel-parity`.
+
+**Supabase:** SUPABASE no requiere cambios.
+
+**Cómo probar**
+
+1. `npm test -- lib/loads/__tests__/driver-actions.test.ts`
+2. App: carga en **In Transit** hacia pickup → **My Loads** → detalle → **Status Action** debe incluir **At pickup** / **Arrived To Hook Container** / **Arrived At Return Empty** según ruta.
+
+---
+
+### Tarea 2 — Picker tipo documento (9.2 · DOC.1)
+
+**Qué se implementó**
+
+- Chips **Driver evidence** / **POD** / **Photo** en `PodUploadSection` (`DRIVER_DOCUMENT_TYPE_OPTIONS`).
+- `useLoadDocumentUpload(file, documentType)` — tipos permitidos: `Driver`, `POD`, `Photo` (paridad TMS `normalizeDriverDocumentType`).
+
+**Supabase:** SUPABASE no requiere cambios.
+
+**Cómo probar**
+
+1. `npm test -- components/loads/__tests__/PodUploadSection.test.tsx`
+2. Detalle carga → **Driver photo** → elegir **POD** → subir foto → TMS **Documents** muestra tipo acorde.
+
+---
+
+### Tarea 3 — Permisos cámara/galería (9.3 · DOC.2)
+
+**Qué se implementó**
+
+- `pick-load-photo.ts` — resultado estructurado `permission_denied` (sin fallo silencioso).
+- `ErrorBanner` con **Open Settings** cuando permiso denegado.
+
+**Supabase:** SUPABASE no requiere cambios.
+
+**Cómo probar**
+
+1. Denegar cámara en Ajustes → **Add driver photo** → **Take photo** → mensaje + botón **Open Settings**.
+
+---
+
+### Tarea 4 — Cola offline status + upload (9.4 · OFF.2)
+
+**Qué se implementó**
+
+- `lib/offline/` — persistencia local (`expo-file-system`), encola **status change** y **document upload**.
+- `OfflineQueueProcessor` — flush al reconectar; banner naranja con acciones pendientes.
+- `useDriverStatusChange` / `useLoadDocumentUpload` — encolan offline con mensaje de confirmación.
+
+**Supabase:** SUPABASE no requiere cambios.
+
+**Cómo probar**
+
+1. `npm test -- lib/offline/__tests__/offline-queue.test.ts`
+2. Modo avión → cambiar status o confirmar upload → banner “waiting to sync” → desactivar avión → acción se sincroniza.
+
+**Siguiente:** **9.5** WT.23 · **9.6** · **9.7**.
+
+---
+
+## 27 de junio de 2026
+
+### Tarea 1 — Samsara geofence live-ready (9.5 · WT.23)
+
+**Qué se implementó** (TMS dev repo)
+
+- Parse **GeofenceExit** Samsara v2 + campos mock legacy.
+- `resolve-geofence-load.ts` — `loadId` explícito, `externalIds.loadId`, o vehículo (placa/VIN) → conductor → `delivery_wait` abierto.
+- Modos integración: `mock_stub` / `webhook_only` / `live`; ping REST `GET …/webhook?ping=1`.
+- Handler actualizado — `activity_log` con `integration: live` cuando aplica.
+
+**Supabase:** SUPABASE no requiere cambios.
+
+**Cómo probar**
+
+1. TMS: `npm test -- lib/integrations/samsara/__tests__/samsara-geofence.test.ts`
+2. Netlify: `SAMSARA_ENABLED=true` + token → `GET …/webhook?ping=1` → `mode: live`
+3. Mock: mobile Check In → `POST …/simulate` con `loadId` → wait cerrado
+4. Live: registrar webhook Samsara → GeofenceExit → ver `docs/QA_SAMSARA_GEOFENCE_MOCK.md` §B
+
+---
+
+### Tarea 2 — Sign-off GPS fase 0 (9.6 · 8.17)
+
+**Qué se implementó**
+
+- `docs/GPS_LIVE_TRACKING_SIGNOFF_8_17.md` — tabla sign-off Dev/QA, criterio G1 ≤ 60 s, ítems diferidos 8.10–8.15.
+- Enlace desde `docs/QA_DRIVER_LIVE_TRACKING.md`.
+
+**Supabase:** sin cambios nuevos (migraciones 8.x ya documentadas).
+
+**Cómo probar**
+
+1. `npm test -- --testPathPattern="tracking-policy|driver-location|useDriverLocationTracking"`
+2. Manual G1 en `docs/QA_DRIVER_LIVE_TRACKING.md` → completar tabla en sign-off doc.
+
+---
+
+### Tarea 3 — Handoff cliente (9.7 · 7.8)
+
+**Qué se implementó**
+
+- `docs/CLIENT_HANDOFF_9_7.md` — builds EAS, env mobile/TMS, SQL Supabase, QA, checklist reunión.
+- `HANDOFF_DEV.md` actualizado (rutas, capacidades 9.1–9.7).
+- Tests `release-handoff-docs.test.ts` ampliados; README enlace handoff cliente.
+
+**Cómo probar**
+
+1. `npm test -- lib/qa/__tests__/release-handoff-docs.test.ts`
+2. `npm run ci`
+3. Revisar checklist §9 en `docs/CLIENT_HANDOFF_9_7.md` antes de reunión con cliente.
+
+**Backlog 9.1–9.7:** ✅ cerrado.
+
+---
+
+### Tarea 4 — Fix POD móvil → auto-stop wait timer (WT.28)
+
+**Qué se implementó**
+
+- `lib/loads/upload-driver-load-document.ts` — uploads **POD** siempre vía TMS (`POST /api/mobile/loads/{id}/documents`); **Driver** / **Photo** siguen Supabase + fallback TMS.
+- `app/load/[id].tsx` — tras upload POD, `waitTimer.refresh()` para reflejar **Stopped** en UI.
+- TMS dev: mobile BFF pasa `requestedDocumentType` a `processLoadDocumentUpload` (WT.28 no corría antes).
+
+**Supabase:** SUPABASE no requiere cambios.
+
+**Cómo probar**
+
+1. `npm test -- lib/loads/__tests__/upload-driver-load-document.test.ts`
+2. App: **Check In** (wait abierto) → **Add driver photo** → chip **POD** → subir → timer **Stopped**; TMS wait panel cerrado; `activity_log` `pod_signed_submitted`.
+3. Regresión: upload tipo **Driver** **no** cierra el timer.
+4. Desplegar TMS con fix en `app/api/mobile/loads/[id]/documents/route.ts`.
 
 ---
 

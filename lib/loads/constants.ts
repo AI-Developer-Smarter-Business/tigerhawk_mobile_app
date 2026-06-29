@@ -38,7 +38,10 @@ export const MOCK_LOAD_TRANSITIONS: Record<LoadStatus, LoadStatus[]> = {
     'Cancelled',
   ],
   'In Transit': [
+    'Arrived At Pickup',
     'Arrived At Delivery',
+    'Arrived To Hook Container',
+    'Arrived At Return Empty',
     'At Warehouse',
     'Delivered',
     'Dispatched',

@@ -1,5 +1,10 @@
 export { getTmsApiUrl, requireTmsApiUrl, tmsApiPath, tmsDocumentApiPath } from './client';
 export {
+  DEFAULT_DRIVER_DOCUMENT_TYPE,
+  DRIVER_DOCUMENT_TYPE_OPTIONS,
+  type DriverDocumentTypeOption,
+} from './driver-document-types';
+export {
   DRIVER_UPLOAD_DOCUMENT_TYPES,
   assertDriverUploadDocumentType,
   isDriverUploadDocumentType,

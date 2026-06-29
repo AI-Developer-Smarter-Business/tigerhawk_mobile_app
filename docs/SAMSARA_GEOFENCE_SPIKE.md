@@ -1,6 +1,6 @@
-# Samsara geofence + wait time auto check-out (WT.23)
+# Samsara geofence + wait time auto check-out (WT.23 / 9.5)
 
-**Status:** **Mock stub in TMS dev** ✅ · **Real Samsara API** ⏳ pending credentials / prod backport.
+**Status:** **Live-ready in TMS dev** ✅ (27 Jun 2026) · enable with Netlify env + Samsara webhook registration.
 
 **Client ask (Q2):** geofenced auto check-out at customer delivery + dispatch alert when driver leaves the site while wait timer is open.
 
@@ -12,159 +12,115 @@
 
 | Layer | Status |
 |-------|--------|
-| **Samsara in TMS prod** | Integrated (client); code not in dev repo yet |
-| **Samsara in TMS dev (Netlify)** | **Stub only** — no outbound Samsara REST calls |
+| **TMS webhook + handler** | ✅ `POST /api/integrations/samsara/webhook` |
+| **Samsara GeofenceExit parsing** | ✅ v2 beta payload + legacy mock fields |
+| **Load resolution** | ✅ explicit `loadId` · `externalIds.loadId` · vehicle plate/VIN → driver → open `delivery_wait` |
+| **REST ping** | ✅ `GET …/webhook?ping=1` (staff auth) tests `SAMSARA_API_TOKEN` |
 | **Mobile app** | No direct Samsara SDK; wait timer manual start/stop (WT.27) |
-| **Wait time close on geofence** | **Implemented (mock)** in TMS dev |
+| **Mock simulate** | ✅ still available for QA without fleet movement |
+
+**Supabase:** SUPABASE no requiere cambios (uses existing `waiting_time_events`, `activity_log`).
 
 ---
 
-## What WT.23 delivered (dev stub)
+## TMS components (tigerhawk-tms-main)
 
-| Component | Path (TMS dev) |
-|-----------|----------------|
+| Component | Path |
+|-----------|------|
 | Close open `delivery_wait` | `lib/wait-time/close-open-delivery-wait.ts` |
 | Geofence handler | `lib/integrations/samsara/handle-geofence-checkout.ts` |
+| Parse webhook / simulate | `lib/integrations/samsara/parse-geofence-event.ts` |
+| Resolve load from vehicle | `lib/integrations/samsara/resolve-geofence-load.ts` |
+| REST client ping | `lib/integrations/samsara/samsara-api-client.ts` |
+| Config / modes | `lib/integrations/samsara/config.ts` |
 | Mock simulate API | `POST /api/integrations/samsara/simulate` |
-| Webhook placeholder | `POST /api/integrations/samsara/webhook` (disabled until env) |
-| Config / status | `lib/integrations/samsara/config.ts` |
+| Live webhook | `POST /api/integrations/samsara/webhook` |
+| Status (+ optional ping) | `GET /api/integrations/samsara/webhook` · `?ping=1` |
 | Tests | `lib/integrations/samsara/__tests__/samsara-geofence.test.ts` |
 
-**Pending Samsara integration:**
+**Integration modes (`config.ts`):**
 
-- Map real Samsara webhook payload → `GeofenceCheckoutInput`
-- Outbound client (`SAMSARA_API_TOKEN`) for vehicles / geofences
-- Backport prod TMS routes into dev repo
-- Vehicle ↔ load ↔ driver correlation (today simulate uses `loadId` directly)
+| Mode | When |
+|------|------|
+| `mock_stub` | `SAMSARA_ENABLED` not set — use simulate only |
+| `webhook_only` | Webhook enabled, no API token |
+| `live` | `SAMSARA_ENABLED=true` **and** `SAMSARA_API_TOKEN` set |
 
 ---
 
-## Flow (target)
+## Flow
 
 ```mermaid
 sequenceDiagram
-  participant S as Samsara (prod, future)
+  participant S as Samsara
   participant WH as TMS webhook
+  participant R as resolve load
   participant WT as waiting_time_events
   participant AL as activity_log
-  participant D as Dispatch UI
 
-  Note over S,WH: Today: POST …/simulate (mock)
-  S->>WH: geofence_exit (future)
-  WH->>WT: PATCH close delivery_wait
-  WH->>AL: delivery_wait_geofence_auto_stop
-  AL-->>D: Realtime bell / toast
+  S->>WH: GeofenceExit webhook
+  WH->>R: parse + resolve loadId
+  R->>WT: close delivery_wait
+  WT->>AL: delivery_wait_geofence_auto_stop
 ```
 
-**Rules (aligned with client):**
+**Rules:**
 
 | Rule | Value |
 |------|--------|
 | Trigger | Driver **exits customer delivery geofence** |
 | Action | Close open `delivery_wait` (same as **End wait time**) |
-| Start wait | Still **manual** on mobile (WT.27) — geofence does **not** start timer |
-| Port / terminal | Not billed; geofence scope = **customer delivery** only |
+| Start wait | Still **manual** on mobile (WT.27) |
+| Port / terminal | Not billed; customer delivery geofence only |
 
 ---
 
-## Mock simulate API (use today)
-
-**Endpoint:** `POST {TMS_URL}/api/integrations/samsara/simulate`
-
-**Auth:**
-
-- TMS staff session (admin/dispatcher), **or**
-- `SAMSARA_MOCK_ALLOW_SIMULATE=true` on TMS (dev Netlify only)
-
-**Body example:**
-
-```json
-{
-  "loadId": "<uuid>",
-  "eventType": "geofence_exit",
-  "geofenceName": "Customer delivery (mock)",
-  "vehicleId": "mock-vehicle-1",
-  "occurredAt": "2026-06-19T14:00:00.000Z"
-}
-```
-
-**Success (closed):**
-
-```json
-{
-  "ok": true,
-  "integration": "mock_stub",
-  "pendingSamsaraApi": true,
-  "closed": true,
-  "loadId": "...",
-  "eventId": "..."
-}
-```
-
-**Success (no open timer):**
-
-```json
-{
-  "ok": true,
-  "closed": false,
-  "reason": "no_open_event"
-}
-```
-
----
-
-## Webhook (when Samsara credentials ready)
-
-**Endpoint:** `POST {TMS_URL}/api/integrations/samsara/webhook`
-
-**Env (TMS server only — never Expo):**
+## Env (TMS server — never Expo)
 
 | Variable | Purpose |
 |----------|---------|
-| `SAMSARA_ENABLED` | `true` to accept webhook |
-| `SAMSARA_WEBHOOK_SECRET` | HMAC verify header `x-samsara-signature: sha256=…` |
-| `SAMSARA_API_TOKEN` | Reserved — future outbound API |
-| `SAMSARA_MOCK_ALLOW_SIMULATE` | `true` = simulate without staff role (dev) |
+| `SAMSARA_ENABLED` | `true` to accept POST webhook |
+| `SAMSARA_API_TOKEN` | Samsara REST Bearer — required for **`live`** mode |
+| `SAMSARA_WEBHOOK_SECRET` | HMAC verify `x-samsara-signature: sha256=…` |
+| `SAMSARA_MOCK_ALLOW_SIMULATE` | Dev only — simulate without staff session |
 
-Until `SAMSARA_ENABLED=true`, webhook returns **503** with hint to use simulate.
-
-**Status check:** `GET /api/integrations/samsara/webhook` → integration status JSON.
+Until `SAMSARA_ENABLED=true`, webhook returns **503** (use simulate for QA).
 
 ---
 
-## Dispatch alert
+## Live webhook payload (Samsara GeofenceExit v2)
 
-On successful auto-close, TMS inserts `activity_log`:
+Register in Samsara dashboard:
 
-- **action:** `delivery_wait_geofence_auto_stop`
-- **details.type:** `samsara_geofence_checkout`
-- **details.pending_samsara_api:** `true` (until live Samsara)
+`POST {TMS_URL}/api/integrations/samsara/webhook`
 
-Feeds existing wait-time Realtime / bell patterns (WT.11–12).
+Minimal fields used by TMS:
+
+- `eventType`: `GeofenceExit`
+- `data.address.name` — geofence label in audit note
+- `data.address.externalIds.loadId` — **recommended** (UUID Tigerhawk load)
+- `data.vehicle.id`, `licensePlate`, `vin`, `name` — fallback load resolution
+
+If `loadId` is omitted, TMS matches **open delivery_wait** for driver whose `truck_number` aligns with vehicle plate/name, or truck VIN/plate in `trucks` table.
 
 ---
 
-## QA (mock, no Samsara account)
+## Mock simulate API (QA without Samsara)
 
-1. Mobile: **Arrived At Delivery** → **Start wait time** (open event).
-2. TMS staff login → curl or REST client:
+**Endpoint:** `POST {TMS_URL}/api/integrations/samsara/simulate`
 
-```bash
-curl -X POST "$TMS_URL/api/integrations/samsara/simulate" \
-  -H "Content-Type: application/json" \
-  -H "Cookie: …" \
-  -d '{"loadId":"LOAD_UUID","eventType":"geofence_exit","geofenceName":"Customer delivery (mock)"}'
-```
+See `docs/QA_SAMSARA_GEOFENCE_MOCK.md`.
 
-3. Verify `waiting_time_events.end_time` set; TMS wait panel **Stopped**.
-4. `activity_log` row with `delivery_wait_geofence_auto_stop`.
-5. Mobile timer refreshes on focus → **Stopped** (no auto-start).
+---
 
-**TMS tests:**
+## Enable live (checklist)
 
-```bash
-npm test -- lib/integrations/samsara/__tests__/samsara-geofence.test.ts
-```
+1. Set Netlify env: `SAMSARA_ENABLED=true`, `SAMSARA_API_TOKEN`, `SAMSARA_WEBHOOK_SECRET`.
+2. Redeploy TMS.
+3. `GET {TMS_URL}/api/integrations/samsara/webhook?ping=1` (staff session) → `mode: live`, `apiPing.ok: true`.
+4. Register Samsara webhook → GeofenceExit → TMS URL above.
+5. Configure customer delivery geofences in Samsara; set `externalIds.loadId` on address or vehicle when possible.
+6. QA: mobile Check In → drive/simulate geofence exit → wait closes + `activity_log`.
 
 ---
 
@@ -173,21 +129,10 @@ npm test -- lib/integrations/samsara/__tests__/samsara-geofence.test.ts
 | Task | Relation |
 |------|----------|
 | WT.27 | Manual start; geofence only **stops** |
-| WT.28 | e-POD auto-stop (parallel auto-stop path) |
-| 8.4–8.16 | Mobile GPS live — future correlation with Samsara position |
-| OFF.2 | Offline queue — geofence is server-side |
+| WT.28 | e-POD auto-stop (parallel path) |
+| 8.4–8.16 | Mobile GPS via Supabase — **≠** Samsara map |
+| 9.4 | Offline queue — geofence is server-side |
 
 ---
 
-## Next steps when Samsara access granted
-
-1. Audit **prod TMS** Samsara routes, env, webhook payload.
-2. Backport into **tigerhawk-tms-main** dev repo.
-3. Replace `parseGeofenceCheckoutBody` mapping with prod schema.
-4. Enable `SAMSARA_ENABLED` + `SAMSARA_WEBHOOK_SECRET` on Netlify.
-5. Register Samsara webhook URL → `{TMS_URL}/api/integrations/samsara/webhook`.
-6. Remove or gate `SAMSARA_MOCK_ALLOW_SIMULATE` in production.
-
----
-
-**Revision:** 19 Jun 2026 · WT.23 stub · pending live Samsara API.
+**Revision:** 27 Jun 2026 · **9.5** live-ready · mobile doc mirror of TMS dev implementation.

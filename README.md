@@ -350,6 +350,31 @@ PROYECTO_MUESTRA/       # TMS web — read only
 GitHub Actions: `.github/workflows/ci.yml` runs `npm run ci` on push/PR (`tsc`, `check:secrets`, Jest).  
 See `docs/GitHub_Setup_Guide.md` and `docs/SECRETS_AND_BFF.md`.
 
+### Client repository mirror (`tigerhawk_mobile`)
+
+The project source code is published to the client org repo (excluding `*.png` and internal planning `.md` files):
+
+**https://github.com/AI-Developer-Smarter-Business/tigerhawk_mobile**
+
+| Item | Value |
+|------|--------|
+| Local mirror folder | `C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\SUBIDAS A GITHUB\PP2_MOBILE` |
+| Git remote (SSH empresa) | `git@github-empresa:AI-Developer-Smarter-Business/tigerhawk_mobile.git` |
+| Sync command | `npm run sync:client-mirror` (from this repo) |
+| Excluded from copy | `*.png`, most `*.md` (planning/daily logs), plus `.git`, `node_modules`, `.expo`, `coverage` |
+| Included `.md` (CI) | `CHANGELOG.md`, `README.md`, and release handoff docs under `docs/` — required by Jest in GitHub Actions |
+
+**Workflow:** run `npm run sync:client-mirror`, then in `PP2_MOBILE` commit and push with the **empresa** SSH key (`github-empresa` in `~/.ssh/config`).
+
+For future pushes from the mirror folder:
+
+```bash
+cd "C:/Users/ariel/OneDrive/Escritorio/RECRUITING_SMARTER___BRASIL/SUBIDAS A GITHUB/PP2_MOBILE"
+git push origin main
+```
+
+Do **not** commit `.env.local` — it stays gitignored in the mirror repo.
+
 ## Database migrations
 
 Apply SQL via **Supabase Dashboard → SQL Editor** (team standard).  
@@ -366,7 +391,7 @@ Optional CLI: `npm run db:apply-rls` if `SUPABASE_DB_PASSWORD` is set (not requi
 - Foreground GPS + Share location; offline v1
 - Jest + `npm run ci` + QA runbooks (`docs/QA_RELEASE_SIGNOFF_7_1.md`)
 
-**Handoff:** `HANDOFF_DEV.md` · **Tasks:** `PP2_TAREAS_DEV.md` · **Changelog:** `CHANGELOG.md`
+**Handoff:** `HANDOFF_DEV.md` · **Client delivery:** `docs/CLIENT_HANDOFF_9_7.md` · **Tasks:** `PP2_TAREAS_DEV.md` · **Changelog:** `CHANGELOG.md`
 
 ## TMS reference
 

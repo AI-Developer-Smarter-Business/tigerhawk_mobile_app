@@ -3,18 +3,23 @@ import { act } from '@testing-library/react-native';
 jest.mock('@/hooks/useAuth', () => ({
   useAuth: jest.fn(),
 }));
+jest.mock('@/context/NetworkContext', () => ({
+  useNetwork: jest.fn(),
+}));
+jest.mock('@/context/OfflineQueueContext', () => ({
+  useOfflineQueue: jest.fn(),
+}));
 jest.mock('@/lib/media/validate-driver-upload-file');
-jest.mock('@/lib/network/assert-online');
-jest.mock('@/lib/supabase/upload-driver-load-document', () => ({
-  uploadDriverLoadDocumentViaSupabase: jest.fn(),
+jest.mock('@/lib/offline/enqueue', () => ({
+  enqueueDocumentUpload: jest.fn(),
+}));
+jest.mock('@/lib/loads/upload-driver-load-document', () => ({
+  uploadDriverLoadDocument: jest.fn(),
 }));
 jest.mock('@/lib/query/invalidate-loads');
-jest.mock('@/lib/tms', () => ({
-  getTmsApiUrl: jest.fn(() => 'https://tms.example.com'),
-  resolveSupabaseAccessToken: jest.fn(async () => 'jwt-token'),
-  uploadLoadDocument: jest.fn(),
-}));
 
+import { useNetwork } from '@/context/NetworkContext';
+import { useOfflineQueue } from '@/context/OfflineQueueContext';
 import { useLoadDocumentUpload } from '@/hooks/useLoadDocumentUpload';
 import { createMockLoadDetail } from '@/hooks/testing/fixtures/mock-load-detail';
 import {
@@ -23,21 +28,22 @@ import {
   renderDriverHook,
 } from '@/hooks/testing/hooks-test-utils';
 import { validateDriverUploadFile } from '@/lib/media/validate-driver-upload-file';
-import { assertOnlineForDocumentUpload } from '@/lib/network/assert-online';
+import { enqueueDocumentUpload } from '@/lib/offline/enqueue';
+import { OfflineQueuedError } from '@/lib/offline/offline-queued-error';
+import { uploadDriverLoadDocument } from '@/lib/loads/upload-driver-load-document';
 import { invalidateLoadDocuments } from '@/lib/query/invalidate-loads';
 import { TmsDocumentUploadError } from '@/lib/tms/document-errors';
-import { getTmsApiUrl, resolveSupabaseAccessToken, uploadLoadDocument } from '@/lib/tms';
 
-const mockSupabaseUpload = jest.requireMock('@/lib/supabase/upload-driver-load-document')
-  .uploadDriverLoadDocumentViaSupabase as jest.Mock;
+const mockUpload = uploadDriverLoadDocument as jest.MockedFunction<
+  typeof uploadDriverLoadDocument
+>;
 const mockUseAuth = jest.requireMock('@/hooks/useAuth').useAuth as jest.Mock;
+const mockUseNetwork = useNetwork as jest.MockedFunction<typeof useNetwork>;
+const mockUseOfflineQueue = useOfflineQueue as jest.MockedFunction<typeof useOfflineQueue>;
+const mockEnqueue = enqueueDocumentUpload as jest.MockedFunction<typeof enqueueDocumentUpload>;
 const mockValidate = validateDriverUploadFile as jest.MockedFunction<
   typeof validateDriverUploadFile
 >;
-const mockAssertOnline = assertOnlineForDocumentUpload as jest.MockedFunction<
-  typeof assertOnlineForDocumentUpload
->;
-const mockTmsUpload = uploadLoadDocument as jest.MockedFunction<typeof uploadLoadDocument>;
 const mockInvalidate = invalidateLoadDocuments as jest.MockedFunction<
   typeof invalidateLoadDocuments
 >;
@@ -55,9 +61,13 @@ describe('useLoadDocumentUpload', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAuth.mockReturnValue(driverAuthState);
-    mockAssertOnline.mockResolvedValue(undefined);
+    mockUseNetwork.mockReturnValue({ isOffline: false, isReady: true });
+    mockUseOfflineQueue.mockReturnValue({
+      pendingCount: 0,
+      refreshPendingCount: jest.fn(async () => undefined),
+    });
     mockValidate.mockImplementation(() => undefined);
-    mockSupabaseUpload.mockResolvedValue({
+    mockUpload.mockResolvedValue({
       id: 'doc-1',
       load_id: load.id,
       filename: 'photo.jpg',
@@ -67,54 +77,56 @@ describe('useLoadDocumentUpload', () => {
       uploaded_at: '2026-06-02T12:00:00.000Z',
     });
     mockInvalidate.mockResolvedValue(undefined);
+    mockEnqueue.mockResolvedValue({
+      id: 'queued-1',
+      type: 'document_upload',
+      loadId: load.id,
+      userId: DRIVER_USER_ID,
+      documentType: 'POD',
+      file: sampleFile,
+      createdAt: '2026-06-26T12:00:00.000Z',
+      attempts: 0,
+    });
   });
 
-  it('uploads via Supabase after online check and validation', async () => {
+  it('uploads via shared driver upload helper', async () => {
     const { result } = renderDriverHook(() => useLoadDocumentUpload(load));
 
     await act(async () => {
-      await result.current(sampleFile);
+      await result.current(sampleFile, 'POD');
     });
 
-    expect(mockAssertOnline).toHaveBeenCalled();
     expect(mockValidate).toHaveBeenCalledWith(sampleFile);
-    expect(mockSupabaseUpload).toHaveBeenCalledWith({
+    expect(mockUpload).toHaveBeenCalledWith({
       loadId: load.id,
       file: sampleFile,
       userId: DRIVER_USER_ID,
+      documentType: 'POD',
     });
-    expect(mockTmsUpload).not.toHaveBeenCalled();
     expect(mockInvalidate).toHaveBeenCalled();
   });
 
-  it('falls back to TMS Driver upload when Supabase returns FORBIDDEN', async () => {
-    mockSupabaseUpload.mockRejectedValue(
-      new TmsDocumentUploadError('Forbidden', 'FORBIDDEN'),
-    );
-    mockTmsUpload.mockResolvedValue({
-      id: 'doc-tms',
-      load_id: load.id,
-      filename: 'photo.jpg',
-      url: 'https://signed.example/photo.jpg',
-      document_type: 'Driver',
-      file_size: 1024,
-      uploaded_at: '2026-06-02T12:00:00.000Z',
-    });
+  it('queues upload when offline', async () => {
+    mockUseNetwork.mockReturnValue({ isOffline: true, isReady: true });
+    const refreshPendingCount = jest.fn(async () => undefined);
+    mockUseOfflineQueue.mockReturnValue({ pendingCount: 0, refreshPendingCount });
 
     const { result } = renderDriverHook(() => useLoadDocumentUpload(load));
 
-    await act(async () => {
-      await result.current(sampleFile);
-    });
+    await expect(
+      act(async () => {
+        await result.current(sampleFile, 'POD');
+      }),
+    ).rejects.toBeInstanceOf(OfflineQueuedError);
 
-    expect(mockTmsUpload).toHaveBeenCalledWith({
+    expect(mockEnqueue).toHaveBeenCalledWith({
       loadId: load.id,
+      userId: DRIVER_USER_ID,
+      documentType: 'POD',
       file: sampleFile,
-      documentType: 'Driver',
-      accessToken: 'jwt-token',
     });
-    expect(resolveSupabaseAccessToken).toHaveBeenCalled();
-    expect(getTmsApiUrl).toHaveBeenCalled();
+    expect(refreshPendingCount).toHaveBeenCalled();
+    expect(mockUpload).not.toHaveBeenCalled();
   });
 
   it('throws when session has no user id', async () => {
@@ -128,7 +140,7 @@ describe('useLoadDocumentUpload', () => {
       }),
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
 
-    expect(mockSupabaseUpload).not.toHaveBeenCalled();
+    expect(mockUpload).not.toHaveBeenCalled();
   });
 
   it('no-ops when load is null', async () => {
@@ -138,7 +150,19 @@ describe('useLoadDocumentUpload', () => {
       await result.current(sampleFile);
     });
 
-    expect(mockSupabaseUpload).not.toHaveBeenCalled();
+    expect(mockUpload).not.toHaveBeenCalled();
     expect(mockInvalidate).not.toHaveBeenCalled();
+  });
+
+  it('wraps unknown errors as TmsDocumentUploadError', async () => {
+    mockUpload.mockRejectedValue(new Error('boom'));
+
+    const { result } = renderDriverHook(() => useLoadDocumentUpload(load));
+
+    await expect(
+      act(async () => {
+        await result.current(sampleFile, 'Driver');
+      }),
+    ).rejects.toBeInstanceOf(TmsDocumentUploadError);
   });
 });

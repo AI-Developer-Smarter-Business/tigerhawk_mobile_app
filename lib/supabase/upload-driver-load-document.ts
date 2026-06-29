@@ -1,5 +1,6 @@
 import { filterDocumentsForExpectedLoad } from '@/lib/loads/document-load-association';
 import { resolveLoadDocumentUrlForDriver } from '@/lib/loads/resolve-load-document-url';
+import type { DriverUploadDocumentType } from '@/lib/tms/assert-driver-document-type';
 import { validateDriverUploadFile } from '@/lib/media/validate-driver-upload-file';
 import { getSupabase } from '@/lib/supabase/client';
 import { TmsDocumentUploadError } from '@/lib/tms/document-errors';
@@ -9,7 +10,6 @@ import type { LoadDocument } from '@/types/load-document';
 import { mapLoadDocumentRow, type LoadDocumentRow } from './queries/map-load-document-row';
 
 const BUCKET = 'load-documents';
-const DRIVER_DOCUMENT_TYPE = 'Driver';
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -37,8 +37,9 @@ export async function uploadDriverLoadDocumentViaSupabase(params: {
   loadId: string;
   file: TmsUploadFileDescriptor;
   userId: string;
+  documentType?: DriverUploadDocumentType;
 }): Promise<LoadDocument> {
-  const { loadId, file, userId } = params;
+  const { loadId, file, userId, documentType = 'Driver' } = params;
 
   validateDriverUploadFile(file);
 
@@ -72,7 +73,7 @@ export async function uploadDriverLoadDocumentViaSupabase(params: {
       filename: file.name,
       url,
       storage_path: storagePath,
-      document_type: DRIVER_DOCUMENT_TYPE,
+      document_type: documentType,
       file_size: file.size,
       uploaded_by: userId,
       uploaded_at: new Date().toISOString(),

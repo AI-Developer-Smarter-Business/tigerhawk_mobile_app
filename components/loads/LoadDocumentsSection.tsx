@@ -14,6 +14,7 @@ import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { formatAppointment } from '@/lib/loads';
 import { formatFileSize } from '@/lib/loads/format-document';
+import type { DriverUploadDocumentType } from '@/lib/tms/assert-driver-document-type';
 import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
 import type { LoadDocument } from '@/types/load-document';
 
@@ -23,7 +24,10 @@ type LoadDocumentsSectionProps = {
   error: string | null;
   onRetry: () => void;
   onRefreshDocuments: () => Promise<LoadDocument[]>;
-  onUploadDocument: (file: TmsUploadFileDescriptor) => Promise<void>;
+  onUploadDocument: (
+    file: TmsUploadFileDescriptor,
+    documentType?: DriverUploadDocumentType,
+  ) => Promise<void>;
 };
 
 export function LoadDocumentsSection({

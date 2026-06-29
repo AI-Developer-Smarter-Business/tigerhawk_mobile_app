@@ -44,38 +44,40 @@ describe('PodUploadSection', () => {
     jest.clearAllMocks();
     mockUseNetwork.mockReturnValue({ isOffline: false, isReady: true });
     mockPickCamera.mockResolvedValue({
-      uri: 'file:///picked.jpg',
-      fileName: 'picked.jpg',
-      mimeType: 'image/jpeg',
-      width: 100,
-      height: 100,
+      ok: true,
+      asset: {
+        uri: 'file:///picked.jpg',
+        fileName: 'picked.jpg',
+        mimeType: 'image/jpeg',
+        width: 100,
+        height: 100,
+      },
     } as never);
     mockPrepare.mockResolvedValue(mappedFile);
     mockValidate.mockImplementation(() => undefined);
   });
 
-  it('renders Add driver photo when online', () => {
+  it('renders document type picker and Add driver photo when online', () => {
     render(<PodUploadSection onUpload={jest.fn()} />);
+    expect(screen.getByText(strings.loadDetail.documentTypeLabel)).toBeTruthy();
     expect(screen.getByText(strings.loadDetail.podAddPhoto)).toBeTruthy();
   });
 
-  it('shows offline hint and disables add when offline', () => {
+  it('shows offline queue hint when offline', () => {
     mockUseNetwork.mockReturnValue({ isOffline: true, isReady: true });
 
     render(<PodUploadSection onUpload={jest.fn()} />);
 
-    expect(screen.getByText(strings.loadDetail.podOfflineHint)).toBeTruthy();
-    const addButtons = screen.getAllByLabelText(strings.loadDetail.podAddPhotoA11y);
-    expect(addButtons.some((node) => node.props.accessibilityState?.disabled === true)).toBe(
-      true,
-    );
+    expect(screen.getByText(strings.loadDetail.podOfflineQueueHint)).toBeTruthy();
+    expect(screen.getByText(strings.loadDetail.podAddPhoto)).toBeTruthy();
   });
 
-  it('uploads after preview confirm', async () => {
+  it('uploads selected document type after preview confirm', async () => {
     const onUpload = jest.fn().mockResolvedValue(undefined);
 
     render(<PodUploadSection onUpload={onUpload} />);
 
+    fireEvent.press(screen.getByText(strings.loadDetail.documentTypePod));
     fireEvent.press(screen.getByText(strings.loadDetail.podAddPhoto));
     fireEvent.press(screen.getByText(strings.loadDetail.podPickCamera));
 
@@ -88,8 +90,26 @@ describe('PodUploadSection', () => {
     });
 
     expect(mockValidate).toHaveBeenCalledWith(mappedFile);
-    expect(onUpload).toHaveBeenCalledWith(mappedFile);
+    expect(onUpload).toHaveBeenCalledWith(mappedFile, 'POD');
     expect(screen.getByText(strings.loadDetail.podUploadSuccess)).toBeTruthy();
+  });
+
+  it('shows permission error with Open Settings action', async () => {
+    mockPickCamera.mockResolvedValue({
+      ok: false,
+      reason: 'permission_denied',
+      canAskAgain: false,
+    });
+
+    render(<PodUploadSection onUpload={jest.fn()} />);
+
+    fireEvent.press(screen.getByText(strings.loadDetail.podAddPhoto));
+    fireEvent.press(screen.getByText(strings.loadDetail.podPickCamera));
+
+    await waitFor(() => {
+      expect(screen.getByText(strings.loadDetail.mediaPermissionDeniedTitle)).toBeTruthy();
+      expect(screen.getByText(strings.loadDetail.mediaPermissionOpenSettings)).toBeTruthy();
+    });
   });
 
   it('discards pending photo when user confirms discard sheet', async () => {

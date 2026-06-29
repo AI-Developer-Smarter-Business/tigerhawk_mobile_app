@@ -37,6 +37,16 @@ export const strings = {
       'This action needs internet. Reconnect and try again.',
     offlineUploadBlocked:
       'Photo upload needs internet. Reconnect and try again.',
+    offlineUploadQueued:
+      'Photo saved. It will upload when you are back online.',
+    offlineStatusQueued:
+      'Status saved. It will sync when you are back online.',
+    offlineQueueBanner: (count: number) =>
+      count === 1
+        ? '1 action waiting to sync when online'
+        : `${count} actions waiting to sync when online`,
+    offlineQueueBannerA11y: (count: number) =>
+      `${count} pending offline action${count === 1 ? '' : 's'}`,
   },
   location: {
     sectionTitle: 'Your location',
@@ -218,6 +228,19 @@ export const strings = {
     driverUploadFileTooLarge: 'This photo exceeds the 50 MB limit. Choose a smaller file.',
     driverUploadEmptyFile: 'This file is empty. Choose another photo.',
     podOfflineHint: 'Connect to the internet to upload a driver photo.',
+    podOfflineQueueHint:
+      'You are offline. Confirm upload to queue it — it will sync when you reconnect.',
+    documentTypeLabel: 'Document type',
+    documentTypeDriver: 'Driver evidence',
+    documentTypeDriverHint: 'Delivery, seal, delay, or incident photos',
+    documentTypePod: 'POD',
+    documentTypePodHint: 'Proof of delivery with signature or seal',
+    documentTypePhoto: 'Photo',
+    documentTypePhotoHint: 'Damage, delay, or other field incidents',
+    mediaPermissionDeniedTitle: 'Camera or photos access needed',
+    mediaPermissionDeniedMessage:
+      'Allow camera or photo library access in Settings to add driver documents.',
+    mediaPermissionOpenSettings: 'Open Settings',
     screenTitle: 'Load details',
     emDash: '—',
   },

@@ -90,4 +90,4 @@ WHERE reference_number = '<LOAD_REF>';
 | Dev | | | | | |
 | QA / PM | | | | | |
 
-**Related:** `docs/TMS_DEV_REPOSITORY.md`, `supabase/sql-editor/VERIFY_pp2_driver_live_location.sql`, `PP2_TAREAS_DEV.md` §8.16.
+**Related:** `docs/TMS_DEV_REPOSITORY.md`, `docs/GPS_LIVE_TRACKING_SIGNOFF_8_17.md`, `supabase/sql-editor/VERIFY_pp2_driver_live_location.sql`, `PP2_TAREAS_DEV.md` §8.16 / **9.6**.

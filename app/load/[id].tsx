@@ -56,7 +56,19 @@ export default function LoadDetailScreen() {
   );
   const waitTimer = useDeliveryWaitTimer(load);
   const locationTracking = useDriverLocationTracking(load);
-  const uploadDocument = useLoadDocumentUpload(load);
+  const uploadDocumentRaw = useLoadDocumentUpload(load);
+  const uploadDocument = useCallback(
+    async (
+      file: Parameters<typeof uploadDocumentRaw>[0],
+      documentType?: Parameters<typeof uploadDocumentRaw>[1],
+    ) => {
+      await uploadDocumentRaw(file, documentType);
+      if (documentType === 'POD') {
+        await waitTimer.refresh();
+      }
+    },
+    [uploadDocumentRaw, waitTimer.refresh],
+  );
   const refreshDocumentsList = useCallback(
     () => refetchDocuments(),
     [refetchDocuments],

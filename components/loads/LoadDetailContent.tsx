@@ -21,6 +21,7 @@ import {
   hasShipmentInfo,
   hasTimeline,
 } from '@/lib/loads/load-detail-helpers';
+import type { DriverUploadDocumentType } from '@/lib/tms/assert-driver-document-type';
 import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
 import type { LoadDetail } from '@/types';
 import type { LoadDocument } from '@/types/load-document';
@@ -36,7 +37,10 @@ type LoadDetailContentProps = {
   documentsError: string | null;
   onDocumentsRetry: () => void;
   onRefreshDocuments: () => Promise<LoadDocument[]>;
-  onUploadDocument: (file: TmsUploadFileDescriptor) => Promise<void>;
+  onUploadDocument: (
+    file: TmsUploadFileDescriptor,
+    documentType?: DriverUploadDocumentType,
+  ) => Promise<void>;
 };
 
 export function LoadDetailContent({

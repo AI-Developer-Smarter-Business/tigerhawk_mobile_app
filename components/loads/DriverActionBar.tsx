@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
+import { isOfflineQueuedError } from '@/lib/offline/offline-queued-error';
 import {
   mapActiveHoldsPreview,
   mapErrorToUserFacing,
@@ -69,6 +70,10 @@ export function DriverActionBar({
         `${formatLoadStatus(currentStatus)} → ${formatLoadStatus(next)}`,
       );
     } catch (err) {
+      if (isOfflineQueuedError(err)) {
+        setLastChange(err.message);
+        return;
+      }
       setActionError(mapErrorToUserFacing(err));
     } finally {
       submittingRef.current = false;

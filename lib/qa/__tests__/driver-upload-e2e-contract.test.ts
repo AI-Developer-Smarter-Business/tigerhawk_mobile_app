@@ -19,14 +19,24 @@ describe('driver upload E2E contract (6.4)', () => {
     expect(screen).toContain('uploadDocument');
   });
 
-  it('upload hook validates online + file and uses Driver document type', () => {
+  it('load detail refreshes wait timer after POD upload', () => {
+    const screen = readSource('app', 'load', '[id].tsx');
+    expect(screen).toContain("documentType === 'POD'");
+    expect(screen).toContain('waitTimer.refresh');
+  });
+
+  it('upload hook validates file, routes POD via TMS helper, and queues offline', () => {
     const hook = readSource('hooks', 'useLoadDocumentUpload.ts');
-    expect(hook).toContain('assertOnlineForDocumentUpload');
+    expect(hook).toContain('enqueueDocumentUpload');
     expect(hook).toContain('validateDriverUploadFile');
-    expect(hook).toContain("documentType: 'Driver'");
-    expect(hook).toContain('uploadDriverLoadDocumentViaSupabase');
-    expect(hook).toContain('uploadLoadDocument');
+    expect(hook).toContain('DriverUploadDocumentType');
+    expect(hook).toContain('uploadDriverLoadDocument');
     expect(hook).toContain('invalidateLoadDocuments');
+
+    const routing = readSource('lib', 'loads', 'upload-driver-load-document.ts');
+    expect(routing).toContain('shouldUploadDriverDocumentViaTms');
+    expect(routing).toContain("documentType === 'POD'");
+    expect(routing).toContain('uploadLoadDocument');
   });
 
   it('TMS upload uses mobile documents API path', () => {
@@ -39,11 +49,13 @@ describe('driver upload E2E contract (6.4)', () => {
     expect(upload).toContain('assertDriverUploadDocumentType');
   });
 
-  it('PodUploadSection prepares, validates on pick, and respects network context', () => {
+  it('PodUploadSection prepares, validates on pick, and handles permissions', () => {
     const section = readSource('components', 'loads', 'PodUploadSection.tsx');
     expect(section).toContain('prepareDriverUploadImage');
     expect(section).toContain('validateDriverUploadFile');
     expect(section).toContain('useNetwork');
+    expect(section).toContain('DRIVER_DOCUMENT_TYPE_OPTIONS');
+    expect(section).toContain('openAppSettings');
     expect(section).toContain('strings.loadDetail.podAddPhoto');
     expect(section).toContain('strings.loadDetail.podUpload');
     expect(section).not.toContain('driverUploadTmsRequired');

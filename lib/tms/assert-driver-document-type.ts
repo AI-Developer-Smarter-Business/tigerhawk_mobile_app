@@ -1,7 +1,7 @@
 import { TmsDocumentUploadError } from './document-errors';
 
-/** Mobile driver field uploads — stored in TMS as document type "Driver". */
-export const DRIVER_UPLOAD_DOCUMENT_TYPES = ['Driver'] as const;
+/** Mobile driver field uploads — aligned to TMS `normalizeDriverDocumentType`. */
+export const DRIVER_UPLOAD_DOCUMENT_TYPES = ['Driver', 'POD', 'Photo'] as const;
 
 export type DriverUploadDocumentType = (typeof DRIVER_UPLOAD_DOCUMENT_TYPES)[number];
 
@@ -15,7 +15,7 @@ export function isDriverUploadDocumentType(
 export function assertDriverUploadDocumentType(documentType: string): void {
   if (!isDriverUploadDocumentType(documentType)) {
     throw new TmsDocumentUploadError(
-      'Drivers may only upload Driver-type documents.',
+      'Drivers may only upload Driver, POD, or Photo documents.',
       'DOCUMENT_TYPE_FORBIDDEN',
     );
   }
