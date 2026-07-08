@@ -7,14 +7,27 @@ import { assertTmsUrlReachableFromDevice } from './assert-tms-device-url';
 import { getTmsApiUrl, tmsDocumentApiPath } from './client';
 import { TmsDocumentUploadError } from './document-errors';
 import {
-    buildDocumentUploadPath,
-    buildDocumentUploadRequestInit,
-    type TmsUploadFileDescriptor,
+  buildDocumentUploadPath,
+  buildDocumentUploadRequestInitAsync,
+  type TmsUploadFileDescriptor,
 } from './document-upload-request';
 import { parseDocumentUploadError } from './parse-document-error';
+import { LOCALHOST_TMS_URL_PATTERN } from './resolve-tms-api-url';
+
+const LAN_TMS_URL_PATTERN = /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}(?=[:/]|$)/i;
 
 const DEV_FETCH_ATTEMPTS = 3;
 const DEV_FETCH_RETRY_MS = 2500;
+
+function buildTmsNetworkDevHint(base: string): string {
+  if (typeof __DEV__ === 'undefined' || !__DEV__ || !base) {
+    return '';
+  }
+  if (LOCALHOST_TMS_URL_PATTERN.test(base) || LAN_TMS_URL_PATTERN.test(base)) {
+    return ` Could not reach ${base}. Is TMS running (npm run dev)? Open that URL once in the phone browser (same Wi‑Fi) and allow port 3000 in Windows Firewall.`;
+  }
+  return ` Could not reach ${base}. On the phone, open that URL in the browser to verify Wi‑Fi or mobile data, then retry.`;
+}
 
 async function fetchTmsUpload(
   url: string,
@@ -72,7 +85,7 @@ export type LoadDocumentRecord = {
 
 /**
  * Uploads a load document via the TMS BFF.
- * Contract: `POST /api/dispatcher/loads/[id]/documents` (multipart).
+ * Contract: `POST /api/mobile/loads/[id]/documents` (multipart).
  * Requires TMS patch 4.1 deployed for driver role.
  * @see docs/TMS_PATCH_4_1_DRIVER_DOCUMENTS.md
  */
@@ -94,7 +107,7 @@ export async function uploadLoadDocument(
   assertTmsUrlReachableFromDevice();
 
   const url = tmsDocumentApiPath(buildDocumentUploadPath(loadId));
-  const init = buildDocumentUploadRequestInit(accessToken, {
+  const init = await buildDocumentUploadRequestInitAsync(accessToken, {
     file,
     documentType,
   });
@@ -114,12 +127,7 @@ export async function uploadLoadDocument(
       })(),
       cause: err instanceof Error ? err.message : String(err),
     });
-    const devHint =
-      typeof __DEV__ !== 'undefined' &&
-      __DEV__ &&
-      base
-        ? ` Could not reach ${base}. Is TMS running (npm run dev)? Open that URL once in the phone browser (first API compile can take ~30s), same Wi‑Fi, and allow port 3000 in Windows Firewall.`
-        : '';
+    const devHint = buildTmsNetworkDevHint(base);
     throw new TmsDocumentUploadError(
       `Network error. Check your connection and try again.${devHint}`,
       'NETWORK',

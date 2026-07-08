@@ -4,19 +4,22 @@ import * as path from 'node:path';
 import { strings } from '../strings';
 
 describe('strings loadDetail driver evidence (6.5)', () => {
-  it('driverEvidenceHint covers delivery, seal, delay, incidents, and one-at-a-time uploads', () => {
+  it('driverEvidenceHint covers delivery docs, photo and complementary signature', () => {
     const hint = strings.loadDetail.driverEvidenceHint.toLowerCase();
-    expect(hint).toContain('delivery');
-    expect(hint).toContain('seal');
-    expect(hint).toContain('delay');
-    expect(hint).toMatch(/incident|damage/);
+    expect(hint).toContain('photo');
+    expect(hint).toContain('signature');
+    expect(hint).toMatch(/complementary|both|or only one/);
     expect(hint).toMatch(/document/);
-    expect(hint).toMatch(/one file at a time|one at a time/);
   });
 
   it('podConfirmHint mentions uploading again for additional files', () => {
     const hint = strings.loadDetail.podConfirmHint.toLowerCase();
-    expect(hint).toMatch(/upload again|another file/);
+    expect(hint).toMatch(/another file|photo or signature/);
+  });
+
+  it('exposes Sign on device copy for receipt signature (SIG.5)', () => {
+    expect(strings.loadDetail.podSignOnDevice).toMatch(/sign on device/i);
+    expect(strings.loadDetail.signatureLegalHint.length).toBeGreaterThan(20);
   });
 
   it('does not expose TMS patch pending placeholder keys or copy', () => {

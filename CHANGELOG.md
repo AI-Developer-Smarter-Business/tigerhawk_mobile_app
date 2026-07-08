@@ -6,6 +6,17 @@ Version alignment: `package.json`, `app.json` → `expo.version`, and `docs/RELE
 
 ## [Unreleased]
 
+### Added (mobile — receipt signature SIG.1–SIG.7 · 8 Jul 2026)
+
+- DHL-style **Sign on device** pad (`SignaturePad` / `SignatureCaptureModal`) — finger/stylus → PNG
+- Export via `lib/media/signature-export.ts`; upload through existing document path (complements photo POD)
+- QA: `docs/QA_DRIVER_SIGNATURE.md`
+
+### Changed (mobile — signature document type · 8 Jul 2026)
+
+- **Sign on device** auto-selects **POD**; signature uploads always send `document_type: POD` (WT.28 wait auto-stop)
+- TMS multipart upload reads signature PNG as `Blob` (fixes empty file body from expo-file-system cache URIs)
+
 ### Added (TMS — wait time emails WT.27–32)
 
 - Customer detention emails at **45 min**, **60 min**, and **wait close** (`detention_warning_45`, `detention_started`, `detention_completed`)
@@ -15,7 +26,6 @@ Version alignment: `package.json`, `app.json` → `expo.version`, and `docs/RELE
 
 ### Planned (v1.1)
 
-- Live GPS tracking + TMS map (Semana 8)
 - Push notifications, load messages API, E2E automation
 
 ---

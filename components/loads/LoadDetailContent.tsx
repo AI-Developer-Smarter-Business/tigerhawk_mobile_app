@@ -236,6 +236,7 @@ export function LoadDetailContent({
           onRetry={onDocumentsRetry}
           onRefreshDocuments={onRefreshDocuments}
           onUploadDocument={onUploadDocument}
+          loadReference={load.reference_number}
         />
       </Card>
     </>

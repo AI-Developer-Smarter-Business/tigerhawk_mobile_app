@@ -28,6 +28,8 @@ type LoadDocumentsSectionProps = {
     file: TmsUploadFileDescriptor,
     documentType?: DriverUploadDocumentType,
   ) => Promise<void>;
+  /** Optional load reference for signature file names (SIG.2). */
+  loadReference?: string | null;
 };
 
 export function LoadDocumentsSection({
@@ -37,6 +39,7 @@ export function LoadDocumentsSection({
   onRetry,
   onRefreshDocuments,
   onUploadDocument,
+  loadReference,
 }: LoadDocumentsSectionProps) {
   const [openingId, setOpeningId] = useState<string | null>(null);
 
@@ -119,7 +122,7 @@ export function LoadDocumentsSection({
       <View style={styles.evidenceBlock}>
         <Text style={styles.evidenceTitle}>{strings.loadDetail.driverEvidenceTitle}</Text>
         <Text style={styles.evidenceHint}>{strings.loadDetail.driverEvidenceHint}</Text>
-        <PodUploadSection onUpload={onUploadDocument} />
+        <PodUploadSection onUpload={onUploadDocument} loadReference={loadReference} />
       </View>
     </View>
   );

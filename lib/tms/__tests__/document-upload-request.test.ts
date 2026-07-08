@@ -3,6 +3,7 @@ import { TmsDocumentUploadError } from '../document-errors';
 import { TMS_DOCUMENT_MAX_BYTES, TMS_DOCUMENT_MAX_FILENAME_LENGTH } from '../document-upload-limits';
 import {
   buildDocumentUploadFormData,
+  buildDocumentUploadFormDataAsync,
   buildDocumentUploadHeaders,
   buildDocumentUploadPath,
   buildDocumentUploadRequestInit,
@@ -120,6 +121,46 @@ describe('buildDocumentUploadFormData', () => {
         }),
       ),
     ).toThrow(TmsDocumentUploadError);
+  });
+});
+
+describe('buildDocumentUploadFormDataAsync', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('appends a React Native uri file part on device', async () => {
+    const ReactNative = require('react-native');
+    ReactNative.Platform.OS = 'ios';
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      blob: async () => new Blob([new Uint8Array([9])], { type: 'image/png' }),
+    });
+
+    const entries: Array<{ name: string; value: unknown }> = [];
+    const originalAppend = FormData.prototype.append;
+    const appendSpy = jest
+      .spyOn(FormData.prototype, 'append')
+      .mockImplementation(function (this: FormData, name: string, value: unknown) {
+        entries.push({ name, value });
+        return originalAppend.call(this, name, value as never);
+      });
+
+    await buildDocumentUploadFormDataAsync({
+      file: { ...sampleFile, type: 'image/png', name: 'signature.png' },
+      documentType: 'POD',
+    });
+
+    appendSpy.mockRestore();
+    expect(getCapturedFilePart(entries)).toEqual({
+      uri: sampleFile.uri,
+      name: 'signature.png',
+      type: 'image/png',
+    });
+    expect(getCapturedDocumentType(entries)).toBe('POD');
   });
 });
 

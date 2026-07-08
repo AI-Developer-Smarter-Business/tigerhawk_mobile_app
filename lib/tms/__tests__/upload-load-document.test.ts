@@ -21,7 +21,7 @@ describe('uploadLoadDocument', () => {
     global.fetch = originalFetch;
   });
 
-  it('POSTs multipart FormData with file uri and document_type metadata', async () => {
+  it('POSTs multipart FormData with file blob or uri and document_type metadata', async () => {
     const appendEntries: Array<{ name: string; value: unknown }> = [];
     const originalAppend = FormData.prototype.append;
     jest
@@ -31,18 +31,24 @@ describe('uploadLoadDocument', () => {
         return originalAppend.call(this, name, value as never);
       });
 
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      status: 201,
-      text: async () =>
-        JSON.stringify({
-          id: 'doc-1',
-          load_id: 'load-1',
-          filename: 'driver.jpg',
-          url: 'https://signed.example/driver.jpg',
-          document_type: 'Driver',
-        }),
-    });
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        blob: async () => new Blob([new Uint8Array([1, 2])], { type: 'image/jpeg' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        text: async () =>
+          JSON.stringify({
+            id: 'doc-1',
+            load_id: 'load-1',
+            filename: 'driver.jpg',
+            url: 'https://signed.example/driver.jpg',
+            document_type: 'Driver',
+          }),
+      });
 
     await uploadLoadDocument({
       loadId: 'load-1',
@@ -56,29 +62,32 @@ describe('uploadLoadDocument', () => {
       },
     });
 
-    expect(getCapturedFilePart(appendEntries)).toEqual({
-      uri: 'file:///driver.jpg',
-      name: 'driver.jpg',
-      type: 'image/jpeg',
-    });
+    const fileEntry = appendEntries.find((e) => e.name === 'file')?.value;
+    expect(fileEntry instanceof Blob || (fileEntry && typeof fileEntry === 'object' && 'uri' in fileEntry)).toBe(true);
     expect(getCapturedDocumentType(appendEntries)).toBe('Driver');
 
     jest.restoreAllMocks();
   });
 
   it('POSTs to mobile documents route and returns parsed record on 201', async () => {
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      status: 201,
-      text: async () =>
-        JSON.stringify({
-          id: 'doc-1',
-          load_id: 'load-1',
-          filename: 'driver.jpg',
-          url: 'https://signed.example/driver.jpg',
-          document_type: 'Driver',
-        }),
-    });
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        blob: async () => new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        text: async () =>
+          JSON.stringify({
+            id: 'doc-1',
+            load_id: 'load-1',
+            filename: 'driver.jpg',
+            url: 'https://signed.example/driver.jpg',
+            document_type: 'Driver',
+          }),
+      });
 
     const result = await uploadLoadDocument({
       loadId: 'load-1',
@@ -100,18 +109,24 @@ describe('uploadLoadDocument', () => {
   });
 
   it('rejects upload response when load_id does not match request', async () => {
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      status: 201,
-      text: async () =>
-        JSON.stringify({
-          id: 'doc-1',
-          load_id: 'other-load',
-          filename: 'driver.jpg',
-          url: 'https://signed.example/driver.jpg',
-          document_type: 'Driver',
-        }),
-    });
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        blob: async () => new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        text: async () =>
+          JSON.stringify({
+            id: 'doc-1',
+            load_id: 'other-load',
+            filename: 'driver.jpg',
+            url: 'https://signed.example/driver.jpg',
+            document_type: 'Driver',
+          }),
+      });
 
     await expect(
       uploadLoadDocument({
@@ -129,14 +144,20 @@ describe('uploadLoadDocument', () => {
   });
 
   it('maps 403 from TMS to FORBIDDEN', async () => {
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: false,
-      status: 403,
-      text: async () =>
-        JSON.stringify({
-          error: "You don't have permission to upload documents for this load",
-        }),
-    });
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        blob: async () => new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        text: async () =>
+          JSON.stringify({
+            error: "You don't have permission to upload documents for this load",
+          }),
+      });
 
     await expect(
       uploadLoadDocument({

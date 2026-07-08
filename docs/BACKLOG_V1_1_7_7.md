@@ -23,6 +23,7 @@ v0.1.0 scope is frozen in `docs/MVP_SCOPE.md` and `docs/RELEASE_NOTES_0_1_0.md`.
 | Priority | Feature | Mobile / TMS | Effort | Depends on | Notes |
 |----------|---------|--------------|--------|------------|-------|
 | **S8** | **Live GPS + TMS map** (persist location, Realtime marker) | Both | Large | **8.2** status list; **8.4–8.6** Supabase | **Driver:** mobile app only (foreground). **TMS UI:** edit `docs/TMS_DEV_REPOSITORY.md` path — extend `LoadSidebarMap` (**8.12**); map today is stops-only, not live. No external tracking API. |
+| **v1.1** | **Receipt signature pad** (DHL-style → PNG → TMS document) | Mobile | Medium | Existing upload + WT.28 | ✅ **SIG.1–SIG.7 (8 jul 2026)** — complements POD photo; `docs/QA_DRIVER_SIGNATURE.md` |
 | **v1.1** | **Expo push** (assignment, status change) | Mobile + TMS events | Medium | TMS notification hooks or Supabase triggers | Out of v0.1.0 (`DRIVER_TMS_CAPABILITIES` §v1.1) |
 | **v1.1** | **Load messages** (replace placeholder card) | Both | Medium | `GET/POST …/loads/[id]/messages` driver channel + RLS | UI today: `LoadDetailContent` shows `noMessages` only; `mocks/messages.ts` unused in production path |
 | **v1.1** | **Wait time / overtime billing** (delivery timer → billing + alerts) | Both | Large | WT.1–WT.15 ✅ (10 jun 2026) | Fase A mock + Fase B API; TMS campana + toasts; SQL Realtime script pending apply |

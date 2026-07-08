@@ -32,7 +32,7 @@ describe('release QA preflight (7.1 / 7.2)', () => {
     const pkg = JSON.parse(read('package.json'));
     const app = JSON.parse(read('app.json'));
     expect(app.expo.version).toBe(pkg.version);
-    expect(app.expo.android.package).toBe('com.tigerhawk.pp2');
+    expect(app.expo.android.package).toBe('com.tigerhawk.mobile');
     expect(fs.existsSync(path.join(root, 'app', 'load', '[id].tsx'))).toBe(true);
   });
 

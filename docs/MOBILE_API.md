@@ -265,6 +265,8 @@ Mobile may use **Supabase SELECT** on `load_documents` (RLS: driver scoped to as
 
 **WT.28 side effect (TMS):** when `document_type` in the multipart form is **`POD`**, TMS auto-closes an open `delivery_wait` on that load (`docs/TMS_PATCH_WT_DRIVER_WAIT_TIME.md`). Mobile routes **POD** uploads through `POST /api/mobile/loads/{id}/documents` (not Supabase direct) so WT.28 runs; **Driver** / **Photo** still use Supabase first with TMS fallback. TMS stores driver POD rows as **`Driver`** in `load_documents` but preserves the original type for auto-stop. Optional explicit hook: `POST /api/dispatcher/loads/{id}/pod-signed` (Bearer).
 
+**SIG.1–SIG.7 — on-device receipt signature (8 Jul 2026):** DHL-style pad (`SignaturePad` / `SignatureCaptureModal`) exports PNG via `lib/media/signature-export.ts` and uploads with the **same** document path as a photo. UI: **Add photo** and **Sign on device** are both available — signature **complements** POD photo (does not remove camera/gallery). Prefer document type **POD** for delivery receipt signatures so WT.28 applies. QA: `docs/QA_DRIVER_SIGNATURE.md`.
+
 ---
 
 ## 6. Critical model: `loads.driver_id`

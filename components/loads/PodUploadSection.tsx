@@ -2,6 +2,7 @@ import type { ImagePickerAsset } from 'expo-image-picker';
 import { useCallback, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { SignatureCaptureModal } from '@/components/loads/SignatureCaptureModal';
 import { useNetwork } from '@/context/NetworkContext';
 import { AppActionSheet } from '@/components/ui/AppActionSheet';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +17,7 @@ import {
   pickLoadPhotoFromLibrary,
   type PickLoadPhotoResult,
 } from '@/lib/media/pick-load-photo';
+import { writeSignatureUploadFile } from '@/lib/media/signature-export';
 import { validateDriverUploadFile } from '@/lib/media/validate-driver-upload-file';
 import { isOfflineQueuedError } from '@/lib/offline/offline-queued-error';
 import type { DriverUploadDocumentType } from '@/lib/tms/assert-driver-document-type';
@@ -30,13 +32,16 @@ type PodUploadSectionProps = {
     file: TmsUploadFileDescriptor,
     documentType: DriverUploadDocumentType,
   ) => Promise<void>;
+  /** Optional load reference used in signature file names (SIG.2). */
+  loadReference?: string | null;
 };
 
 type PendingPhoto = TmsUploadFileDescriptor & {
   previewUri: string;
+  source: 'photo' | 'signature';
 };
 
-export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
+export function PodUploadSection({ onUpload, loadReference }: PodUploadSectionProps) {
   const { isOffline, isReady: networkReady } = useNetwork();
   const isOfflineReady = networkReady && isOffline;
 
@@ -45,6 +50,8 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
   const [pending, setPending] = useState<PendingPhoto | null>(null);
   const [uploading, setUploading] = useState(false);
   const [picking, setPicking] = useState(false);
+  const [signatureOpen, setSignatureOpen] = useState(false);
+  const [signatureBusy, setSignatureBusy] = useState(false);
   const [uploadError, setUploadError] = useState<UserFacingError | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [needsMediaSettings, setNeedsMediaSettings] = useState(false);
@@ -78,7 +85,7 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
 
         const prepared = await prepareDriverUploadImage(result.asset as ImagePickerAsset);
         validateDriverUploadFile(prepared);
-        setPending({ ...prepared, previewUri: prepared.uri });
+        setPending({ ...prepared, previewUri: prepared.uri, source: 'photo' });
       } catch (err) {
         setUploadError(mapErrorToUserFacing(err));
       } finally {
@@ -90,6 +97,13 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
 
   const startPick = useCallback(() => {
     setPickerSheetOpen(true);
+  }, []);
+
+  const startSignature = useCallback(() => {
+    setUploadError(null);
+    setSuccessMessage(null);
+    setDocumentType('POD');
+    setSignatureOpen(true);
   }, []);
 
   const handlePickFromCamera = useCallback(() => {
@@ -106,8 +120,47 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
     setUploadError(null);
   }, [uploading, clearPending]);
 
+  const handleSignatureCancel = useCallback(() => {
+    if (signatureBusy) return;
+    setSignatureOpen(false);
+  }, [signatureBusy]);
+
+  const handleSignatureConfirm = useCallback(
+    async (base64Png: string) => {
+      if (signatureBusy) return;
+      setSignatureBusy(true);
+      setUploadError(null);
+      setSuccessMessage(null);
+      try {
+        const prepared = await writeSignatureUploadFile({
+          base64Payload: base64Png,
+          loadRef: loadReference,
+        });
+        validateDriverUploadFile(prepared);
+        setDocumentType('POD');
+        setPending({ ...prepared, previewUri: prepared.uri, source: 'signature' });
+        setSignatureOpen(false);
+      } catch (err) {
+        setUploadError({
+          kind: 'validation',
+          title: strings.loadDetail.signatureExportError,
+          message:
+            err instanceof Error && err.message.trim()
+              ? err.message
+              : strings.loadDetail.signatureExportError,
+        });
+      } finally {
+        setSignatureBusy(false);
+      }
+    },
+    [loadReference, signatureBusy],
+  );
+
   const handleConfirm = useCallback(async () => {
     if (!pending || uploading) return;
+
+    const uploadDocumentType =
+      pending.source === 'signature' ? 'POD' : documentType;
 
     setUploading(true);
     setUploadError(null);
@@ -120,10 +173,15 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
           type: pending.type,
           size: pending.size,
         },
-        documentType,
+        uploadDocumentType,
       );
+      const wasSignature = pending.source === 'signature';
       clearPending();
-      setSuccessMessage(strings.loadDetail.podUploadSuccess);
+      setSuccessMessage(
+        wasSignature
+          ? strings.loadDetail.signatureUploadSuccess
+          : strings.loadDetail.podUploadSuccess,
+      );
     } catch (err) {
       if (isOfflineQueuedError(err)) {
         clearPending();
@@ -139,6 +197,9 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
   const handleDiscardPress = useCallback(() => {
     setDiscardSheetOpen(true);
   }, []);
+
+  const actionsDisabled = picking || uploading || signatureBusy;
+  const signatureTypeLocked = pending?.source === 'signature';
 
   return (
     <View accessibilityLabel={strings.loadDetail.podAddPhotoA11y}>
@@ -168,14 +229,20 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
       <View style={styles.typeRow}>
         {DRIVER_DOCUMENT_TYPE_OPTIONS.map((option) => {
           const selected = documentType === option.value;
+          const chipDisabled = signatureTypeLocked;
           return (
             <Pressable
               key={option.value}
               accessibilityRole="button"
-              accessibilityState={{ selected }}
+              accessibilityState={{ selected, disabled: chipDisabled }}
               accessibilityLabel={strings.loadDetail[option.labelKey]}
+              disabled={chipDisabled}
               onPress={() => setDocumentType(option.value)}
-              style={[styles.typeChip, selected ? styles.typeChipSelected : null]}>
+              style={[
+                styles.typeChip,
+                selected ? styles.typeChipSelected : null,
+                chipDisabled && !selected ? styles.typeChipDisabled : null,
+              ]}>
               <Text style={[styles.typeChipText, selected ? styles.typeChipTextSelected : null]}>
                 {strings.loadDetail[option.labelKey]}
               </Text>
@@ -222,14 +289,24 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
           />
         </View>
       ) : (
-        <Button
-          title={strings.loadDetail.podAddPhoto}
-          variant="accent"
-          loading={picking}
-          disabled={picking || uploading}
-          onPress={startPick}
-          accessibilityLabel={strings.loadDetail.podAddPhotoA11y}
-        />
+        <View style={styles.entryActions}>
+          <Button
+            title={strings.loadDetail.podAddPhoto}
+            variant="accent"
+            loading={picking}
+            disabled={actionsDisabled}
+            onPress={startPick}
+            accessibilityLabel={strings.loadDetail.podAddPhotoA11y}
+          />
+          <Button
+            title={strings.loadDetail.podSignOnDevice}
+            variant="outlineAccent"
+            disabled={actionsDisabled}
+            onPress={startSignature}
+            style={styles.actionBtn}
+            accessibilityLabel={strings.loadDetail.podSignOnDeviceA11y}
+          />
+        </View>
       )}
 
       <AppActionSheet
@@ -258,6 +335,15 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
           },
         ]}
       />
+
+      <SignatureCaptureModal
+        visible={signatureOpen}
+        confirming={signatureBusy}
+        onConfirm={(payload) => {
+          void handleSignatureConfirm(payload);
+        }}
+        onCancel={handleSignatureCancel}
+      />
     </View>
   );
 }
@@ -282,6 +368,9 @@ const styles = StyleSheet.create({
     fontSize: PP2Theme.typography.sizes.body,
     color: PP2Theme.colors.text,
     marginBottom: PP2Theme.spacing.md,
+  },
+  entryActions: {
+    gap: PP2Theme.spacing.sm,
   },
   actionBtn: {
     marginBottom: PP2Theme.spacing.sm,
@@ -320,6 +409,9 @@ const styles = StyleSheet.create({
   typeChipSelected: {
     borderColor: PP2Theme.colors.tms.navActive,
     backgroundColor: 'rgba(232, 112, 10, 0.1)',
+  },
+  typeChipDisabled: {
+    opacity: 0.45,
   },
   typeChipText: {
     fontSize: PP2Theme.typography.sizes.caption,

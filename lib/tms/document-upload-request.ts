@@ -4,6 +4,7 @@ import {
 } from './document-upload-limits';
 import { TmsDocumentUploadError } from './document-errors';
 import type { DriverUploadDocumentType } from './assert-driver-document-type';
+import { resolveUploadFormFilePart } from './read-upload-file-blob';
 
 /** File descriptor for React Native `FormData` append (task 4.2 wires `expo-image-picker`). */
 export type TmsUploadFileDescriptor = {
@@ -68,6 +69,19 @@ export function buildDocumentUploadFormData(params: BuildDocumentFormDataParams)
   return formData;
 }
 
+/** Async builder — reads cache/signature files as Blob so TMS receives non-empty multipart bodies. */
+export async function buildDocumentUploadFormDataAsync(
+  params: BuildDocumentFormDataParams,
+): Promise<FormData> {
+  validateDocumentUploadFile(params.file);
+  const formData = new FormData();
+  const filePart = await resolveUploadFormFilePart(params.file);
+  formData.append('file', filePart as unknown as Blob);
+  formData.append('document_type', params.documentType);
+  formData.append('filename', params.file.name);
+  return formData;
+}
+
 /** Multipart body including JWT fallback when proxies strip Authorization. */
 export function buildDocumentUploadFormDataWithAuth(
   accessToken: string,
@@ -92,5 +106,18 @@ export function buildDocumentUploadRequestInit(
     method: 'POST',
     headers: buildDocumentUploadHeaders(accessToken),
     body: buildDocumentUploadFormDataWithAuth(accessToken, params),
+  };
+}
+
+export async function buildDocumentUploadRequestInitAsync(
+  accessToken: string,
+  params: BuildDocumentFormDataParams,
+): Promise<DocumentUploadRequestInit> {
+  const formData = await buildDocumentUploadFormDataAsync(params);
+  formData.append('access_token', accessToken.trim());
+  return {
+    method: 'POST',
+    headers: buildDocumentUploadHeaders(accessToken),
+    body: formData,
   };
 }
