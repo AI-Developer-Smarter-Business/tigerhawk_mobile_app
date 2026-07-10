@@ -1,6 +1,6 @@
 # Tigerhawk Mobile (PP2)
 
-**Version:** `0.1.0` · **Package:** `pp2-mobile` · **Android:** `com.tigerhawk.pp2`
+**Version:** `0.1.1` · **Package:** `pp2-mobile` · **Android / iOS:** `com.tigerhawk.mobile`
 
 **React Native + Expo** field driver app connected to the **same Supabase project** as the TigerHawk TMS (reference in `PROYECTO_MUESTRA/`). No separate backend: data and auth via Supabase; privileged operations via the TMS Next.js API when required.
 
@@ -69,6 +69,8 @@ npm test
 | `npm run build:preflight` | Check EAS config before APK/IPA build |
 | `npm run eas:push-env` | Push `.env.local` `EXPO_PUBLIC_*` to EAS (preview + production) |
 | `npm run build:android:preview` | EAS cloud build → Android APK (internal QA) |
+| `npm run build:ios:production` | EAS cloud build → iOS IPA (TestFlight / store) |
+| `npm run submit:ios` | Upload latest iOS build to App Store Connect / TestFlight |
 
 ### Environment variables
 
@@ -140,8 +142,8 @@ If QR fails: `npx expo start --tunnel`.
 
 | Platform | Status | Command |
 |----------|--------|---------|
-| **Android APK** | Ready | `npm run build:android:preview` |
-| **iOS (IPA)** | Ready via EAS cloud — needs Apple setup (client) | `npx eas-cli build --platform ios --profile preview` |
+| **Android APK** | Ready | `npm run build:android:preview` or `production` |
+| **iOS (IPA → TestFlight)** | Ready (Apple Developer + EAS) | See **[Update iOS on TestFlight](#update-ios-on-testflight-after-app-changes)** below |
 
 Full reference: **`docs/MOBILE_BUILDS.md`** · Release notes: **`docs/RELEASE_NOTES_0_1_0.md`** · Rollback: **`docs/ROLLBACK_PP2.md`**.
 
@@ -251,7 +253,7 @@ npm run build:android:production
 2. Wait until status is **Finished**.
 3. Download the **APK** (or scan the QR on an Android device).
 4. On the phone: allow **Install unknown apps** for your browser/files app if sideloading.
-5. **Uninstall** an older APK before installing a new build with the same package (`com.tigerhawk.pp2`).
+5. **Uninstall** an older APK before installing a new build with the same package (`com.tigerhawk.mobile`).
 
 #### Step 8 — Smoke test on device
 
@@ -284,48 +286,88 @@ Custody (keystore, secrets): **`docs/EAS_CREDENTIALS_HANDOFF_7_5.md`**.
 
 ---
 
-#### iOS installable — mini-guide for the client
+### Update iOS on TestFlight (after app changes)
 
-You **do not need a Mac** on the developer machine to **compile** iOS: **EAS Build** runs on Expo’s cloud (macOS servers). A Mac at the client is useful for Apple portal tasks but is **not** required to trigger `eas build` from Windows.
+Use this whenever you change the mobile app (UI, logo/icon/splash, env, features) and need the client to get a **new installable build** on iPhone. You do **not** need a Mac: EAS builds and submits from Windows.
 
-**What is optional vs required**
+**Already configured (do not recreate unless credentials expire)**
 
-| Item | Required? | Notes |
-|------|-----------|--------|
-| Expo account + EAS project | Yes | Same as Android (`pp2`). |
-| EAS env vars (`EXPO_PUBLIC_*`) | Yes | Same three variables as Android (`npm run eas:push-env`). |
-| **Apple Developer Program** (~**$99/year**) | **Optional for dev only** · **Required to install on real iPhones** | Apple’s paid membership to **sign** the app and distribute outside Expo Go. Without it you can only test in **Expo Go** (not a store-style installable). |
-| Physical **iPhone** | Yes (for field QA) | To validate GPS, camera, installs. |
-| **Mac** | Optional | Helpful for App Store Connect / Xcode; EAS can manage signing credentials without a local Mac. |
+| Item | Value |
+|------|--------|
+| Expo project | `@likaon1606/pp2` |
+| Bundle ID | `com.tigerhawk.mobile` |
+| App Store Connect app | **Tigerhawk Mobile** · ASC App ID `6788865727` (`eas.json` → `submit.production.ios.ascAppId`) |
+| Apple Developer team | Client account (e.g. Ian Vollers / `ian@tenetlgx.com`) |
+| Distribution | **TestFlight** (internal group **Team (Expo)**) |
+| EAS profile | `production` (store / TestFlight signing) |
 
-**Distribution options (after Apple Developer account)**
+**Important**
 
-| Method | Best for | Apple account? |
-|--------|----------|----------------|
-| **TestFlight** | Client / QA on iPhone | Yes — recommended |
-| **Ad hoc / internal** | Few registered devices (UDID list) | Yes |
-| **App Store** | Public release | Yes |
-| **Expo Go** | Quick UI dev only | No — not an installable IPA |
+- Changing code or `assets/images/logo_new.png` in Expo Go does **not** update the home-screen icon or native splash. Those are baked into the IPA at **EAS build** time.
+- `.env.local` is **not** inside the IPA. Keep EAS **production** env vars correct (`EXPO_PUBLIC_TMS_API_URL` must be a **public HTTPS** URL, not a LAN IP).
+- Bump `expo.version` in `app.json` (and `package.json`) when shipping a meaningful release (see `docs/VERSIONING.md`). EAS manages the iOS **build number** remotely (`eas.json` → `cli.appVersionSource: remote`).
 
-**iOS steps (client + dev team)**
+#### Repeat release (every update)
 
-1. **Enroll in [Apple Developer Program](https://developer.apple.com/programs/)** (paid, annual) — owner should be the **client organization**, not a personal throwaway account.
-2. **App Store Connect** — create app (or let EAS create on first build). Bundle ID is already set: `com.tigerhawk.pp2` (`app.json`).
-3. **EAS iOS credentials** (one-time, with client Apple ID or App Store Connect API key):
-   ```bash
-   npx eas-cli credentials -p ios
-   ```
-   Prefer **EAS-managed** certificates and provisioning profiles unless the client already has their own.
-4. **Build IPA** (from Windows or Mac — same command):
-   ```bash
-   npx eas-cli build --platform ios --profile preview
-   ```
-5. **Install on iPhone** — download IPA alone is **not** enough on iOS. Typical path:
-   - **TestFlight:** `npx eas-cli submit --platform ios` (after build), then invite testers by email in App Store Connect.
-   - Or register device UDIDs for ad hoc distribution (more manual).
-6. **Verify** — login `driver_test@test.com`, **My Loads**, status change and upload against the **public** TMS URL.
+```bash
+cd proyecto_PP2_app_mobile
+npm install
+npm run eas:push-env          # only if EXPO_PUBLIC_* changed in .env.local
+npm run build:preflight
+npm run ci                    # recommended before shipping
+npx eas build --platform ios --profile production
+```
 
-**Summary for the client:** Android APK can be sideloaded immediately after EAS build. iOS needs the **Apple Developer Program** only when you want a **signed installable** on iPhones (TestFlight / App Store). Until then, Android APK + Expo Go on iOS cover most cross-platform dev; production iOS for drivers should plan for Apple enrollment + TestFlight.
+Wait until the build is **Finished** on [expo.dev → pp2 → Builds](https://expo.dev/accounts/likaon1606/projects/pp2/builds). Then upload to Apple:
+
+```bash
+npx eas submit --platform ios --latest
+```
+
+- First submit may ask for Apple login / App Store Connect API Key (EAS can create and store it).
+- Apple processes the binary ~**5–15 minutes** (sometimes longer). Status: [App Store Connect → Tigerhawk Mobile → TestFlight](https://appstoreconnect.apple.com/apps/6788865727/testflight/ios).
+- When the build is **Ready to Test**, testers with the **TestFlight** app get an update (or a new invite).
+
+#### Invite / refresh a tester (once per person)
+
+1. [App Store Connect](https://appstoreconnect.apple.com) → **Users and Access** → **+**.
+2. Invite the email that is the **Apple ID on their iPhone** (may differ from the Developer Program login, e.g. personal Gmail vs `ian@tenetlgx.com`).
+3. Role: **Developer** (enough for internal TestFlight) · app access: **Tigerhawk Mobile**.
+4. Tester accepts the email invite, then opens **TestFlight** on the iPhone and installs **Tigerhawk Mobile**.
+
+#### First-time setup only (already done for this project)
+
+If credentials are missing on a new machine or a new Apple team:
+
+```bash
+npx eas login
+npx eas credentials --platform ios   # profile: production — EAS-managed cert + App Store profile
+```
+
+Confirm `eas.json` has:
+
+```json
+"submit": {
+  "production": {
+    "ios": { "ascAppId": "6788865727" }
+  }
+}
+```
+
+#### iOS troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| Prebuild fails: missing `logo_new.png` / `logo.png` | Ensure PNGs under `assets/images/` are **not** gitignored (see `.gitignore` exceptions) |
+| Submit fails / Expo outage | Check [status.expo.dev](https://status.expo.dev/); retry `npx eas submit --platform ios --latest` |
+| Build stuck in TestFlight “Processing” | Wait; refresh App Store Connect. Email arrives when ready |
+| Tester cannot see the app | Confirm their **iPhone Apple ID** is in Users and Access + TestFlight group **Team (Expo)** |
+| Old icon/splash after install | Uninstall app → install new TestFlight build (native assets only update with a new IPA) |
+| App talks to wrong TMS | EAS Environment **production** → `EXPO_PUBLIC_TMS_API_URL` = public Netlify URL → rebuild |
+
+**Android after the same code change:** `npm run build:android:production` (sideload APK; uninstall previous build first).
+
+More detail: **`docs/MOBILE_BUILDS.md`**. Credentials custody: **`docs/EAS_CREDENTIALS_HANDOFF_7_5.md`**.
 
 ## Project structure
 

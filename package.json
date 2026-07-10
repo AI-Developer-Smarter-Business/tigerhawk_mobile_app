@@ -28,7 +28,9 @@
     "db:assign-driver-test-loads:pagination": "node scripts/assign-loads-driver-test.mjs --max=21",
     "db:trim-driver-test-loads": "node scripts/trim-driver-test-loads.mjs",
     "build:android:preview": "eas build --platform android --profile preview",
-    "build:android:production": "eas build --platform android --profile production"
+    "build:android:production": "eas build --platform android --profile production",
+    "build:ios:production": "eas build --platform ios --profile production",
+    "submit:ios": "eas submit --platform ios --latest"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

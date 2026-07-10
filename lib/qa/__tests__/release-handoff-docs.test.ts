@@ -23,7 +23,7 @@ describe('release handoff docs (7.3–7.5)', () => {
     expect(readme).toContain('## Installation');
     expect(readme).toContain('EXPO_PUBLIC_SUPABASE_URL');
     expect(readme).toContain('docs/BUG_REPORTING.md');
-    expect(readme).toContain('0.1.0');
+    expect(readme).toMatch(/\*\*Version:\*\* `\d+\.\d+\.\d+`/);
   });
 
   it('rollback and EAS handoff docs reference Supabase sql-editor', () => {
@@ -40,7 +40,7 @@ describe('release handoff docs (7.3–7.5)', () => {
   it('app and package versions stay aligned', () => {
     const pkg = JSON.parse(read('package.json'));
     const app = JSON.parse(read('app.json'));
-    expect(pkg.version).toBe('0.1.0');
+    expect(pkg.version).toMatch(/^\d+\.\d+\.\d+$/);
     expect(app.expo.version).toBe(pkg.version);
   });
 });
