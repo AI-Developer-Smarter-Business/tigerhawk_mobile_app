@@ -54,5 +54,7 @@ PROXIMOS_PASOS.md
 PROYECTO_MUESTRA.md
 RESPUESTAS_CLIENTE.md
 
-# .png files
+# .png files (screenshots/docs at repo root); keep app icons for EAS prebuild
 *.png
+!assets/images/
+!assets/images/**

@@ -64,6 +64,23 @@ if (!fs.existsSync(releaseNotesPath)) {
   errors.push('Missing docs/RELEASE_NOTES_0_1_0.md');
 }
 
+const logoPath = path.join(root, 'assets/images/logo_new.png');
+if (!fs.existsSync(logoPath)) {
+  errors.push('Missing assets/images/logo_new.png (required for icon/splash in app.json)');
+}
+
+const gitignorePath = path.join(root, '.gitignore');
+if (fs.existsSync(gitignorePath)) {
+  const gitignore = fs.readFileSync(gitignorePath, 'utf8');
+  const ignoresAllPng = /^\*\.png\s*$/m.test(gitignore);
+  const allowsAppAssets = /!assets\/images\//m.test(gitignore);
+  if (ignoresAllPng && !allowsAppAssets) {
+    errors.push(
+      '.gitignore ignores *.png without !assets/images/** — EAS will omit icon/splash and iOS prebuild fails',
+    );
+  }
+}
+
 const projectId = app.extra?.eas?.projectId ?? '';
 if (!projectId || projectId.includes('REEMPLAZAR')) {
   warnings.push(
