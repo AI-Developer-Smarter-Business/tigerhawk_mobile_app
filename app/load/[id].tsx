@@ -129,7 +129,10 @@ export default function LoadDetailScreen() {
   return (
     <>
       <Stack.Screen
-        options={{ title: formatReference(load.reference_number) }}
+        options={{
+          title: formatReference(load.reference_number),
+          headerBackButtonDisplayMode: 'minimal',
+        }}
       />
       <ScrollView
         style={styles.scroll}

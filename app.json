@@ -2,14 +2,14 @@
   "expo": {
     "name": "Tigerhawk Mobile",
     "slug": "pp2",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
+    "icon": "./assets/images/logo_new.png",
     "scheme": "pp2",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/logo.png",
+      "image": "./assets/images/logo_new.png",
       "resizeMode": "contain",
       "backgroundColor": "#0B1120"
     },
@@ -17,7 +17,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.tigerhawk.mobile",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Tigerhawk Mobile uses your location while the app is open so you can share your position with dispatch for assigned loads."
+        "NSLocationWhenInUseUsageDescription": "Tigerhawk Mobile uses your location while the app is open so you can share your position with dispatch for assigned loads.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -28,7 +29,7 @@
         "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo.png",
+        "foregroundImage": "./assets/images/logo_new.png",
         "backgroundColor": "#0B1120"
       },
       "edgeToEdgeEnabled": true,
@@ -52,7 +53,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/logo.png"
+      "favicon": "./assets/images/logo_new.png"
     },
     "plugins": [
       "expo-router",
@@ -75,7 +76,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/logo.png",
+          "image": "./assets/images/logo_new.png",
           "resizeMode": "contain",
           "backgroundColor": "#0B1120",
           "imageWidth": 280

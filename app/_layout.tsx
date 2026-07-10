@@ -88,11 +88,15 @@ export default function RootLayout() {
                   name="auth/callback"
                   options={{ headerShown: false, title: 'Signing in' }}
                 />
-                <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="(drawer)"
+                  options={{ headerShown: false, title: strings.nav.loads }}
+                />
                 <Stack.Screen
                   name="load/[id]"
                   options={{
                     title: strings.loadDetail.screenTitle,
+                    headerBackButtonDisplayMode: 'minimal',
                     headerStyle: {
                       backgroundColor: PP2Theme.colors.tms.headerBackground,
                     },

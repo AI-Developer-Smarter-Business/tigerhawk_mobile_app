@@ -64,9 +64,9 @@ if (!fs.existsSync(releaseNotesPath)) {
   errors.push('Missing docs/RELEASE_NOTES_0_1_0.md');
 }
 
-const logoPath = path.join(root, 'assets/images/logo.png');
+const logoPath = path.join(root, 'assets/images/logo_new.png');
 if (!fs.existsSync(logoPath)) {
-  errors.push('Missing assets/images/logo.png (required for icon/splash in app.json)');
+  errors.push('Missing assets/images/logo_new.png (required for icon/splash in app.json)');
 }
 
 const gitignorePath = path.join(root, '.gitignore');
