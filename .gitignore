@@ -43,16 +43,12 @@ coverage/
 /ios
 /android
 
-# .md files
-PP2_DOCUMENTACION.md
-PP2_TAREAS_CLIENTE.md
-PP2_TAREAS_DEV.md
-PP2_TASKS.md
-DAILY_REPORTS.md
-REPORTES_DIARIOS.md
-PROXIMOS_PASOS.md
-PROYECTO_MUESTRA.md
-RESPUESTAS_CLIENTE.md
+# Root markdown — only README.md may be pushed (docs/ and nested *.md stay trackable)
+/*.md
+!/README.md
+
+# Client feedback working folder (local only — do not push)
+z-feedback_cliente/
 
 # .png files (screenshots/docs at repo root); keep app icons for EAS prebuild
 *.png
