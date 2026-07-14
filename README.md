@@ -2,14 +2,14 @@
 
 **Version:** `0.1.1` · **Package:** `pp2-mobile` · **Android / iOS:** `com.tigerhawk.mobile`
 
-**React Native + Expo** field driver app connected to the **same Supabase project** as the TigerHawk TMS (reference in `PROYECTO_MUESTRA/`). No separate backend: data and auth via Supabase; privileged operations via the TMS Next.js API when required.
+**React Native + Expo** field driver app connected to the **same Supabase project** as the TigerHawk TMS. No separate backend: data and auth via Supabase; privileged operations via the TMS Next.js API when required. Current TMS source of truth for code parity: `TMS_fusion` (see `docs/TMS_DEV_REPOSITORY.md`).
 
 ## Guidelines for agents and developers
 
 - **Product name:** PP2 (`pp2-mobile`, Expo slug `pp2`).
-- **`PROYECTO_MUESTRA/`:** TMS web reference — **do not modify** (see `AGENTS.md`).
+- **TMS code:** `TMS_fusion` — not an in-repo folder; see `docs/TMS_DEV_REPOSITORY.md`.
 - **UI language:** all user-facing app strings in **English** (`constants/strings.ts`).
-- **Daily log:** document functional changes in `REPORTES_DIARIOS.md` (Spanish) and `DAILY_REPORTS.md` (English) — see directive at the top of those files.
+- **Daily log:** document functional changes in `REPORTES_DIARIOS.md` (Spanish) and `DAILY_REPORTS.md` (English) — local planning files; may be gitignored at repo root.
 
 ## Planning docs
 
@@ -39,7 +39,7 @@
 | `docs/MOBILE_SUPPORT_RUNBOOK_7_6.md` | **Support** — RLS, Storage, TMS errors, escalation |
 | `docs/BACKLOG_V1_1_7_7.md` | **v1.1 backlog** — live GPS first (Semana 8), then push/messages |
 | `docs/GPS_LIVE_TRACKING_ARCHITECTURE.md` | **Live tracking** — Supabase + Realtime + TMS map (no external tracking API) |
-| `docs/TMS_DEV_REPOSITORY.md` | **TMS dev repo path** — where to edit deployed TMS (not `PROYECTO_MUESTRA/`) |
+| `docs/TMS_DEV_REPOSITORY.md` | **TMS path** — `TMS_fusion` for code; Netlify via `EXPO_PUBLIC_TMS_API_URL` |
 | `docs/QA_RELEASE_SIGNOFF_7_1.md` | Pre-release QA (P0/P1) |
 
 ## Requirements
@@ -384,7 +384,6 @@ supabase/
   migrations/           # SQL history (git)
   sql-editor/           # Paste into Supabase SQL Editor
 mocks/                  # Dev demo data
-PROYECTO_MUESTRA/       # TMS web — read only
 ```
 
 ## CI/CD
@@ -437,7 +436,7 @@ Optional CLI: `npm run db:apply-rls` if `SUPABASE_DB_PASSWORD` is set (not requi
 
 ## TMS reference
 
-Driver actions: `PROYECTO_MUESTRA/components/dispatcher/DriverActionPanel.tsx`.
+Editable TMS (latest): `TMS_fusion` — see `docs/TMS_DEV_REPOSITORY.md`. Runtime host: `EXPO_PUBLIC_TMS_API_URL`.
 
 ## Progress log
 

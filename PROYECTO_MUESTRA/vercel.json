@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/port-houston/rotate",
-      "schedule": "*/15 * * * *"
-    }
-  ]
-}

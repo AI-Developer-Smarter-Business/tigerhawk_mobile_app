@@ -54,3 +54,6 @@ z-feedback_cliente/
 *.png
 !assets/images/
 !assets/images/**
+
+# Legacy TMS sample (removed — use TMS_fusion)
+PROYECTO_MUESTRA/

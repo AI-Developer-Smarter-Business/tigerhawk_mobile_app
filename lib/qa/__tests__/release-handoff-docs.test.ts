@@ -81,8 +81,8 @@ describe('release handoff docs (7.6–7.7)', () => {
 
   it('TMS dev repository doc defines editable path and map audit', () => {
     const tms = read('docs/TMS_DEV_REPOSITORY.md');
-    expect(tms).toContain('tigerhawk-tms-main');
-    expect(tms).toMatch(/PROYECTO_MUESTRA.*do not modify|no modificar/i);
+    expect(tms).toMatch(/TMS_fusion/);
+    expect(tms).toMatch(/PROYECTO_MUESTRA.*Obsolete|do not use|no modificar/i);
     expect(tms).toContain('LoadSidebarMap');
     expect(tms).toMatch(/Implemented \(8\.12\)|useLoadLiveLocation/i);
     expect(tms).toMatch(/Does not exist|static route map/i);
