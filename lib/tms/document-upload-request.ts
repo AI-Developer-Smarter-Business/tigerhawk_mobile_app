@@ -4,6 +4,7 @@ import {
 } from './document-upload-limits';
 import { TmsDocumentUploadError } from './document-errors';
 import type { DriverUploadDocumentType } from './assert-driver-document-type';
+import { mobileLoadDocumentsPath } from './mobile-api-routes';
 import { resolveUploadFormFilePart } from './read-upload-file-blob';
 
 /** File descriptor for React Native `FormData` append (task 4.2 wires `expo-image-picker`). */
@@ -20,7 +21,7 @@ export type TmsUploadFileDescriptor = {
  * `file`, `document_type`, plus `access_token` for JWT.
  */
 export function buildDocumentUploadPath(loadId: string): string {
-  return `/api/mobile/loads/${encodeURIComponent(loadId)}/documents`;
+  return mobileLoadDocumentsPath(loadId);
 }
 
 /** Bearer only — do not set `Content-Type`; fetch sets multipart boundary. */

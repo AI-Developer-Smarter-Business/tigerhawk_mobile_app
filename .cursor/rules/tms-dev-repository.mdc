@@ -9,22 +9,28 @@ alwaysApply: true
 
 Cualquier cambio de **código o UI del TMS** que deba reflejarse en el entorno de **desarrollo desplegado** (Netlify u otro) se hace **solo** en:
 
-`C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_1_TigerHawk TMS\tigerhawk-tms-main\tigerhawk-tms-main`
+`C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\TMS_fusion`
 
 (Equivalente con barras `/` si la herramienta lo exige.)
+
+**Comparar código TMS ↔ app móvil:** siempre leer **`TMS_fusion`** (versión más actualizada). No usar `proyecto_1_TigerHawk TMS\…` ni `PROYECTO_MUESTRA/` como fuente de verdad del código.
+
+**Deploy en vivo (runtime):** el host Netlify de la app sigue siendo `EXPO_PUBLIC_TMS_API_URL` (p. ej. `https://tigerhawkv2.netlify.app`) — puede ir detrás del código en `TMS_fusion` hasta el próximo deploy.
 
 ## Qué NO es ese repo
 
 | Carpeta / repo | Uso |
 |----------------|-----|
-| **`PROYECTO_MUESTRA/`** (dentro de `proyecto_PP2_app_mobile`) | **Solo lectura** — referencia de dominio/API; **nunca** modificar |
+| **`PROYECTO_MUESTRA/`** (dentro de `proyecto_PP2_app_mobile`) | **Solo lectura** — referencia histórica; **nunca** modificar; **no** es el TMS actual |
+| **`proyecto_1_TigerHawk TMS\…`** | Copia antigua — **no** consultar para paridad móvil |
 | **`proyecto_PP2_app_mobile`** | App **Tigerhawk Mobile** (Expo), SQL copias en `supabase/sql-editor/`, docs PP2 |
 
 ## Cuándo aplicar esta regla
 
 - Tareas **8.12–8.13** (mapa en vivo, panel dispatcher), rutas `app/api/…`, componentes `components/dispatcher/`, `components/maps/`
 - Parches documentados en `docs/TMS_PATCH_*.md` del repo móvil → implementar en el **repo TMS de desarrollo** arriba
-- Antes de asumir que el TMS en producción/dev tiene una feature: **leer o buscar en esa ruta**, no solo en `PROYECTO_MUESTRA/`
+- Antes de asumir que el TMS tiene una feature en **código**: **leer o buscar en `TMS_fusion`**, no en `PROYECTO_MUESTRA/` ni en el repo `proyecto_1_…`
+- Antes de asumir que el **deploy Netlify** ya la expone: smoke HTTP (`npm run smoke:a0`) contra `EXPO_PUBLIC_TMS_API_URL`
 
 ## Seguimiento GPS en vivo (Semana 8)
 

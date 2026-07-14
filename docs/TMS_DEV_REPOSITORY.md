@@ -8,17 +8,18 @@
 
 ## Editable TMS (development deploy)
 
-All TMS application changes for the **deployed development** environment must be made in:
+All TMS application changes and **code comparison with Tigerhawk Mobile** use:
 
 ```
-C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_1_TigerHawk TMS\tigerhawk-tms-main\tigerhawk-tms-main
+C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\TMS_fusion
 ```
 
-| Action | Repo |
-|--------|------|
-| Edit Next.js pages, dispatcher UI, `app/api/*` | **TMS path above** |
+| Action | Repo / host |
+|--------|-------------|
+| Read/edit Next.js pages, dispatcher UI, `app/api/*` (current TMS) | **`TMS_fusion`** |
 | Edit Tigerhawk Mobile (Expo) | `proyecto_PP2_app_mobile` (this repo) |
-| Read-only TMS reference (audit, parity) | `PROYECTO_MUESTRA/` inside mobile repo — **do not modify** |
+| Runtime sync check (what the phone hits) | `EXPO_PUBLIC_TMS_API_URL` (e.g. Netlify) — may lag `TMS_fusion` until deploy |
+| `PROYECTO_MUESTRA/` / `proyecto_1_TigerHawk TMS\…` | **Obsolete for parity** — do not use as source of truth |
 
 **Agents:** see `.cursor/rules/tms-dev-repository.mdc`, `.cursor/rules/deployment-status.mdc`, and `AGENTS.md` § Entornos desplegados.
 

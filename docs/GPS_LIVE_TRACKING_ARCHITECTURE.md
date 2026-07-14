@@ -105,7 +105,7 @@ Replaces need to call stub `postDriverLocationToTms()` if using **Supabase-only*
 
 Implement in **TMS development repository** only:
 
-`C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_1_TigerHawk TMS\tigerhawk-tms-main\tigerhawk-tms-main`
+`C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\TMS_fusion`
 
 Do **not** edit `PROYECTO_MUESTRA/`. See `docs/TMS_DEV_REPOSITORY.md`.
 

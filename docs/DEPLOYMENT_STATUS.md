@@ -14,7 +14,7 @@
 | Patches in TMS repo (`wait-time`, documents, billing, etc.) | Deploy by pushing/redeploying **TMS dev repo** — not `PROYECTO_MUESTRA/` |
 
 **Repo path (editable TMS):**  
-`C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\proyecto_1_TigerHawk TMS\tigerhawk-tms-main\tigerhawk-tms-main`
+`C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\TMS_fusion`
 
 **Agents:** **Do not list WT.19 as pending.** If a feature fails, check TMS deploy includes the latest commit — do not assume “TMS not deployed yet”.
 
