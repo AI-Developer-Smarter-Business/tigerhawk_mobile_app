@@ -50,6 +50,12 @@ const PROBES = [
     expectWithoutAuth: [401, 403],
   },
   {
+    id: 'driver.loads.history',
+    method: 'GET',
+    path: '/api/mobile/driver/loads/history',
+    expectWithoutAuth: [401, 403],
+  },
+  {
     id: 'loads.progress.get',
     method: 'GET',
     path: `/api/mobile/loads/${PLACEHOLDER}/progress`,

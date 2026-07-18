@@ -2,7 +2,7 @@
 
 **Task:** `z-feedback_cliente/TASKS.md` → **A.0**  
 **Contract:** `z-feedback_cliente/RESPUESTAS_CLIENTE.md` (14 Jul 2026)  
-**Updated:** 14 July 2026
+**Updated:** 15 July 2026
 
 ---
 
@@ -10,14 +10,32 @@
 
 | # | Check | How |
 |---|--------|-----|
-| 1 | Host exposes the **14 Jul** `/api/mobile/*` surface (preview until Ian merges to main) | `npm run smoke:a0` |
-| 2 | SQL: clock columns + `20260714_driver_acceptance_and_pod.sql` | `supabase/sql-editor/VERIFY_driver_clock_and_acceptance_a0.sql` |
+| 1 | Host exposes the **14 Jul** `/api/mobile/*` surface on **production Netlify** (post PR #2 merge) | `npm run smoke:a0` → **0 missing** |
+| 2 | SQL: clock columns + acceptance/POD migration applied | `supabase/sql-editor/VERIFY_driver_clock_and_acceptance_a0.sql` |
 | 3 | Endpoint → expected unauthenticated status matrix documented | This file §3–§4 |
 
 App path builders (avoid route drift): `lib/tms/mobile-api-routes.ts`.
 
 **Código TMS (fuente actual):** `C:\Users\ariel\OneDrive\Escritorio\RECRUITING_SMARTER___BRASIL\TMS_fusion` — comparar contratos ahí.  
-**Runtime Netlify:** `EXPO_PUBLIC_TMS_API_URL` (puede no incluir aún todo lo que ya está en `TMS_fusion`).
+**Runtime Netlify:** `EXPO_PUBLIC_TMS_API_URL` (ej. `https://tigerhawkv2.netlify.app`) — **15 Jul: superficie July-14 presente**.
+
+---
+
+## 1b. Auditoría código `TMS_fusion` (15 Jul 2026 — post merge PR #2)
+
+Repo: `TMS_fusion` @ `main` (merge `dashboard-layout-refactor`). Under `app/api/mobile/` **all** RESPUESTAS routes:
+
+| Route in RESPUESTAS / A.0–A.2 | Present in `TMS_fusion`? | Netlify smoke (unauth) |
+|------------------------------|--------------------------|-------------------------|
+| `POST /api/mobile/auth/login` | **Yes** | `401` present |
+| `GET/POST /api/mobile/driver/clock` | **Yes** | `401` present |
+| `GET /api/mobile/driver/loads` | **Yes** | `401` present |
+| `GET/POST …/progress` | **Yes** | `401` present |
+| `GET …/pod` · `POST …/pod-signature` | **Yes** | `401` present |
+| `POST …/accept` · `…/reject` | **Yes** | `401` present |
+| `POST …/documents` | **Yes** | `500` without multipart (route present) |
+
+**A.2:** username login en prod verificado (`thl-test`). El bridge `@`→email Supabase permanece solo como respaldo.
 
 ---
 
@@ -25,21 +43,10 @@ App path builders (avoid route drift): `lib/tms/mobile-api-routes.ts`.
 
 | Host | Role |
 |------|------|
-| `EXPO_PUBLIC_TMS_API_URL` in `.env.local` / EAS today | Often **production Netlify** (e.g. `tigerhawkv2.netlify.app`) — **may lack** 14 Jul routes until main merges |
-| Netlify/Vercel **preview** of Ian’s working branch | Use for A.1+ until cutover (**RESPUESTAS Q1**) |
+| `EXPO_PUBLIC_TMS_API_URL` → `https://tigerhawkv2.netlify.app` | **Production Netlify** — July-14 routes **live** (15 Jul) |
+| Preview de branch | Solo necesario si se prueba un PR **antes** de merge |
 
-**Actions**
-
-1. Ask Ian for the **preview deploy URL** of the branch with auth login, `driver/loads`, accept/reject, pod/pod-signature.
-2. Point local/EAS temporarily:
-   ```bash
-   # .env.local
-   EXPO_PUBLIC_TMS_API_URL=https://<preview-host>
-   ```
-3. Re-run `npm run smoke:a0 -- --require-preview` until it exits 0.
-4. After merge to main: point `EXPO_PUBLIC_TMS_API_URL` back to production (task **A.5**).
-
-Optional: set `EXPO_PUBLIC_TMS_API_URL` to preview only in EAS **preview** profile when you cut over (A.5 docs).
+**Cutover (A.5):** con el merge en `main`, el host de producción es el target correcto. No hace falta apuntar a preview para A.0–A.2.
 
 ---
 

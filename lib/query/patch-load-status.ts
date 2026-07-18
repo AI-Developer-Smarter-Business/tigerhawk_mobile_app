@@ -14,8 +14,8 @@ export function setLoadStatusInCache(
   loadId: string,
   status: LoadStatus,
 ): void {
-  queryClient.setQueryData<LoadDetail | null>(
-    queryKeys.loads.detail(userId, loadId),
+  queryClient.setQueriesData<LoadDetail | null>(
+    { queryKey: [...queryKeys.loads.all(userId), 'detail', loadId] },
     (current) => (current ? { ...current, status } : current),
   );
 

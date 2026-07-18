@@ -20,11 +20,19 @@ export const driverAuthState = {
   user: { id: DRIVER_USER_ID },
   isSupabaseAuthenticated: true,
   isInitialized: true,
+  mobileDriver: null,
 };
 
+/** Identity for tests: `drivers.id` matches load `driver_id` filters (A.3). */
 export const driverProfileState = {
-  profile: { role: 'driver' } as UserProfile,
+  profile: null as UserProfile | null,
+  linkedDriver: {
+    id: DRIVER_USER_ID,
+    name: 'Test Driver',
+    username: 'thl-test',
+  },
   isDriver: true,
+  assignedDriverId: DRIVER_USER_ID,
   loading: false,
   error: null,
   refetch: async () => {},

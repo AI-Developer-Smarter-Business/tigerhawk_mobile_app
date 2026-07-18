@@ -1,25 +1,43 @@
-import { isProfileGateLoading } from '../profile-gate-loading';
-import type { UserProfile } from '@/types/profile';
+import { isDriverIdentityLoading } from '../profile-gate-loading';
 
-const driver: UserProfile = {
-  id: 'u1',
-  role: 'driver',
-  full_name: 'D',
-  email: 'd@test.com',
-  phone: null,
-};
-
-describe('isProfileGateLoading', () => {
+describe('isDriverIdentityLoading (A.3)', () => {
   it('blocks when not initialized', () => {
-    expect(isProfileGateLoading(false, false, null)).toBe(true);
+    expect(
+      isDriverIdentityLoading({
+        isInitialized: false,
+        fetchInFlight: false,
+        hasSessionDriver: false,
+      }),
+    ).toBe(true);
   });
 
-  it('blocks only when fetching without a cached profile', () => {
-    expect(isProfileGateLoading(true, true, null)).toBe(true);
-    expect(isProfileGateLoading(true, true, driver)).toBe(false);
+  it('does not block when username login already set mobileDriver', () => {
+    expect(
+      isDriverIdentityLoading({
+        isInitialized: true,
+        fetchInFlight: true,
+        hasSessionDriver: true,
+      }),
+    ).toBe(false);
   });
 
-  it('does not block after profile is loaded', () => {
-    expect(isProfileGateLoading(true, false, driver)).toBe(false);
+  it('blocks while resolving drivers.auth_user_id without session snapshot', () => {
+    expect(
+      isDriverIdentityLoading({
+        isInitialized: true,
+        fetchInFlight: true,
+        hasSessionDriver: false,
+      }),
+    ).toBe(true);
+  });
+
+  it('does not block after fetch finishes', () => {
+    expect(
+      isDriverIdentityLoading({
+        isInitialized: true,
+        fetchInFlight: false,
+        hasSessionDriver: false,
+      }),
+    ).toBe(false);
   });
 });

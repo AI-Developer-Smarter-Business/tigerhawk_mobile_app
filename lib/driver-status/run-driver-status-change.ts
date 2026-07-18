@@ -1,14 +1,11 @@
 import type { QueryClient } from '@tanstack/react-query';
 
-import { canOptimisticallyUpdateLoadStatus } from '@/lib/loads/optimistic-status';
 import {
   invalidateDriverLoads,
   invalidateLoadDetail,
 } from '@/lib/query/invalidate-loads';
-import { setLoadStatusInCache } from '@/lib/query/patch-load-status';
 import { driverStatusTelemetry } from '@/lib/telemetry';
 import { patchLoadStatus } from '@/lib/tms';
-import type { LoadTransitionMap } from '@/lib/tms/fetch-load-transitions';
 import type { LoadDetail, LoadStatus } from '@/types';
 
 export type RunDriverStatusChangeParams = {
@@ -17,13 +14,12 @@ export type RunDriverStatusChangeParams = {
   load: Pick<LoadDetail, 'id' | 'status' | 'active_holds'>;
   targetStatus: LoadStatus;
   accessToken: string;
-  updateLoadStatus: (id: string, status: LoadStatus) => void;
-  transitionMap?: LoadTransitionMap;
 };
 
 /**
- * Driver status change with optimistic cache only when safe (task 3.5).
- * On API failure after optimistic apply, rolls back React Query + LoadsContext.
+ * Drains status changes queued by app versions older than D.2.
+ * Current driver screens use `/progress` and never call this function.
+ * No mock transition map or optimistic status derivation is used.
  */
 export async function runDriverStatusChange(
   params: RunDriverStatusChangeParams,
@@ -34,31 +30,17 @@ export async function runDriverStatusChange(
     load,
     targetStatus,
     accessToken,
-    updateLoadStatus,
   } = params;
-
-  const previousStatus = load.status;
-  const optimistic = canOptimisticallyUpdateLoadStatus({
-    from: previousStatus,
-    to: targetStatus,
-    activeHolds: load.active_holds,
-    transitionMap: params.transitionMap,
-  });
 
   const telemetryBase = {
     loadId: load.id,
-    from: previousStatus,
+    from: load.status,
     to: targetStatus,
-    optimistic,
+    optimistic: false,
   };
 
   const startedAt = Date.now();
   driverStatusTelemetry.attempt(telemetryBase);
-
-  if (optimistic) {
-    setLoadStatusInCache(queryClient, userId, load.id, targetStatus);
-    updateLoadStatus(load.id, targetStatus);
-  }
 
   try {
     await patchLoadStatus({
@@ -75,14 +57,10 @@ export async function runDriverStatusChange(
       durationMs: Date.now() - startedAt,
     });
   } catch (error) {
-    if (optimistic) {
-      setLoadStatusInCache(queryClient, userId, load.id, previousStatus);
-      updateLoadStatus(load.id, previousStatus);
-    }
     driverStatusTelemetry.failure(
       {
         ...telemetryBase,
-        rolledBack: optimistic,
+        rolledBack: false,
         durationMs: Date.now() - startedAt,
       },
       error,

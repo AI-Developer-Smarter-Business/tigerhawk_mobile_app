@@ -13,7 +13,7 @@ const jestPatterns = [
   'open-load-document',
   'upload-load-document',
   'web-driver-panel-parity',
-  'driver-actions',
+  'driver-progress',
   'network-state',
   'reconnect-recovery',
   'route-params',

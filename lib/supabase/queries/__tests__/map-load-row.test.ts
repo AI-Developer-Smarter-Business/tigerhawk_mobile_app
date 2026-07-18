@@ -21,7 +21,7 @@ describe('mapLoadRowToDetail', () => {
     expect(detail.customer_name).toBe('Acme');
     expect(detail.active_holds).toEqual([]);
     expect(detail.load_type).toBeNull();
-    expect(detail.is_hazmat).toBe(false);
+    expect(detail.is_hazmat).toBeNull();
   });
 
   it('uses first embed when PostgREST returns an array', () => {

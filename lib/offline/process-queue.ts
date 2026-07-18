@@ -11,7 +11,6 @@ import { OFFLINE_QUEUE_MAX_ATTEMPTS, type OfflineQueueItem } from './types';
 export type ProcessOfflineQueueParams = {
   queryClient: QueryClient;
   userId: string;
-  updateLoadStatus: (id: string, status: import('@/types').LoadStatus) => void;
 };
 
 export type ProcessOfflineQueueResult = {
@@ -35,7 +34,6 @@ async function processStatusItem(
     },
     targetStatus: item.targetStatus,
     accessToken,
-    updateLoadStatus: params.updateLoadStatus,
   });
 }
 

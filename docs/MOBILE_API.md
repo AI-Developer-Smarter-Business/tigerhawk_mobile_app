@@ -215,23 +215,23 @@ await fetch(`${env.tmsApiUrl}/api/dispatcher/loads/${loadId}/status`, {
 
 If `env.tmsApiUrl` is empty, status calls must fail fast with a clear config error (document in ops runbook).
 
-### 4.3 Client-only behaviour (not persisted to TMS/DB)
+### 4.3 Mobile client behaviour
 
 | Behaviour | Where | Notes |
 |-----------|-------|-------|
-| Driver status buttons | `DriverActionBar` → `useDriverStatusChange` → `runDriverStatusChange` | Optimistic cache only when safe; rollback on error; invalidate on success; dev telemetry |
-| Pull-to-refresh | `useAssignedLoadsQuery` / `useLoadDetailQuery` | Refetch from Supabase; overwrites local status demo |
+| Driver progress actions | `DriverProgressActions` → `useDriverProgressAction` → `mutateMobileDriverProgress` | Server-derived `GET/POST …/progress`; optional `chassis_number` (50), `container_number` (20), `seal_number` (50), `note`; no raw-status PATCH |
+| Pull-to-refresh | `useDriverLoadsBuckets` / `useLoadDetailQuery` / `useDriverProgressQuery` | Refetches server-backed cards, detail, and progress |
 | Mock auth | `EXPO_PUBLIC_ENABLE_MOCK_AUTH=1` | Dev only; off by default |
 
 ### 4.4 Quick reference — one glance
 
 | Data | Source now | Source target |
 |------|------------|---------------|
-| Who am I? | Supabase `user_profiles` | Same |
-| My loads list | Supabase `loads` | Same |
-| Load detail | Supabase `loads` + embeds | Same |
-| Change status | TMS `PATCH …/status` | Same (3.1) |
-| POD / photos | — | TMS POST (after backend allows driver) or Storage+BFF |
+| Who am I? | Mobile login + `drivers.auth_user_id` / `mobile_enabled` | Same |
+| My loads list | TMS `GET /api/mobile/driver/loads` (move cards) | Same |
+| Load detail | Supabase detail, with assigned move-card fallback | Dedicated mobile detail if added |
+| Progress | TMS `GET/POST /api/mobile/loads/{id}/progress` | Same |
+| POD / photos | TMS mobile documents routes | Legal POD stamp routes for G.* |
 | Chat | — | Supabase and/or TMS messages API |
 
 ---

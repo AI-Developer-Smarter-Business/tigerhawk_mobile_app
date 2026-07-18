@@ -103,9 +103,9 @@ const DETAIL_DEFAULTS = {
   customer_address: null,
   driver_name: null,
   driver_phone: null,
-  is_hazmat: false,
-  is_overweight: false,
-  is_bonded: false,
+  is_hazmat: null,
+  is_overweight: null,
+  is_bonded: null,
 } satisfies Partial<LoadDetail>;
 
 export function mapLoadRowToDetail(row: LoadListRow): LoadDetail {
@@ -163,9 +163,9 @@ export function mapLoadDetailRowToDetail(row: LoadDetailRow): LoadDetail {
     customer_address: formatCustomerAddress(customer),
     driver_name: driver?.name ?? null,
     driver_phone: driver?.phone ?? null,
-    is_hazmat: row.is_hazmat ?? false,
-    is_overweight: row.is_overweight ?? false,
-    is_bonded: row.is_bonded ?? false,
+    is_hazmat: row.is_hazmat ?? null,
+    is_overweight: row.is_overweight ?? null,
+    is_bonded: row.is_bonded ?? null,
   };
 }
 

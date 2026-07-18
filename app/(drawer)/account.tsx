@@ -26,14 +26,26 @@ export default function AccountScreen() {
     lastAuthEvent,
     initError,
     refreshSession,
+    mobileDriver,
     signOut,
   } = useAuth();
-  const { profile, loading: profileLoading, error: profileError, refetch } =
-    useProfile();
+  const {
+    profile,
+    linkedDriver,
+    isDriver,
+    loading: profileLoading,
+    error: profileError,
+    refetch,
+  } = useProfile();
 
   const supabaseHost = env.supabaseUrl.replace(/^https?:\/\//, '').split('.')[0];
+  const driverIdentity = mobileDriver ?? linkedDriver;
   const displayName =
-    profile?.full_name ?? session?.user.email ?? 'Driver';
+    driverIdentity?.name ??
+    profile?.full_name ??
+    session?.user.email ??
+    'Driver';
+  const username = driverIdentity?.username;
 
   const handleLogout = async () => {
     await signOut();
@@ -54,23 +66,34 @@ export default function AccountScreen() {
             <Text style={styles.profileName}>{displayName}</Text>
             <View style={styles.rolePill}>
               <Text style={styles.rolePillText}>
-                {profile?.role ?? strings.account.driverRole}
+                {isDriver
+                  ? strings.account.driverRole
+                  : (profile?.role ?? strings.account.driverRole)}
               </Text>
             </View>
           </View>
         </View>
-        {profile ? (
+        {username ? (
+          <>
+            <Text style={[styles.label, styles.mt]}>{strings.account.usernameLabel}</Text>
+            <Text style={styles.value}>{username}</Text>
+          </>
+        ) : null}
+        {profile?.email || session?.user.email ? (
           <>
             <Text style={[styles.label, styles.mt]}>{strings.account.emailLabel}</Text>
-            <Text style={styles.value}>{profile.email ?? session?.user.email}</Text>
+            <Text style={styles.value}>{profile?.email ?? session?.user.email}</Text>
           </>
-        ) : profileLoading ? (
+        ) : null}
+        {profileLoading && !driverIdentity ? (
           <Text style={[styles.muted, styles.mt]}>{strings.account.loadingProfile}</Text>
-        ) : (
-          <Text style={[styles.muted, styles.mt]}>
-            {profileError ?? strings.account.noProfile}
-          </Text>
-        )}
+        ) : null}
+        {!profileLoading && !isDriver && profileError ? (
+          <Text style={[styles.muted, styles.mt]}>{profileError}</Text>
+        ) : null}
+        {!profileLoading && !isDriver && !profileError ? (
+          <Text style={[styles.muted, styles.mt]}>{strings.auth.notDriverRole}</Text>
+        ) : null}
       </Card>
 
       <Card title={strings.auth.supabaseLabel} elevated>
@@ -122,32 +145,29 @@ const styles = StyleSheet.create({
   subheading: {
     fontSize: PP2Theme.typography.sizes.body,
     color: PP2Theme.colors.textMuted,
-    marginBottom: PP2Theme.spacing.lg,
+    marginBottom: PP2Theme.spacing.md,
   },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: PP2Theme.spacing.md,
-    marginBottom: PP2Theme.spacing.sm,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: PP2Theme.colors.accentMuted,
-    borderWidth: 2,
-    borderColor: tms.navActive,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: tms.navActive,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: PP2Theme.typography.sizes.title,
+    color: '#fff',
     fontWeight: '700',
-    color: tms.navActive,
+    fontSize: PP2Theme.typography.sizes.body,
   },
   profileInfo: {
     flex: 1,
-    gap: PP2Theme.spacing.xs,
+    minWidth: 0,
   },
   profileName: {
     fontSize: PP2Theme.typography.sizes.title,
@@ -156,34 +176,26 @@ const styles = StyleSheet.create({
   },
   rolePill: {
     alignSelf: 'flex-start',
-    backgroundColor: PP2Theme.colors.accentMuted,
-    borderWidth: 1,
-    borderColor: tms.navActive,
-    borderRadius: PP2Theme.radius.sm,
+    marginTop: PP2Theme.spacing.xs,
     paddingHorizontal: PP2Theme.spacing.sm,
     paddingVertical: 2,
+    borderRadius: PP2Theme.radius.sm,
+    backgroundColor: `${tms.navActive}22`,
   },
   rolePillText: {
     fontSize: PP2Theme.typography.sizes.caption,
-    fontWeight: '700',
+    fontWeight: '600',
     color: tms.navActive,
-    textTransform: 'capitalize',
   },
   label: {
     fontSize: PP2Theme.typography.sizes.caption,
     color: PP2Theme.colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontWeight: '600',
   },
   value: {
     fontSize: PP2Theme.typography.sizes.body,
     color: PP2Theme.colors.text,
-    marginTop: PP2Theme.spacing.xs,
-  },
-  envValue: {
-    fontSize: PP2Theme.typography.sizes.caption,
-    color: PP2Theme.colors.textMuted,
-    fontFamily: 'monospace',
+    marginTop: 2,
   },
   muted: {
     fontSize: PP2Theme.typography.sizes.body,
@@ -192,7 +204,12 @@ const styles = StyleSheet.create({
   error: {
     fontSize: PP2Theme.typography.sizes.body,
     color: PP2Theme.colors.error,
-    marginTop: PP2Theme.spacing.xs,
   },
-  mt: { marginTop: PP2Theme.spacing.md },
+  envValue: {
+    fontSize: PP2Theme.typography.sizes.body,
+    color: PP2Theme.colors.text,
+  },
+  mt: {
+    marginTop: PP2Theme.spacing.md,
+  },
 });

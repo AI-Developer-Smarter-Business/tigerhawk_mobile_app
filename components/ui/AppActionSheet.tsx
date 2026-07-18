@@ -5,6 +5,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import type { ReactNode } from 'react';
 
 import { PP2Theme } from '@/constants/theme';
 
@@ -12,6 +13,9 @@ export type AppActionSheetAction = {
   label: string;
   onPress: () => void;
   variant?: 'default' | 'cancel' | 'destructive';
+  testID?: string;
+  /** Keep the sheet open so the action can validate embedded form fields. */
+  dismissOnPress?: boolean;
 };
 
 type AppActionSheetProps = {
@@ -21,6 +25,7 @@ type AppActionSheetProps = {
   actions: AppActionSheetAction[];
   onDismiss: () => void;
   testID?: string;
+  children?: ReactNode;
 };
 
 /** Light-themed bottom sheet — replaces system Alert for in-app pickers and confirms. */
@@ -31,6 +36,7 @@ export function AppActionSheet({
   actions,
   onDismiss,
   testID,
+  children,
 }: AppActionSheetProps) {
   return (
     <Modal
@@ -51,14 +57,16 @@ export function AppActionSheet({
             </Text>
           ) : null}
           {message ? <Text style={styles.message}>{message}</Text> : null}
+          {children}
           <View style={styles.actions}>
             {actions.map((action) => (
               <Pressable
                 key={action.label}
+                testID={action.testID}
                 accessibilityRole="button"
                 accessibilityLabel={action.label}
                 onPress={() => {
-                  onDismiss();
+                  if (action.dismissOnPress !== false) onDismiss();
                   action.onPress();
                 }}
                 style={({ pressed }) => [

@@ -43,7 +43,7 @@ describe('release QA preflight (7.1 / 7.2)', () => {
   });
 
   it('release handoff docs exist for 7.3–7.5', () => {
-    expect(fs.existsSync(path.join(root, 'CHANGELOG.md'))).toBe(true);
+    // CHANGELOG.md is local-only (root *.md stays out of the repo except README).
     expect(fs.existsSync(path.join(root, 'docs', 'VERSIONING.md'))).toBe(true);
     expect(fs.existsSync(path.join(root, 'docs', 'BUG_REPORTING.md'))).toBe(true);
     expect(fs.existsSync(path.join(root, 'docs', 'ROLLBACK_PP2.md'))).toBe(true);

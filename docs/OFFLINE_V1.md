@@ -31,7 +31,8 @@ Manual QA: **`docs/QA_NETWORK_RECONNECT_5_5.md`**.
 
 | Action | Queued offline? |
 |--------|----------------|
-| Status change (`DriverActionBar`) | Yes |
+| Progress action (`DriverProgressActions`) | No — server is the single source of truth |
+| Legacy queued status change (app versions before D.2) | Drain only; no new items are created |
 | Driver photo / POD / Photo upload | Yes |
 | Load notes (TMS) | No mobile UI yet — not queued |
 

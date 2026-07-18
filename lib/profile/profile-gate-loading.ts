@@ -1,15 +1,18 @@
-import type { UserProfile } from '@/types/profile';
-
 /**
- * Blocks driver queries only on the first profile load — not on silent reconnect refetch.
+ * Blocks driver queries while auth/identity is still resolving.
+ * Does **not** wait on `user_profiles` (truck drivers have none — TASKS A.3).
  */
-export function isProfileGateLoading(
-  isInitialized: boolean,
-  fetchInFlight: boolean,
-  profile: UserProfile | null,
-): boolean {
-  if (!isInitialized) {
+export function isDriverIdentityLoading(params: {
+  isInitialized: boolean;
+  fetchInFlight: boolean;
+  /** Username-login identity already on AuthContext — no wait for drivers lookup. */
+  hasSessionDriver: boolean;
+}): boolean {
+  if (!params.isInitialized) {
     return true;
   }
-  return fetchInFlight && profile === null;
+  if (params.hasSessionDriver) {
+    return false;
+  }
+  return params.fetchInFlight;
 }

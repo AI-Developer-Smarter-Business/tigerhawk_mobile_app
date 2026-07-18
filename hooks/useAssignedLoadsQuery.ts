@@ -32,15 +32,14 @@ export type UseAssignedLoadsQueryResult = {
 
 export function useAssignedLoadsQuery(): UseAssignedLoadsQueryResult {
   const queryClient = useQueryClient();
-  const { user, isSupabaseAuthenticated, isInitialized } = useAuth();
-  const { profile, isDriver, loading: profileLoading } = useProfile();
+  const { isSupabaseAuthenticated, isInitialized } = useAuth();
+  const { isDriver, assignedDriverId, loading: profileLoading } = useProfile();
 
-  const userId = user?.id ?? '';
+  const driverId = assignedDriverId ?? '';
   const gateError = getDriverQueryGateError({
     isSupabaseAuthenticated,
     profileLoading,
     isDriver,
-    hasProfile: profile != null,
   });
 
   const enabled = isDriverLoadsQueryEnabled({
@@ -48,17 +47,17 @@ export function useAssignedLoadsQuery(): UseAssignedLoadsQueryResult {
     isSupabaseAuthenticated,
     profileLoading,
     isDriver,
-    userId,
+    driverId,
   });
 
   const query = useInfiniteQuery({
-    queryKey: queryKeys.loads.list(userId),
+    queryKey: queryKeys.loads.list(driverId),
     enabled,
     staleTime: 0,
     placeholderData: keepPreviousData,
     initialPageParam: 0,
     queryFn: async ({ pageParam }): Promise<DriverLoadsPageResult> => {
-      const result = await fetchDriverLoadsPage(getSupabase(), userId, {
+      const result = await fetchDriverLoadsPage(getSupabase(), driverId, {
         page: pageParam,
       });
       if (result.errorMessage) {
@@ -69,7 +68,6 @@ export function useAssignedLoadsQuery(): UseAssignedLoadsQueryResult {
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.page + 1 : undefined,
   });
-
   const loads = useMemo(() => {
     const flat = query.data?.pages.flatMap((page) => page.loads) ?? [];
     return sortAssignedLoadsByPriority(dedupeLoadsById(flat));
@@ -80,11 +78,11 @@ export function useAssignedLoadsQuery(): UseAssignedLoadsQueryResult {
   const totalCount = query.data?.pages[0]?.totalCount ?? null;
 
   const invalidateAndRefetch = useCallback(async () => {
-    if (userId) {
-      await invalidateDriverLoads(queryClient, userId);
+    if (driverId) {
+      await invalidateDriverLoads(queryClient, driverId);
     }
     await query.refetch();
-  }, [query, queryClient, userId]);
+  }, [query, queryClient, driverId]);
 
   const refetch = useCallback(async () => {
     await invalidateAndRefetch();

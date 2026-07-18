@@ -46,6 +46,12 @@ export default function DrawerLayout() {
         }}
       />
       <Drawer.Screen
+        name="history"
+        options={{
+          title: strings.loadHistory.title,
+        }}
+      />
+      <Drawer.Screen
         name="account"
         options={{
           title: strings.account.title,

@@ -6,6 +6,7 @@ import {
   MOBILE_AUTH_LOGIN_PATH,
   MOBILE_DRIVER_CLOCK_PATH,
   MOBILE_DRIVER_LOADS_PATH,
+  MOBILE_DRIVER_LOAD_HISTORY_PATH,
   mobileLoadAcceptPath,
   mobileLoadDocumentsPath,
   mobileLoadPodPath,
@@ -19,6 +20,9 @@ describe('mobile-api-routes (A.0)', () => {
     expect(MOBILE_AUTH_LOGIN_PATH).toBe('/api/mobile/auth/login');
     expect(MOBILE_DRIVER_CLOCK_PATH).toBe('/api/mobile/driver/clock');
     expect(MOBILE_DRIVER_LOADS_PATH).toBe('/api/mobile/driver/loads');
+    expect(MOBILE_DRIVER_LOAD_HISTORY_PATH).toBe(
+      '/api/mobile/driver/loads/history',
+    );
   });
 
   it('builds load-scoped paths with encodeURIComponent', () => {
@@ -46,6 +50,7 @@ describe('mobile-api-routes (A.0)', () => {
     expect(smoke).toContain(MOBILE_AUTH_LOGIN_PATH);
     expect(smoke).toContain(MOBILE_DRIVER_CLOCK_PATH);
     expect(smoke).toContain(MOBILE_DRIVER_LOADS_PATH);
+    expect(smoke).toContain(MOBILE_DRIVER_LOAD_HISTORY_PATH);
     expect(smoke).toContain('/progress');
     expect(smoke).toContain('/pod-signature');
     expect(smoke).toContain('/accept');

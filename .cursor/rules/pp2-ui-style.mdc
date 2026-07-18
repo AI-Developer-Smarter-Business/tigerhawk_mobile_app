@@ -31,7 +31,7 @@ Al añadir pantallas o componentes UI:
 ## Accesibilidad (tarea 3.7+)
 
 - Objetivo táctil mínimo **48dp**: `PP2Theme.layout.minTouchTarget` en `Button` y ítems del drawer.
-- Acciones de carga: `Button` `variant="accent"` + `accessibilityLabel` en `DriverActionBar`.
+- Acciones de progreso: `Button` `variant="accent"` + `accessibilityLabel` en `DriverProgressActions`.
 - QA manual web vs móvil: `docs/QA_DRIVER_ACTIONS_3_7.md`.
 
 ## Referencia visual

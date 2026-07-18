@@ -22,6 +22,7 @@
     "eas:push-env": "node scripts/eas-push-env-from-local.mjs",
     "smoke:5.7": "node scripts/smoke-5-7.mjs",
     "smoke:a0": "node scripts/smoke-mobile-api-a0.mjs",
+    "smoke:a1": "node scripts/smoke-mobile-api-a1.mjs",
     "db:apply-rls": "node scripts/apply-supabase-migration.mjs",
     "db:apply-wt20": "node scripts/apply-wt20-wait-time.mjs",
     "db:seed-driver-test": "node scripts/create-driver-test-user.mjs",

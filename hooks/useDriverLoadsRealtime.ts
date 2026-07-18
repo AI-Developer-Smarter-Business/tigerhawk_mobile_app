@@ -22,14 +22,15 @@ const ACTIVE_POLL_MS = 5_000;
  */
 export function useDriverLoadsRealtime(): void {
   const queryClient = useQueryClient();
-  const { user, isSupabaseAuthenticated, session } = useAuth();
-  const { isDriver, loading: profileLoading } = useProfile();
-  const userId = user?.id ?? '';
+  const { isSupabaseAuthenticated, session } = useAuth();
+  const { isDriver, assignedDriverId, loading: profileLoading } = useProfile();
+  /** Cache key = `drivers.id` (same as list/detail queries — A.3). */
+  const driverId = assignedDriverId ?? '';
   const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (!isSupabaseAuthenticated || profileLoading || !isDriver || !userId) {
+    if (!isSupabaseAuthenticated || profileLoading || !isDriver || !driverId) {
       return;
     }
 
@@ -37,17 +38,24 @@ export function useDriverLoadsRealtime(): void {
     subscriptionRef.current = subscribeDriverLoadsRealtime(
       supabase,
       queryClient,
-      userId,
+      driverId,
     );
 
     return () => {
       subscriptionRef.current?.unsubscribe();
       subscriptionRef.current = null;
     };
-  }, [isSupabaseAuthenticated, profileLoading, isDriver, userId, queryClient, session?.access_token]);
+  }, [
+    isSupabaseAuthenticated,
+    profileLoading,
+    isDriver,
+    driverId,
+    queryClient,
+    session?.access_token,
+  ]);
 
   useEffect(() => {
-    if (!userId || !isDriver) return;
+    if (!driverId || !isDriver) return;
 
     const stopPoll = () => {
       if (pollTimerRef.current) {
@@ -59,16 +67,16 @@ export function useDriverLoadsRealtime(): void {
     const startPoll = () => {
       if (pollTimerRef.current) return;
       pollTimerRef.current = setInterval(() => {
-        void refetchActiveDriverLoadQueries(queryClient, userId);
+        void refetchActiveDriverLoadQueries(queryClient, driverId);
       }, ACTIVE_POLL_MS);
     };
 
     const onAppState = (nextState: AppStateStatus) => {
       if (nextState === 'active') {
         startPoll();
-        const throttleKey = `loads-foreground:${userId}`;
+        const throttleKey = `loads-foreground:${driverId}`;
         if (shouldRunThrottledRefetch(throttleKey, FOREGROUND_LOADS_REFETCH_MIN_MS)) {
-          void invalidateDriverLoads(queryClient, userId);
+          void invalidateDriverLoads(queryClient, driverId);
         }
         return;
       }
@@ -84,5 +92,5 @@ export function useDriverLoadsRealtime(): void {
       subscription.remove();
       stopPoll();
     };
-  }, [userId, isDriver, queryClient]);
+  }, [driverId, isDriver, queryClient]);
 }

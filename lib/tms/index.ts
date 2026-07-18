@@ -40,11 +40,8 @@ export {
 } from './upload-load-document';
 export { resolveSupabaseAccessToken } from './resolve-access-token';
 export {
-  fetchLoadTransitions,
-  normalizeLoadTransitionMap,
-  type LoadTransitionMap,
-} from './fetch-load-transitions';
-export { rethrowIfTmsApiUnauthorized } from './tms-unauthorized-helpers';
+  rethrowIfTmsApiUnauthorized,
+} from './tms-unauthorized-helpers';
 export {
   TmsStatusChangeError,
   getStatusChangeErrorMessage,

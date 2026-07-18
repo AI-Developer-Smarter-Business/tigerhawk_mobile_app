@@ -51,7 +51,8 @@ export function parseDocumentUploadError(
 
   if (httpStatus === 403 && code === 'PROFILE_NOT_FOUND') {
     return new TmsDocumentUploadError(
-      error ?? 'Driver profile missing in TMS. Ask dispatch to set user_profiles.role = driver.',
+      error ??
+        'Driver mobile access missing in TMS. Ask dispatch to enable Tigerhawk Mobile for this username.',
       'FORBIDDEN',
     );
   }

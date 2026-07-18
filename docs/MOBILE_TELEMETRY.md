@@ -14,18 +14,14 @@ Entry: `driverStatusTelemetry` in `lib/telemetry/driver-status.ts`.
 
 Never log tokens, passwords, or full API bodies. `safe-log.ts` redacts sensitive keys.
 
-## Optimistic UI policy
+## Progress UI policy (D.2)
 
-Optimistic React Query + `LoadsContext` updates run only when `canOptimisticallyUpdateLoadStatus` is true:
+Current driver screens use server-derived `GET/POST …/progress` through
+`useDriverProgressQuery` and `useDriverProgressAction`. The app does not derive
+raw status transitions or apply optimistic status changes.
 
-- No `active_holds`
-- Valid driver transition (`canDriverTransition`)
-- Target is a driver-field status (not dispatch/final)
-
-Otherwise `runDriverStatusChange` calls TMS first and invalidates cache on success (no speculative write).
-
-Orchestration: `lib/driver-status/run-driver-status-change.ts`  
-Screen hook: `hooks/useDriverStatusChange.ts`
+`runDriverStatusChange` remains isolated only to drain `status_change` items
+created by app versions older than D.2; it performs no optimistic update.
 
 ## Staging / production
 

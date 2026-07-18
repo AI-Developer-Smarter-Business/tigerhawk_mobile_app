@@ -16,6 +16,7 @@ import {
 } from '@/lib/loads';
 import {
   formatDisplayValue,
+  formatLoadFlagValue,
   hasContainerInfo,
   hasLoadFlags,
   hasShipmentInfo,
@@ -55,6 +56,23 @@ export function LoadDetailContent({
   onRefreshDocuments,
   onUploadDocument,
 }: LoadDetailContentProps) {
+  const flagRows: { label: string; value: string }[] = [];
+  const hazmatValue = formatLoadFlagValue(load.is_hazmat);
+  const overweightValue = formatLoadFlagValue(load.is_overweight);
+  const bondedValue = formatLoadFlagValue(load.is_bonded);
+  if (hazmatValue != null) {
+    flagRows.push({ label: strings.loadDetail.hazmat, value: hazmatValue });
+  }
+  if (overweightValue != null) {
+    flagRows.push({
+      label: strings.loadDetail.overweight,
+      value: overweightValue,
+    });
+  }
+  if (bondedValue != null) {
+    flagRows.push({ label: strings.loadDetail.bonded, value: bondedValue });
+  }
+
   return (
     <>
       {error ? (
@@ -71,6 +89,9 @@ export function LoadDetailContent({
       />
 
       <LoadDetailHero load={load} />
+      <Text style={styles.readOnlyHint}>
+        {strings.loadDetail.readOnlyHint}
+      </Text>
 
       {load.active_holds.length > 0 ? (
         <Card title={strings.loadDetail.holds} elevated>
@@ -202,19 +223,14 @@ export function LoadDetailContent({
 
       {hasLoadFlags(load) ? (
         <Card title={strings.loadDetail.flags} elevated>
-          <LoadDetailRow
-            label={strings.loadDetail.hazmat}
-            value={load.is_hazmat ? strings.loadDetail.yes : strings.loadDetail.no}
-          />
-          <LoadDetailRow
-            label={strings.loadDetail.overweight}
-            value={load.is_overweight ? strings.loadDetail.yes : strings.loadDetail.no}
-          />
-          <LoadDetailRow
-            label={strings.loadDetail.bonded}
-            value={load.is_bonded ? strings.loadDetail.yes : strings.loadDetail.no}
-            last
-          />
+          {flagRows.map((row, index) => (
+            <LoadDetailRow
+              key={row.label}
+              label={row.label}
+              value={row.value}
+              last={index === flagRows.length - 1}
+            />
+          ))}
         </Card>
       ) : null}
 
@@ -244,6 +260,10 @@ export function LoadDetailContent({
 }
 
 const styles = StyleSheet.create({
+  readOnlyHint: {
+    fontSize: PP2Theme.typography.sizes.caption,
+    color: PP2Theme.colors.textMuted,
+  },
   holdsNote: {
     fontSize: PP2Theme.typography.sizes.caption,
     color: PP2Theme.colors.textMuted,

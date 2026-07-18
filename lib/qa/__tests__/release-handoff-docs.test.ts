@@ -7,12 +7,23 @@ function read(relativePath: string): string {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
+/**
+ * Root markdown files (except README.md) are intentionally untracked
+ * (.gitignore `/*.md`), so they exist locally but not in CI checkouts.
+ * Run their checks only when the file is present.
+ */
+function itIfRootDoc(relativePath: string) {
+  return fs.existsSync(path.join(root, relativePath)) ? it : it.skip;
+}
+
 describe('release handoff docs (7.3–7.5)', () => {
-  it('CHANGELOG and VERSIONING exist with semver reference', () => {
+  itIfRootDoc('CHANGELOG.md')('CHANGELOG follows semver (local-only doc)', () => {
     const changelog = read('CHANGELOG.md');
     expect(changelog).toContain('[0.1.0]');
     expect(changelog).toMatch(/Semantic Versioning/i);
+  });
 
+  it('VERSIONING exists with semver reference', () => {
     const versioning = read('docs/VERSIONING.md');
     expect(versioning).toContain('MAJOR');
     expect(versioning).toContain('package.json');
@@ -131,9 +142,12 @@ describe('release handoff docs (9.5–9.7)', () => {
     expect(handoff).toContain('SAMSARA_ENABLED');
   });
 
-  it('HANDOFF_DEV points to client handoff 9.7', () => {
-    const dev = read('HANDOFF_DEV.md');
-    expect(dev).toContain('docs/CLIENT_HANDOFF_9_7.md');
-    expect(dev).toContain('9.5');
-  });
+  itIfRootDoc('HANDOFF_DEV.md')(
+    'HANDOFF_DEV points to client handoff 9.7 (local-only doc)',
+    () => {
+      const dev = read('HANDOFF_DEV.md');
+      expect(dev).toContain('docs/CLIENT_HANDOFF_9_7.md');
+      expect(dev).toContain('9.5');
+    },
+  );
 });

@@ -11,7 +11,7 @@ import {
 import { invalidateLoadDetail } from '@/lib/query/invalidate-loads';
 import { queryKeys } from '@/lib/query/query-keys';
 import { getUserFacingMessage } from '@/lib/errors';
-import { fetchLoadDetailForDriver } from '@/lib/supabase/queries';
+import { resolveLoadDetailForDriver } from '@/lib/loads/resolve-load-detail-for-driver';
 import { getSupabase } from '@/lib/supabase/client';
 import type { LoadDetail } from '@/types';
 
@@ -25,20 +25,22 @@ export type UseLoadDetailQueryResult = {
   retry: () => Promise<void>;
 };
 
-export function useLoadDetailQuery(loadId: string | undefined): UseLoadDetailQueryResult {
+export function useLoadDetailQuery(
+  loadId: string | undefined,
+  moveId?: string,
+): UseLoadDetailQueryResult {
   const queryClient = useQueryClient();
-  const { user, isSupabaseAuthenticated, isInitialized } = useAuth();
-  const { profile, isDriver, loading: profileLoading } = useProfile();
+  const { isSupabaseAuthenticated, isInitialized, session } = useAuth();
+  const { isDriver, assignedDriverId, loading: profileLoading } = useProfile();
   const { getLoadById } = useLoads();
 
-  const userId = user?.id ?? '';
+  const driverId = assignedDriverId ?? '';
   const cachedLoad = loadId ? getLoadById(loadId) : undefined;
 
   const gateError = getDriverQueryGateError({
     isSupabaseAuthenticated,
     profileLoading,
     isDriver,
-    hasProfile: profile != null,
   });
 
   const enabled =
@@ -47,19 +49,24 @@ export function useLoadDetailQuery(loadId: string | undefined): UseLoadDetailQue
       isSupabaseAuthenticated,
       profileLoading,
       isDriver,
-      userId,
+      driverId,
     }) && Boolean(loadId);
 
+  const detailMoveId = moveId?.trim() ?? '';
+
   const query = useQuery({
-    queryKey: queryKeys.loads.detail(userId, loadId ?? ''),
+    queryKey: queryKeys.loads.detail(driverId, loadId ?? '', detailMoveId),
     enabled,
     staleTime: 0,
     queryFn: async (): Promise<LoadDetail | null> => {
-      const result = await fetchLoadDetailForDriver(
-        getSupabase(),
-        loadId!,
-        userId,
-      );
+      const result = await resolveLoadDetailForDriver({
+        supabase: getSupabase(),
+        queryClient,
+        loadId: loadId!,
+        driverId,
+        moveId,
+        accessToken: session?.access_token,
+      });
       if (result.errorMessage) {
         throw new Error(result.errorMessage);
       }
@@ -68,11 +75,11 @@ export function useLoadDetailQuery(loadId: string | undefined): UseLoadDetailQue
   });
 
   const invalidateAndRefetch = useCallback(async () => {
-    if (userId && loadId) {
-      await invalidateLoadDetail(queryClient, userId, loadId);
+    if (driverId && loadId) {
+      await invalidateLoadDetail(queryClient, driverId, loadId);
     }
     await query.refetch();
-  }, [query, queryClient, userId, loadId]);
+  }, [query, queryClient, driverId, loadId]);
 
   const refetch = invalidateAndRefetch;
   const retry = refetch;

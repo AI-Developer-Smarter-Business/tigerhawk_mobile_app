@@ -1,5 +1,6 @@
 import {
   formatDisplayValue,
+  formatLoadFlagValue,
   hasContainerInfo,
   hasLoadFlags,
   hasShipmentInfo,
@@ -43,9 +44,9 @@ function createLoadDetail(overrides: Partial<LoadDetail> = {}): LoadDetail {
     customer_address: null,
     driver_name: null,
     driver_phone: null,
-    is_hazmat: false,
-    is_overweight: false,
-    is_bonded: false,
+    is_hazmat: null,
+    is_overweight: null,
+    is_bonded: null,
     ...overrides,
   };
 }
@@ -90,8 +91,17 @@ describe('hasTimeline', () => {
 });
 
 describe('hasLoadFlags', () => {
-  it('is true when any flag is set', () => {
+  it('is true when any flag is known, including false', () => {
     expect(hasLoadFlags(createLoadDetail({ is_hazmat: true }))).toBe(true);
+    expect(hasLoadFlags(createLoadDetail({ is_overweight: false }))).toBe(true);
     expect(hasLoadFlags(createLoadDetail())).toBe(false);
+  });
+});
+
+describe('formatLoadFlagValue', () => {
+  it('returns Yes/No for known flags and null when unknown', () => {
+    expect(formatLoadFlagValue(true)).toBe('Yes');
+    expect(formatLoadFlagValue(false)).toBe('No');
+    expect(formatLoadFlagValue(null)).toBeNull();
   });
 });

@@ -26,16 +26,15 @@ export type UseLoadDocumentsQueryResult = {
 export function useLoadDocumentsQuery(
   loadId: string | undefined,
 ): UseLoadDocumentsQueryResult {
-  const { user, isSupabaseAuthenticated, isInitialized } = useAuth();
-  const { profile, isDriver, loading: profileLoading } = useProfile();
-  const userId = user?.id ?? '';
+  const { isSupabaseAuthenticated, isInitialized } = useAuth();
+  const { isDriver, assignedDriverId, loading: profileLoading } = useProfile();
+  const driverId = assignedDriverId ?? '';
   const effectiveLoadId = normalizeLoadIdParam(loadId) ?? undefined;
 
   const gateError = getDriverQueryGateError({
     isSupabaseAuthenticated,
     profileLoading,
     isDriver,
-    hasProfile: profile != null,
   });
 
   const enabled =
@@ -45,12 +44,12 @@ export function useLoadDocumentsQuery(
       profileLoading,
       isDriver,
       isInitialized,
-      userId,
+      driverId,
     });
 
   const query = useQuery({
     queryKey: effectiveLoadId
-      ? queryKeys.loads.documents(userId, effectiveLoadId)
+      ? queryKeys.loads.documents(driverId, effectiveLoadId)
       : ['disabled'],
     enabled: enabled && Boolean(effectiveLoadId),
     staleTime: 0,
