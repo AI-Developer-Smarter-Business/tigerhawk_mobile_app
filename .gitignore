@@ -43,10 +43,9 @@ coverage/
 /ios
 /android
 
-# Root markdown — only README.md and CHANGELOG.md may be pushed (docs/ and nested *.md stay trackable)
+# Root markdown — only README.md may be pushed (docs/ and nested *.md stay trackable)
 /*.md
 !/README.md
-!/CHANGELOG.md
 
 # Client feedback working folder (local only — do not push)
 z-feedback_cliente/
