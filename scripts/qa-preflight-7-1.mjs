@@ -21,7 +21,7 @@ const jestPatterns = [
   'driver-loads-subscription',
   'network-state',
   'reconnect-recovery',
-  'driver-actions',
+  'driver-progress',
   'web-driver-panel-parity',
   'get-foreground-position',
   'location-permission',

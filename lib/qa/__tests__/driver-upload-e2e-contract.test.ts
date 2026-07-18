@@ -41,8 +41,12 @@ describe('driver upload E2E contract (6.4)', () => {
 
   it('TMS upload uses mobile documents API path', () => {
     const request = readSource('lib', 'tms', 'document-upload-request.ts');
-    expect(request).toContain('/api/mobile/loads/');
-    expect(request).toContain('documents');
+    expect(request).toContain('mobileLoadDocumentsPath');
+    expect(request).toContain('buildDocumentUploadPath');
+
+    const routes = readSource('lib', 'tms', 'mobile-api-routes.ts');
+    expect(routes).toContain('/api/mobile/loads/');
+    expect(routes).toContain('/documents');
 
     const upload = readSource('lib', 'tms', 'upload-load-document.ts');
     expect(upload).toContain('buildDocumentUploadPath');

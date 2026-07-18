@@ -2,17 +2,20 @@ import { OfflineError } from '@/lib/network/offline-error';
 import { isNetworkFailure } from '@/lib/network/network-state';
 import { LocationError } from '@/lib/location/location-errors';
 import { TmsDocumentUploadError } from '@/lib/tms/document-errors';
+import { TmsMobileApiError } from '@/lib/tms/mobile-api-error';
 import { TmsStatusChangeError } from '@/lib/tms/errors';
 
 import { errorStrings } from './strings';
 import { mapDocumentUploadError } from './map-document-error';
 import { mapLocationError } from './map-location-error';
+import { mapMobileApiError } from './map-mobile-api-error';
 import { mapSupabaseError } from './map-supabase-error';
 import { mapStatusChangeError } from './map-status-error';
 import type { UserFacingError } from './types';
 
 /**
- * Single entry point: PostgREST, TMS status PATCH, document POST, or unknown errors.
+ * Single entry point: PostgREST, TMS status PATCH, mobile `/api/mobile/*`,
+ * document POST, or unknown errors.
  */
 function mapNetworkError(error: unknown): UserFacingError {
   const message =
@@ -34,6 +37,9 @@ export function mapErrorToUserFacing(error: unknown): UserFacingError {
   }
   if (isNetworkFailure(error)) {
     return mapNetworkError(error);
+  }
+  if (error instanceof TmsMobileApiError) {
+    return mapMobileApiError(error);
   }
   if (error instanceof TmsDocumentUploadError) {
     return mapDocumentUploadError(error);

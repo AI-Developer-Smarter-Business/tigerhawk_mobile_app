@@ -37,5 +37,14 @@ export function hasTimeline(load: LoadDetail): boolean {
 }
 
 export function hasLoadFlags(load: LoadDetail): boolean {
-  return load.is_hazmat || load.is_overweight || load.is_bonded;
+  return (
+    load.is_hazmat != null ||
+    load.is_overweight != null ||
+    load.is_bonded != null
+  );
+}
+
+export function formatLoadFlagValue(flag: boolean | null): string | null {
+  if (flag == null) return null;
+  return flag ? strings.loadDetail.yes : strings.loadDetail.no;
 }

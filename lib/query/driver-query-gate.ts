@@ -4,17 +4,16 @@ export type DriverQueryGateInput = {
   isSupabaseAuthenticated: boolean;
   profileLoading: boolean;
   isDriver: boolean;
-  hasProfile: boolean;
 };
 
-/** Error message when loads/detail queries must not run (not driver, no profile, etc.). */
+/** Error when loads/detail queries must not run (not a mobile driver). */
 export function getDriverQueryGateError(input: DriverQueryGateInput): string | null {
-  const { isSupabaseAuthenticated, profileLoading, isDriver, hasProfile } = input;
+  const { isSupabaseAuthenticated, profileLoading, isDriver } = input;
   if (!isSupabaseAuthenticated || profileLoading) {
     return null;
   }
   if (!isDriver) {
-    return hasProfile ? strings.auth.notDriverRole : strings.account.noProfile;
+    return strings.auth.notDriverRole;
   }
   return null;
 }
@@ -24,13 +23,14 @@ export function isDriverLoadsQueryEnabled(params: {
   isSupabaseAuthenticated: boolean;
   profileLoading: boolean;
   isDriver: boolean;
-  userId: string | undefined;
+  /** `drivers.id` for `loads.driver_id` (not auth uid). */
+  driverId: string | undefined;
 }): boolean {
   return (
     params.isInitialized &&
     params.isSupabaseAuthenticated &&
     !params.profileLoading &&
     params.isDriver &&
-    Boolean(params.userId)
+    Boolean(params.driverId)
   );
 }

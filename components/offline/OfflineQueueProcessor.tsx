@@ -2,7 +2,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useLoads } from '@/context/LoadsContext';
 import { useNetwork } from '@/context/NetworkContext';
 import { useOfflineQueue } from '@/context/OfflineQueueContext';
 import {
@@ -18,7 +17,6 @@ import { safeLog } from '@/lib/logging/safe-log';
 export function OfflineQueueProcessor() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { updateLoadStatus } = useLoads();
   const { isOffline, isReady } = useNetwork();
   const { refreshPendingCount } = useOfflineQueue();
   const wasOfflineRef = useRef(false);
@@ -55,7 +53,6 @@ export function OfflineQueueProcessor() {
           const result = await processOfflineQueue({
             queryClient,
             userId: user.id,
-            updateLoadStatus,
           });
           if (result.processed > 0 || result.failed > 0) {
             safeLog.event('offline-queue', 'flush_complete', {
@@ -78,7 +75,7 @@ export function OfflineQueueProcessor() {
         processingRef.current = false;
       }
     };
-  }, [isOffline, isReady, queryClient, refreshPendingCount, updateLoadStatus, user?.id]);
+  }, [isOffline, isReady, queryClient, refreshPendingCount, user?.id]);
 
   return null;
 }

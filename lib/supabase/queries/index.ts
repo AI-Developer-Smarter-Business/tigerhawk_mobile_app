@@ -1,5 +1,9 @@
 export { fetchUserProfile, type ProfileQueryResult } from './profile';
 export {
+  fetchDriverByAuthUserId,
+  type DriverByAuthResult,
+} from './fetch-driver-by-auth-user';
+export {
   fetchLoadsForDriver,
   fetchDriverLoadsPage,
   fetchLoadDetailForDriver,

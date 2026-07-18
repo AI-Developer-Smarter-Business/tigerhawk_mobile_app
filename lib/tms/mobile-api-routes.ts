@@ -16,6 +16,10 @@ export const MOBILE_DRIVER_CLOCK_PATH = '/api/mobile/driver/clock';
 /** GET `{ active, upcoming }` move cards */
 export const MOBILE_DRIVER_LOADS_PATH = '/api/mobile/driver/loads';
 
+/** GET `{ history }` completed move cards (`?from=&to=&q=`) */
+export const MOBILE_DRIVER_LOAD_HISTORY_PATH =
+  '/api/mobile/driver/loads/history';
+
 export function mobileLoadProgressPath(loadId: string): string {
   return `/api/mobile/loads/${encodeLoadId(loadId)}/progress`;
 }

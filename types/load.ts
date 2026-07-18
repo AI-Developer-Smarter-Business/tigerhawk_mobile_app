@@ -55,7 +55,8 @@ export type LoadDetail = LoadSummary & {
   customer_address: string | null;
   driver_name: string | null;
   driver_phone: string | null;
-  is_hazmat: boolean;
-  is_overweight: boolean;
-  is_bonded: boolean;
+  /** Null means the source did not provide the flag (do not invent No/Yes). */
+  is_hazmat: boolean | null;
+  is_overweight: boolean | null;
+  is_bonded: boolean | null;
 };

@@ -11,16 +11,27 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { isNetworkFailure } from '@/lib/network/network-state';
 import { applyProfileFetchResult } from '@/lib/profile/apply-profile-fetch-result';
-import { isProfileGateLoading } from '@/lib/profile/profile-gate-loading';
+import { isDriverIdentityLoading } from '@/lib/profile/profile-gate-loading';
+import {
+  resolveAssignedDriverId,
+  resolveIsMobileDriver,
+} from '@/lib/profile/resolve-is-mobile-driver';
 import { getSupabase } from '@/lib/supabase/client';
+import { fetchDriverByAuthUserId } from '@/lib/supabase/queries/fetch-driver-by-auth-user';
 import { fetchUserProfile } from '@/lib/supabase/queries';
+import type { MobileDriverIdentity } from '@/lib/tms/mobile-driver-identity';
 import type { UserProfile } from '@/types/profile';
 
 export type ProfileContextValue = {
+  /** Optional office/legacy row — truck drivers normally have none (A.3). */
   profile: UserProfile | null;
+  /** Driver row linked by `drivers.auth_user_id` (+ mobile_enabled). */
+  linkedDriver: MobileDriverIdentity | null;
   loading: boolean;
   error: string | null;
   isDriver: boolean;
+  /** `drivers.id` for `loads.driver_id` filters. */
+  assignedDriverId: string | null;
   refetch: () => Promise<void>;
 };
 
@@ -39,14 +50,16 @@ type LoadProfileOptions = {
 };
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const { user, isInitialized, isSupabaseAuthenticated } = useAuth();
+  const { user, isInitialized, isSupabaseAuthenticated, mobileDriver } = useAuth();
   const [{ profile, error }, setProfileState] = useState<ProfileState>(emptyProfileState);
+  const [linkedDriver, setLinkedDriver] = useState<MobileDriverIdentity | null>(null);
   const [fetchInFlight, setFetchInFlight] = useState(false);
 
-  const loadProfile = useCallback(
+  const loadIdentity = useCallback(
     async ({ background = false }: LoadProfileOptions = {}) => {
       if (!user?.id || !isSupabaseAuthenticated) {
         setProfileState(emptyProfileState);
+        setLinkedDriver(null);
         setFetchInFlight(false);
         return;
       }
@@ -56,9 +69,16 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         setProfileState((prev) => ({ ...prev, error: null }));
       }
 
+      const supabase = getSupabase();
+
       try {
-        const result = await fetchUserProfile(getSupabase(), user.id);
-        setProfileState((prev) => applyProfileFetchResult(prev.profile, result));
+        // Profile is optional display data only. Driver gate uses drivers row / login.
+        const [profileResult, driverResult] = await Promise.all([
+          fetchUserProfile(supabase, user.id),
+          fetchDriverByAuthUserId(supabase, user.id),
+        ]);
+        setProfileState((prev) => applyProfileFetchResult(prev.profile, profileResult));
+        setLinkedDriver(driverResult.driver);
       } catch (err) {
         setProfileState((prev) => {
           if (isNetworkFailure(err) && prev.profile) {
@@ -85,6 +105,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       if (!user?.id || !isSupabaseAuthenticated) {
         if (!cancelled) {
           setProfileState(emptyProfileState);
+          setLinkedDriver(null);
           setFetchInFlight(false);
         }
         return;
@@ -95,14 +116,20 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         setProfileState((prev) => ({ ...prev, error: null }));
       }
 
+      const supabase = getSupabase();
+
       try {
-        const result = await fetchUserProfile(getSupabase(), user.id);
+        const [profileResult, driverResult] = await Promise.all([
+          fetchUserProfile(supabase, user.id),
+          fetchDriverByAuthUserId(supabase, user.id),
+        ]);
 
         if (cancelled) {
           return;
         }
 
-        setProfileState((prev) => applyProfileFetchResult(prev.profile, result));
+        setProfileState((prev) => applyProfileFetchResult(prev.profile, profileResult));
+        setLinkedDriver(driverResult.driver);
       } catch (err) {
         if (cancelled) {
           return;
@@ -128,15 +155,48 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     };
   }, [isInitialized, user?.id, isSupabaseAuthenticated]);
 
+  const isDriver = resolveIsMobileDriver({
+    mobileDriver,
+    linkedDriver,
+  });
+
+  const assignedDriverId = resolveAssignedDriverId({
+    mobileDriver,
+    linkedDriver,
+  });
+
+  const hasSessionDriver = Boolean(mobileDriver);
+  const hasDriverIdentity = Boolean(mobileDriver || linkedDriver);
+
   const value = useMemo<ProfileContextValue>(
     () => ({
       profile,
-      loading: isProfileGateLoading(isInitialized, fetchInFlight, profile),
-      error,
-      isDriver: profile?.role === 'driver',
-      refetch: () => loadProfile({ background: profile != null }),
+      linkedDriver,
+      loading: isDriverIdentityLoading({
+        isInitialized,
+        fetchInFlight,
+        hasSessionDriver,
+      }),
+      // Missing user_profiles is normal for truck drivers — never surface as a hard error
+      // when we already have a drivers identity.
+      error: hasDriverIdentity ? null : error,
+      isDriver,
+      assignedDriverId,
+      refetch: () =>
+        loadIdentity({ background: hasDriverIdentity || profile != null }),
     }),
-    [profile, fetchInFlight, error, isInitialized, loadProfile],
+    [
+      profile,
+      linkedDriver,
+      fetchInFlight,
+      error,
+      isInitialized,
+      loadIdentity,
+      hasSessionDriver,
+      hasDriverIdentity,
+      isDriver,
+      assignedDriverId,
+    ],
   );
 
   return (

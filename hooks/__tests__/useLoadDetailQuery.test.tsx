@@ -2,7 +2,7 @@ import { waitFor } from '@testing-library/react-native';
 
 import { strings } from '@/constants/strings';
 import { useLoadDetailQuery } from '@/hooks/useLoadDetailQuery';
-import { fetchLoadDetailForDriver } from '@/lib/supabase/queries';
+import { resolveLoadDetailForDriver } from '@/lib/loads/resolve-load-detail-for-driver';
 
 import {
   DRIVER_USER_ID,
@@ -14,6 +14,9 @@ import { createMockLoadDetail } from '@/hooks/testing/fixtures/mock-load-detail'
 
 jest.mock('@/hooks/useAuth');
 jest.mock('@/hooks/useProfile');
+jest.mock('@/lib/loads/resolve-load-detail-for-driver', () => ({
+  resolveLoadDetailForDriver: jest.fn(),
+}));
 jest.mock('@/lib/supabase/queries', () => ({
   fetchDriverLoadsPage: jest.fn(),
   fetchLoadDetailForDriver: jest.fn(),
@@ -24,8 +27,8 @@ jest.mock('@/lib/supabase/client', () => ({
 
 const mockUseAuth = jest.requireMock('@/hooks/useAuth').useAuth as jest.Mock;
 const mockUseProfile = jest.requireMock('@/hooks/useProfile').useProfile as jest.Mock;
-const mockFetchLoadDetailForDriver = fetchLoadDetailForDriver as jest.MockedFunction<
-  typeof fetchLoadDetailForDriver
+const mockResolveLoadDetail = resolveLoadDetailForDriver as jest.MockedFunction<
+  typeof resolveLoadDetailForDriver
 >;
 
 describe('useLoadDetailQuery', () => {
@@ -35,36 +38,42 @@ describe('useLoadDetailQuery', () => {
     mockUseProfile.mockReturnValue(driverProfileState);
   });
 
-  it('returns load detail from Supabase', async () => {
+  it('returns load detail from the resolver', async () => {
     const load = createMockLoadDetail({
       id: 'load-detail-1',
       reference_number: 'THWK_DETAIL',
     });
-    mockFetchLoadDetailForDriver.mockResolvedValue({
+    mockResolveLoadDetail.mockResolvedValue({
       load,
       errorMessage: null,
       notFound: false,
+      fromMoveCard: false,
     });
 
-    const { result } = renderDriverHook(() => useLoadDetailQuery('load-detail-1'));
+    const { result } = renderDriverHook(() =>
+      useLoadDetailQuery('load-detail-1', 'move-1'),
+    );
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.load?.reference_number).toBe('THWK_DETAIL');
     expect(result.current.error).toBeNull();
     expect(result.current.notFound).toBe(false);
-    expect(mockFetchLoadDetailForDriver).toHaveBeenCalledWith(
-      expect.anything(),
-      'load-detail-1',
-      DRIVER_USER_ID,
+    expect(mockResolveLoadDetail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        loadId: 'load-detail-1',
+        driverId: DRIVER_USER_ID,
+        moveId: 'move-1',
+      }),
     );
   });
 
-  it('marks notFound when Supabase returns no row', async () => {
-    mockFetchLoadDetailForDriver.mockResolvedValue({
+  it('marks notFound when resolver finds no row and no move card', async () => {
+    mockResolveLoadDetail.mockResolvedValue({
       load: null,
       errorMessage: null,
       notFound: true,
+      fromMoveCard: false,
     });
 
     const { result } = renderDriverHook(() => useLoadDetailQuery('missing-load'));
@@ -81,8 +90,10 @@ describe('useLoadDetailQuery', () => {
       reference_number: 'THWK_CACHED',
     });
 
-    let resolveFetch!: (value: Awaited<ReturnType<typeof fetchLoadDetailForDriver>>) => void;
-    mockFetchLoadDetailForDriver.mockImplementation(
+    let resolveFetch!: (
+      value: Awaited<ReturnType<typeof resolveLoadDetailForDriver>>,
+    ) => void;
+    mockResolveLoadDetail.mockImplementation(
       () =>
         new Promise((resolve) => {
           resolveFetch = resolve;
@@ -102,6 +113,7 @@ describe('useLoadDetailQuery', () => {
       }),
       errorMessage: null,
       notFound: false,
+      fromMoveCard: false,
     });
 
     await waitFor(() =>
@@ -111,10 +123,11 @@ describe('useLoadDetailQuery', () => {
 
   it('surfaces fetch errors and keeps cached load when available', async () => {
     const cached = createMockLoadDetail({ id: 'load-err', reference_number: 'THWK_ERR' });
-    mockFetchLoadDetailForDriver.mockResolvedValue({
+    mockResolveLoadDetail.mockResolvedValue({
       load: null,
       errorMessage: 'timeout',
       notFound: false,
+      fromMoveCard: false,
     });
 
     const { result } = renderDriverHook(() => useLoadDetailQuery('load-err'), {
@@ -129,8 +142,10 @@ describe('useLoadDetailQuery', () => {
 
   it('blocks fetch for non-driver accounts', async () => {
     mockUseProfile.mockReturnValue({
-      profile: { role: 'staff' },
+      profile: null,
+      linkedDriver: null,
       isDriver: false,
+      assignedDriverId: null,
       loading: false,
       error: null,
       refetch: async () => {},
@@ -141,6 +156,6 @@ describe('useLoadDetailQuery', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toBe(strings.auth.notDriverRole);
-    expect(mockFetchLoadDetailForDriver).not.toHaveBeenCalled();
+    expect(mockResolveLoadDetail).not.toHaveBeenCalled();
   });
 });

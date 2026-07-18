@@ -81,8 +81,10 @@ describe('useAssignedLoadsQuery', () => {
 
   it('does not fetch when the user is not a driver', async () => {
     mockUseProfile.mockReturnValue({
-      profile: { role: 'dispatcher' },
+      profile: null,
+      linkedDriver: null,
       isDriver: false,
+      assignedDriverId: null,
       loading: false,
       error: null,
       refetch: async () => {},

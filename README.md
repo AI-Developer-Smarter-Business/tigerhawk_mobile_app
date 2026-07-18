@@ -112,9 +112,9 @@ npm run check:secrets  # fail if privileged keys in client code
 
 ### Auth for testing
 
-1. **Test driver:** `driver_test@test.com` / `Driver01*` — create with `npm run db:seed-driver-test`, assign loads with `npm run db:assign-driver-test-loads` (3 loads) or `npm run db:assign-driver-test-loads:pagination` (21 loads for infinite-scroll QA). If too many were assigned earlier: `npm run db:trim-driver-test-loads` (keeps 21). **Live updates from TMS:** ensure `loads` is in Supabase Realtime (`supabase/sql-editor/enable_realtime_loads.sql`).
-2. **TMS drivers:** any user with `user_profiles.role = driver` and loads assigned in the TMS.
-3. **Magic link:** “Email me a sign-in link” (requires redirect URLs in Supabase).
+1. **Preferred (username):** a `drivers` row with `username`, `auth_user_id`, `mobile_enabled=true` — sign in via `POST /api/mobile/auth/login` (e.g. QA `thl-test`). Truck drivers have **no** `user_profiles` row.
+2. **Legacy email bridge:** identifier with `@` still uses Supabase email/password if that auth user is linked on `drivers.auth_user_id`.
+3. **Load assignment:** `loads.driver_id` must equal `drivers.id` (not `auth.users.id`). **Realtime:** `loads` in publication `supabase_realtime`.
 
 The app uses **Supabase data only** (no mock loads). Legacy mock login: `EXPO_PUBLIC_ENABLE_MOCK_AUTH=1` in dev only.
 

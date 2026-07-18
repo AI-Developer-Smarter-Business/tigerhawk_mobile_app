@@ -1,3 +1,4 @@
+import { TmsMobileApiError } from '@/lib/tms/mobile-api-error';
 import { TmsStatusChangeError } from '@/lib/tms/errors';
 
 import {
@@ -49,5 +50,17 @@ describe('mapErrorToUserFacing', () => {
       new TmsStatusChangeError('x', 'ACTIVE_HOLDS', { activeHolds: ['fees_hold'] }),
     );
     expect(result.kind).toBe('active_holds');
+  });
+
+  it('routes TmsMobileApiError through mobile mapper (A.1)', () => {
+    const result = mapErrorToUserFacing(
+      new TmsMobileApiError('chassis', {
+        code: 'CHASSIS_REQUIRED',
+        httpStatus: 422,
+        appAction: 'prompt_chassis',
+      }),
+    );
+    expect(result.kind).toBe('validation');
+    expect(result.title).toMatch(/Chassis/i);
   });
 });

@@ -35,26 +35,20 @@ const baseLoad: Pick<LoadDetail, 'id' | 'status' | 'active_holds'> = {
 describe('runDriverStatusChange', () => {
   let queryClient: QueryClient;
   const userId = 'user-1';
-  let contextUpdates: Array<{ id: string; status: string }>;
 
   beforeEach(() => {
     jest.clearAllMocks();
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    contextUpdates = [];
     queryClient.setQueryData(queryKeys.loads.detail(userId, baseLoad.id), {
       ...baseLoad,
       reference_number: 'REF-1',
     } as LoadDetail);
   });
 
-  it('applies optimistic cache, rolls back on failure, and logs telemetry', async () => {
+  it('does not derive or optimistically update status for a legacy queue failure', async () => {
     mockPatch.mockRejectedValueOnce(
       new TmsStatusChangeError('Forbidden', 'FORBIDDEN'),
     );
-
-    const updateLoadStatus = jest.fn((id, status) => {
-      contextUpdates.push({ id, status });
-    });
 
     await expect(
       runDriverStatusChange({
@@ -63,14 +57,8 @@ describe('runDriverStatusChange', () => {
         load: baseLoad,
         targetStatus: 'In Transit',
         accessToken: 'token',
-        updateLoadStatus,
       }),
     ).rejects.toThrow('Forbidden');
-
-    expect(contextUpdates).toEqual([
-      { id: 'load-1', status: 'In Transit' },
-      { id: 'load-1', status: 'Dispatched' },
-    ]);
 
     const detail = queryClient.getQueryData<LoadDetail>(
       queryKeys.loads.detail(userId, baseLoad.id),
@@ -78,20 +66,16 @@ describe('runDriverStatusChange', () => {
     expect(detail?.status).toBe('Dispatched');
 
     expect(driverStatusTelemetry.attempt).toHaveBeenCalledWith(
-      expect.objectContaining({ optimistic: true }),
+      expect.objectContaining({ optimistic: false }),
     );
     expect(driverStatusTelemetry.failure).toHaveBeenCalledWith(
-      expect.objectContaining({ rolledBack: true }),
+      expect.objectContaining({ rolledBack: false }),
       expect.any(TmsStatusChangeError),
     );
   });
 
-  it('skips optimistic update when holds are active', async () => {
+  it('invalidates server state after draining a legacy queue item', async () => {
     mockPatch.mockResolvedValueOnce(undefined);
-
-    const updateLoadStatus = jest.fn((id, status) => {
-      contextUpdates.push({ id, status });
-    });
 
     await runDriverStatusChange({
       queryClient,
@@ -99,10 +83,8 @@ describe('runDriverStatusChange', () => {
       load: { ...baseLoad, active_holds: ['freight_hold'] },
       targetStatus: 'In Transit',
       accessToken: 'token',
-      updateLoadStatus,
     });
 
-    expect(contextUpdates).toEqual([]);
     expect(driverStatusTelemetry.attempt).toHaveBeenCalledWith(
       expect.objectContaining({ optimistic: false }),
     );

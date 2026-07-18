@@ -1,6 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
 
-import { canOptimisticallyUpdateLoadStatus } from '@/lib/loads/optimistic-status';
 import { patchLoadStatus } from '@/lib/tms';
 import {
   buildStatusPatchBody,
@@ -45,26 +44,8 @@ describe('driver status action layer', () => {
     expect(buildStatusPatchHeaders('tok').Authorization).toBe('Bearer tok');
   });
 
-  it('only optimistically updates when canOptimisticallyUpdateLoadStatus is true', () => {
-    expect(
-      canOptimisticallyUpdateLoadStatus({
-        from: 'Dispatched',
-        to: 'In Transit',
-        activeHolds: [],
-      }),
-    ).toBe(true);
-    expect(
-      canOptimisticallyUpdateLoadStatus({
-        from: 'Dispatched',
-        to: 'In Transit',
-        activeHolds: ['freight_hold'],
-      }),
-    ).toBe(false);
-  });
-
-  it('runDriverStatusChange calls patchLoadStatus with load id, status, and token', async () => {
+  it('drains a legacy queued change without deriving status locally', async () => {
     const queryClient = new QueryClient();
-    const updateLoadStatus = jest.fn();
 
     await runDriverStatusChange({
       queryClient,
@@ -72,7 +53,6 @@ describe('driver status action layer', () => {
       load: { id: 'load-99', status: 'Dispatched', active_holds: [] },
       targetStatus: 'In Transit',
       accessToken: 'access-jwt',
-      updateLoadStatus,
     });
 
     expect(mockPatch).toHaveBeenCalledWith({

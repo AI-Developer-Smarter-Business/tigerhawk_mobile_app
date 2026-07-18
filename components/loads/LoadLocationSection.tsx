@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -10,7 +11,7 @@ import {
   formatAccuracyMeters,
   formatCoordinates,
 } from '@/lib/location/format-coordinates';
-import { buildGoogleMapsUrl } from '@/lib/location/maps-url';
+import { openCoordinatesInMaps } from '@/lib/location/maps-url';
 import { canPersistLocationToTms } from '@/lib/location/tms-location-integration';
 
 import type { LoadStatus } from '@/types';
@@ -44,6 +45,22 @@ export function LoadLocationSection({
       driverName,
       driverPhone,
     });
+  const [mapsError, setMapsError] = useState<string | null>(null);
+
+  const openInMaps = useCallback(async () => {
+    if (!position) return;
+
+    setMapsError(null);
+    try {
+      await openCoordinatesInMaps(
+        position.latitude,
+        position.longitude,
+        Linking.openURL,
+      );
+    } catch {
+      setMapsError(strings.location.mapsOpenFailed);
+    }
+  }, [position]);
 
   if (Platform.OS === 'web') {
     return (
@@ -67,6 +84,8 @@ export function LoadLocationSection({
         <ErrorBanner title={error.title} message={error.message} />
       ) : null}
 
+      {mapsError ? <ErrorBanner message={mapsError} /> : null}
+
       {lowPowerHint ? (
         <Text style={styles.tmsHint}>{strings.location.lowPowerHint}</Text>
       ) : null}
@@ -89,9 +108,7 @@ export function LoadLocationSection({
           <Button
             title={strings.location.openInMaps}
             variant="outline"
-            onPress={() =>
-              void Linking.openURL(buildGoogleMapsUrl(position.latitude, position.longitude))
-            }
+            onPress={() => void openInMaps()}
             style={styles.secondaryBtn}
             accessibilityLabel={strings.location.mapsLinkA11y}
           />

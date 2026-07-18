@@ -1,6 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import { BrandHeader } from '@/components/brand/BrandHeader';
 import { Button } from '@/components/ui/Button';
@@ -10,33 +17,26 @@ import { Input } from '@/components/ui/Input';
 import { Screen } from '@/components/ui/Screen';
 import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
-import { getAuthRedirectUri } from '@/lib/auth/redirect-uri';
 import { useAuth } from '@/hooks/useAuth';
 
 const tms = PP2Theme.colors.tms;
 
 export default function LoginScreen() {
   const { authError } = useLocalSearchParams<{ authError?: string }>();
-  const {
-    signInWithPassword,
-    signInWithMagicLink,
-    isSupabaseAuthenticated,
-    initError,
-  } = useAuth();
-  const [email, setEmail] = useState('driver_test@test.com');
-  const [password, setPassword] = useState<string>('');
+  const { signInWithUsername, isSupabaseAuthenticated, initError } = useAuth();
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(
     typeof authError === 'string' ? authError : null,
   );
-  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handlePasswordLogin = async () => {
+  const handleSignIn = async () => {
+    if (loading) return;
     setLoading(true);
     setError(null);
-    setInfo(null);
 
-    const result = await signInWithPassword(email, password);
+    const result = await signInWithUsername(identifier, password);
     setLoading(false);
 
     if (result.ok) {
@@ -47,84 +47,78 @@ export default function LoginScreen() {
     setError(result.error ?? strings.auth.signInFailed);
   };
 
-  const handleMagicLink = async () => {
-    setLoading(true);
-    setError(null);
-    setInfo(null);
-
-    const result = await signInWithMagicLink(email);
-    setLoading(false);
-
-    if (!result.ok) {
-      setError(result.error ?? strings.auth.signInFailed);
-      return;
-    }
-
-    setInfo(strings.auth.magicLinkSent);
-  };
-
   return (
-    <Screen>
+    <Screen style={styles.screen}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}>
-        <BrandHeader variant="login" style={styles.header} />
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+          showsVerticalScrollIndicator={false}>
+          <BrandHeader variant="login" style={styles.header} />
 
-        <Card title={strings.auth.signIn} elevated>
-          <View style={styles.sessionPill}>
-            <Text style={styles.sessionHint}>
-              {strings.auth.driverSubtitle} ·{' '}
-              {initError
-                ? 'error'
-                : isSupabaseAuthenticated
-                  ? strings.auth.sessionActive
-                  : strings.auth.sessionReady}
-            </Text>
-          </View>
-          {initError ? <ErrorBanner message={initError} /> : null}
-          {error ? <ErrorBanner message={error} /> : null}
-          {info ? <Text style={styles.info}>{info}</Text> : null}
-          <Input
-            label={strings.auth.email}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-          />
-          <Input
-            label={strings.auth.password}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="password"
-          />
-          <Button
-            title={strings.auth.signInButton}
-            variant="accent"
-            onPress={handlePasswordLogin}
-            loading={loading}
-          />
-          <Button
-            title={strings.auth.sendMagicLink}
-            variant="outlineAccent"
-            onPress={handleMagicLink}
-            loading={loading}
-            style={styles.mt}
-          />
-          {__DEV__ ? (
-            <Text style={styles.redirect} numberOfLines={2}>
-              Redirect: {getAuthRedirectUri()}
-            </Text>
-          ) : null}
-        </Card>
+          <Card title={strings.auth.signIn} elevated>
+            <View style={styles.sessionPill}>
+              <Text style={styles.sessionHint}>
+                {strings.auth.driverSubtitle} ·{' '}
+                {initError
+                  ? 'error'
+                  : isSupabaseAuthenticated
+                    ? strings.auth.sessionActive
+                    : strings.auth.sessionReady}
+              </Text>
+            </View>
+            {initError ? <ErrorBanner message={initError} /> : null}
+            {error ? <ErrorBanner message={error} /> : null}
+            <Input
+              label={strings.auth.usernameOrEmail}
+              value={identifier}
+              onChangeText={setIdentifier}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="username"
+              textContentType="username"
+              keyboardType="email-address"
+              accessibilityLabel={strings.auth.usernameOrEmail}
+            />
+            <Input
+              label={strings.auth.password}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete="password"
+              textContentType="password"
+              returnKeyType="done"
+              onSubmitEditing={handleSignIn}
+              accessibilityLabel={strings.auth.password}
+            />
+            <Button
+              title={strings.auth.signInButton}
+              variant="accent"
+              onPress={handleSignIn}
+              loading={loading}
+              accessibilityLabel={strings.auth.signInButton}
+            />
+            <Text style={styles.hint}>{strings.auth.usernameOrEmailHint}</Text>
+            <Text style={styles.hint}>{strings.auth.contactDispatchPassword}</Text>
+          </Card>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { padding: 0 },
   flex: { flex: 1 },
+  scrollContent: {
+    flexGrow: 1,
+    padding: PP2Theme.spacing.md,
+    paddingBottom: PP2Theme.spacing.xl,
+  },
   header: {
     marginBottom: PP2Theme.spacing.lg,
     marginTop: PP2Theme.spacing.lg,
@@ -144,16 +138,11 @@ const styles = StyleSheet.create({
     color: tms.navActive,
     fontWeight: '600',
   },
-  redirect: {
+  hint: {
     marginTop: PP2Theme.spacing.sm,
-    fontSize: 10,
+    fontSize: PP2Theme.typography.sizes.caption,
     color: PP2Theme.colors.textMuted,
     textAlign: 'center',
+    lineHeight: 18,
   },
-  info: {
-    fontSize: PP2Theme.typography.sizes.body,
-    color: PP2Theme.colors.success,
-    marginBottom: PP2Theme.spacing.sm,
-  },
-  mt: { marginTop: PP2Theme.spacing.sm },
 });
