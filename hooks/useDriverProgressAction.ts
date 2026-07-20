@@ -12,6 +12,7 @@ import {
   mapDriverProgressError,
   type DriverProgressError,
 } from '@/lib/loads/driver-progress-error';
+import { flushPodSignaturesForLoad } from '@/lib/offline/flush-pod-signatures';
 import {
   invalidateDriverLoads,
   invalidateLoadDetail,
@@ -55,6 +56,19 @@ export function useDriverProgressAction(params: {
   const mutation = useMutation({
     mutationFn: async (input: DriverProgressActionInput) => {
       if (!params.loadId) throw new Error('Load id is required.');
+
+      // G.5: flush queued legal POD stamps before leave-delivery progress.
+      if (
+        (input.action === 'enroute' || input.action === 'arrived') &&
+        assignedDriverId
+      ) {
+        await flushPodSignaturesForLoad({
+          loadId: params.loadId,
+          userId: assignedDriverId,
+          accessToken: session?.access_token,
+        });
+      }
+
       const result = await mutateMobileDriverProgress({
         action: input.action,
         loadId: params.loadId,
@@ -112,9 +126,7 @@ export function useDriverProgressAction(params: {
   const clearSuccess = useCallback(() => setSuccessMessage(null), []);
 
   return {
-    pendingAction: mutation.isPending
-      ? mutation.variables.action
-      : null,
+    pendingAction: mutation.isPending ? mutation.variables.action : null,
     error,
     successMessage,
     runAction,

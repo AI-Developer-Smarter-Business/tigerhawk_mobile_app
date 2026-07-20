@@ -25,11 +25,19 @@ function mapTmsRecord(record: LoadDocumentRecord): LoadDocument {
   };
 }
 
-/** WT.28 — POD must hit TMS so open delivery_wait auto-closes. */
+/**
+ * TMS-required uploads:
+ * - POD (legacy) — WT.28 wait auto-stop
+ * - TIR Out / TIR In — Complete `missing[]` looks up these exact types (F.2)
+ */
 export function shouldUploadDriverDocumentViaTms(
   documentType: DriverUploadDocumentType,
 ): boolean {
-  return documentType === 'POD';
+  return (
+    documentType === 'POD' ||
+    documentType === 'TIR Out' ||
+    documentType === 'TIR In'
+  );
 }
 
 async function uploadDriverDocumentViaTms(
@@ -81,7 +89,7 @@ async function uploadDriverDocumentViaSupabaseWithTmsFallback(
 }
 
 /**
- * Driver document upload — POD always via TMS (WT.28); Driver/Photo via Supabase with TMS fallback.
+ * Driver document upload — TIR/POD via TMS; Driver/Photo via Supabase with TMS fallback.
  */
 export async function uploadDriverLoadDocument(
   params: UploadDriverLoadDocumentParams,

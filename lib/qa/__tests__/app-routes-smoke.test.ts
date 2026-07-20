@@ -8,6 +8,7 @@ const REQUIRED_ROUTES = [
   'app/(auth)/login.tsx',
   'app/(auth)/_layout.tsx',
   'app/(drawer)/loads.tsx',
+  'app/(drawer)/clock.tsx',
   'app/(drawer)/history.tsx',
   'app/(drawer)/account.tsx',
   'app/(drawer)/_layout.tsx',
@@ -29,6 +30,7 @@ describe('app routes smoke (5.7)', () => {
     expect(source).toContain('Redirect');
     expect(source).toContain('loads');
     expect(source).toContain('history');
+    expect(source).toContain('clock');
     expect(source).toContain('account');
   });
 
@@ -126,6 +128,56 @@ describe('app routes smoke (5.7)', () => {
     );
     expect(routesSource).toContain('MOBILE_DRIVER_LOAD_HISTORY_PATH');
     expect(routesSource).toContain('/api/mobile/driver/loads/history');
+  });
+
+  it('wires Clock screen to /api/mobile/driver/clock (I.1–I.4)', () => {
+    const routes = fs.readFileSync(
+      path.join(ROOT, 'lib', 'tms', 'mobile-api-routes.ts'),
+      'utf8',
+    );
+    expect(routes).toContain('MOBILE_DRIVER_CLOCK_PATH');
+    expect(routes).toContain('/api/mobile/driver/clock');
+
+    const screen = fs.readFileSync(
+      path.join(ROOT, 'app', '(drawer)', 'clock.tsx'),
+      'utf8',
+    );
+    expect(screen).toContain('useDriverClockQuery');
+    expect(screen).toContain('useDriverClockAction');
+    expect(screen).toContain('useFocusEffect');
+    expect(screen).toContain("runEvent('in')");
+    expect(screen).toContain("runEvent('out')");
+    expect(screen).toContain('formatCentralLongDate');
+    expect(screen).not.toContain('strings.waitTime.checkIn');
+    expect(screen).not.toContain('strings.waitTime.checkOut');
+
+    const nav = fs.readFileSync(
+      path.join(ROOT, 'constants', 'navigation.ts'),
+      'utf8',
+    );
+    expect(nav).toContain("'clock'");
+    expect(nav).toContain('clock-o');
+
+    const stringsSource = fs.readFileSync(
+      path.join(ROOT, 'constants', 'strings.ts'),
+      'utf8',
+    );
+    expect(stringsSource).toContain(
+      "You're off duty. Your loads stay assigned to you.",
+    );
+    expect(stringsSource).toContain("America/Chicago");
+
+    const central = fs.readFileSync(
+      path.join(ROOT, 'lib', 'time', 'central.ts'),
+      'utf8',
+    );
+    expect(central).toContain("America/Chicago");
+
+    const mutate = fs.readFileSync(
+      path.join(ROOT, 'lib', 'tms', 'mutate-driver-clock.ts'),
+      'utf8',
+    );
+    expect(mutate).toContain("event: params.event");
   });
 
   it('Upcoming move offers call accept/reject by move id (C.1)', () => {
@@ -366,5 +418,109 @@ describe('app routes smoke (5.7)', () => {
     );
     expect(detailSource).toContain('strings.loadDetail.readOnlyHint');
     expect(detailSource).not.toContain('<Input');
+  });
+
+  it('uses canonical documents + TIR routes and PortPro rows (F.1–F.5)', () => {
+    const routes = fs.readFileSync(
+      path.join(ROOT, 'lib', 'tms', 'mobile-api-routes.ts'),
+      'utf8',
+    );
+    expect(routes).toContain('mobileLoadDocumentsPath');
+    expect(routes).toContain('/documents');
+
+    const assertTypes = fs.readFileSync(
+      path.join(ROOT, 'lib', 'tms', 'assert-driver-document-type.ts'),
+      'utf8',
+    );
+    expect(assertTypes).toContain("'TIR Out'");
+    expect(assertTypes).toContain("'TIR In'");
+    expect(assertTypes).toContain('normalizeDriverUploadDocumentType');
+
+    const uploadRouting = fs.readFileSync(
+      path.join(ROOT, 'lib', 'loads', 'upload-driver-load-document.ts'),
+      'utf8',
+    );
+    expect(uploadRouting).toContain("documentType === 'TIR Out'");
+    expect(uploadRouting).toContain("documentType === 'TIR In'");
+
+    const portPro = fs.readFileSync(
+      path.join(ROOT, 'components', 'loads', 'DocumentsPortProSection.tsx'),
+      'utf8',
+    );
+    expect(portPro).toContain('TIR Out');
+    expect(portPro).toContain('TIR In');
+    expect(portPro).toContain('PodLegalSection');
+    expect(portPro).toContain('documents-row-tir-out');
+    expect(portPro).toContain('documents-row-pod-sign');
+    expect(portPro).toContain('documents-row-tir-in');
+
+    const evidenceOptions = fs.readFileSync(
+      path.join(ROOT, 'lib', 'tms', 'driver-document-types.ts'),
+      'utf8',
+    );
+    expect(evidenceOptions).not.toContain("value: 'POD'");
+    expect(evidenceOptions).toContain("value: 'Driver'");
+    expect(evidenceOptions).toContain("value: 'Photo'");
+
+    const progressUi = fs.readFileSync(
+      path.join(ROOT, 'components', 'loads', 'DriverProgressActions.tsx'),
+      'utf8',
+    );
+    expect(progressUi).toContain('formatMissingRequirements');
+    expect(progressUi).toContain('onOpenTirDocuments');
+    expect(progressUi).toContain('tir_out_photo');
+    expect(progressUi).toContain('driver-progress-complete-load');
+    expect(progressUi).toContain('checklistTitle');
+  });
+
+  it('uses canonical POD stamp routes and not documents for legal signature (G.1–G.6)', () => {
+    const routes = fs.readFileSync(
+      path.join(ROOT, 'lib', 'tms', 'mobile-api-routes.ts'),
+      'utf8',
+    );
+    expect(routes).toContain('mobileLoadPodPath');
+    expect(routes).toContain('mobileLoadPodSignaturePath');
+
+    const mutatePod = fs.readFileSync(
+      path.join(ROOT, 'lib', 'tms', 'mutate-pod-signature.ts'),
+      'utf8',
+    );
+    expect(mutatePod).toContain('client_signature_id');
+    expect(mutatePod).toContain('signer_name');
+    expect(mutatePod).toContain('signed_at');
+    expect(mutatePod).toContain('STAMP_PENDING');
+
+    const fetchPod = fs.readFileSync(
+      path.join(ROOT, 'lib', 'tms', 'fetch-load-pod.ts'),
+      'utf8',
+    );
+    expect(fetchPod).toContain('mobileLoadPodPath');
+
+    const progressHook = fs.readFileSync(
+      path.join(ROOT, 'hooks', 'useDriverProgressAction.ts'),
+      'utf8',
+    );
+    expect(progressHook).toContain('flushPodSignaturesForLoad');
+
+    const progressUi = fs.readFileSync(
+      path.join(ROOT, 'components', 'loads', 'DriverProgressActions.tsx'),
+      'utf8',
+    );
+    expect(progressUi).toContain("error?.appAction === 'open_signature'");
+    expect(progressUi).toContain('onOpenSignature');
+
+    const uploadUi = fs.readFileSync(
+      path.join(ROOT, 'components', 'loads', 'PodUploadSection.tsx'),
+      'utf8',
+    );
+    expect(uploadUi).not.toContain('SignatureCaptureModal');
+    expect(uploadUi).toContain("documentType === 'POD' ? 'Driver'");
+
+    const legalUi = fs.readFileSync(
+      path.join(ROOT, 'components', 'loads', 'PodLegalSection.tsx'),
+      'utf8',
+    );
+    expect(legalUi).toContain('SignatureCaptureModal');
+    expect(legalUi).toContain('podNoSkipHint');
   });
 });

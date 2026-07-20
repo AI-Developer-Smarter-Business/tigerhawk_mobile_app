@@ -45,5 +45,6 @@ describe('queryKeys', () => {
       loadId,
     ]);
     expect(queryKeys.loads.all(userId)).toEqual(['pp2', 'loads', userId]);
+    expect(queryKeys.clock(userId)).toEqual(['pp2', 'driver', 'clock', userId]);
   });
 });

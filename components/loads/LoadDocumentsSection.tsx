@@ -28,10 +28,9 @@ type LoadDocumentsSectionProps = {
     file: TmsUploadFileDescriptor,
     documentType?: DriverUploadDocumentType,
   ) => Promise<void>;
-  /** Optional load reference for signature file names (SIG.2). */
-  loadReference?: string | null;
 };
 
+/** Document list + optional Driver evidence photos (F.5). TIR/POD sign live above. */
 export function LoadDocumentsSection({
   documents,
   loading,
@@ -39,7 +38,6 @@ export function LoadDocumentsSection({
   onRetry,
   onRefreshDocuments,
   onUploadDocument,
-  loadReference,
 }: LoadDocumentsSectionProps) {
   const [openingId, setOpeningId] = useState<string | null>(null);
 
@@ -63,7 +61,7 @@ export function LoadDocumentsSection({
   );
 
   return (
-    <View accessibilityLabel={strings.loadDetail.pod}>
+    <View accessibilityLabel={strings.loadDetail.documentsListA11y}>
       <Text style={styles.note}>{strings.loadDetail.documentsNote}</Text>
 
       {error ? (
@@ -96,7 +94,11 @@ export function LoadDocumentsSection({
               <Text style={styles.docName} numberOfLines={2}>
                 {doc.filename}
               </Text>
-              <Text style={[styles.docSub, driverDoc ? styles.docSubDriver : null]}>
+              <Text
+                style={[
+                  styles.docSub,
+                  driverDoc ? styles.docSubDriver : null,
+                ]}>
                 {doc.document_type}
                 {driverDoc ? ` · ${strings.loadDetail.driverDocBadge}` : ''}
                 {' · '}
@@ -120,9 +122,13 @@ export function LoadDocumentsSection({
       })}
 
       <View style={styles.evidenceBlock}>
-        <Text style={styles.evidenceTitle}>{strings.loadDetail.driverEvidenceTitle}</Text>
-        <Text style={styles.evidenceHint}>{strings.loadDetail.driverEvidenceHint}</Text>
-        <PodUploadSection onUpload={onUploadDocument} loadReference={loadReference} />
+        <Text style={styles.evidenceTitle}>
+          {strings.loadDetail.driverEvidenceTitle}
+        </Text>
+        <Text style={styles.evidenceHint}>
+          {strings.loadDetail.driverEvidenceHint}
+        </Text>
+        <PodUploadSection onUpload={onUploadDocument} />
       </View>
     </View>
   );

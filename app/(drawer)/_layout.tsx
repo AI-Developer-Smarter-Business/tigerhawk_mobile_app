@@ -46,6 +46,12 @@ export default function DrawerLayout() {
         }}
       />
       <Drawer.Screen
+        name="clock"
+        options={{
+          title: strings.clock.title,
+        }}
+      />
+      <Drawer.Screen
         name="history"
         options={{
           title: strings.loadHistory.title,

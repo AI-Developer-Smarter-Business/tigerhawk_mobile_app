@@ -78,7 +78,8 @@ export const MOBILE_API_CODE_CONTRACT: readonly MobileApiCodeContract[] = [
   },
   {
     code: 'REQUIREMENTS_NOT_MET',
-    typicalHttp: [409],
+    /** TMS `completeLoad` returns 422; some contract docs still say 409 — accept both. */
+    typicalHttp: [422, 409],
     appAction: 'show_checklist',
     meaning: 'Complete blocked; missing[] lists gaps',
   },

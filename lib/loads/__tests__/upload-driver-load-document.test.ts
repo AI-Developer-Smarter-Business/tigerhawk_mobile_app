@@ -37,8 +37,10 @@ const tmsRecord = {
 };
 
 describe('shouldUploadDriverDocumentViaTms', () => {
-  it('returns true only for POD', () => {
+  it('returns true for POD and TIR types required by TMS Complete', () => {
     expect(shouldUploadDriverDocumentViaTms('POD')).toBe(true);
+    expect(shouldUploadDriverDocumentViaTms('TIR Out')).toBe(true);
+    expect(shouldUploadDriverDocumentViaTms('TIR In')).toBe(true);
     expect(shouldUploadDriverDocumentViaTms('Driver')).toBe(false);
     expect(shouldUploadDriverDocumentViaTms('Photo')).toBe(false);
   });
@@ -54,6 +56,23 @@ describe('uploadDriverLoadDocument', () => {
       id: 'doc-sb',
       document_type: 'Driver',
     });
+  });
+
+  it('routes TIR Out through TMS so Complete can clear tir_out_photo', async () => {
+    await uploadDriverLoadDocument({
+      loadId: 'load-1',
+      file: sampleFile,
+      userId: 'user-1',
+      documentType: 'TIR Out',
+    });
+
+    expect(mockTmsUpload).toHaveBeenCalledWith({
+      loadId: 'load-1',
+      file: sampleFile,
+      documentType: 'TIR Out',
+      accessToken: 'jwt-token',
+    });
+    expect(mockSupabaseUpload).not.toHaveBeenCalled();
   });
 
   it('routes POD through TMS for WT.28 auto-stop', async () => {
