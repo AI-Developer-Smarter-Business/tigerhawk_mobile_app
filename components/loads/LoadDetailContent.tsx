@@ -1,10 +1,14 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
-import { LiveLocationTrackingBanner } from '@/components/loads/LiveLocationTrackingBanner';
+import {
+  DocumentsPortProSection,
+  type TirForceUpload,
+} from '@/components/loads/DocumentsPortProSection';
 import { LoadDetailHero } from '@/components/loads/LoadDetailHero';
 import { LoadDocumentsSection } from '@/components/loads/LoadDocumentsSection';
 import { LoadLocationSection } from '@/components/loads/LoadLocationSection';
 import { LoadDetailMeta, LoadDetailRow } from '@/components/loads/LoadDetailRow';
+import { LiveLocationTrackingBanner } from '@/components/loads/LiveLocationTrackingBanner';
 import { Card } from '@/components/ui/Card';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { strings } from '@/constants/strings';
@@ -22,6 +26,7 @@ import {
   hasShipmentInfo,
   hasTimeline,
 } from '@/lib/loads/load-detail-helpers';
+import type { LoadPodPreview } from '@/lib/loads/pod-preview';
 import type { DriverUploadDocumentType } from '@/lib/tms/assert-driver-document-type';
 import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
 import type { LoadDetail } from '@/types';
@@ -42,6 +47,21 @@ type LoadDetailContentProps = {
     file: TmsUploadFileDescriptor,
     documentType?: DriverUploadDocumentType,
   ) => Promise<void>;
+  podPreview: LoadPodPreview | null;
+  podLoading: boolean;
+  podError: string | null;
+  onPodRetry: () => void;
+  podSubmitting: boolean;
+  podSubmitError: string | null;
+  podSuccessMessage: string | null;
+  onSubmitPodSignature: (input: {
+    signaturePng: string;
+    signerName: string;
+  }) => Promise<boolean>;
+  forcePodSign?: boolean;
+  onForcePodSignHandled?: () => void;
+  forceTirUpload?: TirForceUpload;
+  onForceTirUploadHandled?: () => void;
 };
 
 export function LoadDetailContent({
@@ -55,6 +75,18 @@ export function LoadDetailContent({
   onDocumentsRetry,
   onRefreshDocuments,
   onUploadDocument,
+  podPreview,
+  podLoading,
+  podError,
+  onPodRetry,
+  podSubmitting,
+  podSubmitError,
+  podSuccessMessage,
+  onSubmitPodSignature,
+  forcePodSign = false,
+  onForcePodSignHandled,
+  forceTirUpload = null,
+  onForceTirUploadHandled,
 }: LoadDetailContentProps) {
   const flagRows: { label: string; value: string }[] = [];
   const hazmatValue = formatLoadFlagValue(load.is_hazmat);
@@ -244,7 +276,23 @@ export function LoadDetailContent({
         <Text style={styles.muted}>{strings.loadDetail.noMessages}</Text>
       </Card>
 
-      <Card title={strings.loadDetail.pod} elevated>
+      <Card title={strings.loadDetail.documents} elevated>
+        <DocumentsPortProSection
+          documents={documents}
+          onUploadDocument={onUploadDocument}
+          podPreview={podPreview}
+          podLoading={podLoading}
+          podError={podError}
+          onPodRetry={onPodRetry}
+          podSubmitting={podSubmitting}
+          podSubmitError={podSubmitError}
+          podSuccessMessage={podSuccessMessage}
+          onSubmitPodSignature={onSubmitPodSignature}
+          forcePodSign={forcePodSign}
+          onForcePodSignHandled={onForcePodSignHandled}
+          forceTirUpload={forceTirUpload}
+          onForceTirUploadHandled={onForceTirUploadHandled}
+        />
         <LoadDocumentsSection
           documents={documents}
           loading={documentsLoading}
@@ -252,7 +300,6 @@ export function LoadDetailContent({
           onRetry={onDocumentsRetry}
           onRefreshDocuments={onRefreshDocuments}
           onUploadDocument={onUploadDocument}
-          loadReference={load.reference_number}
         />
       </Card>
     </>

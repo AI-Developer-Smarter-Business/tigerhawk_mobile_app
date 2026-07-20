@@ -10,14 +10,18 @@ import { enqueueDocumentUpload } from '@/lib/offline/enqueue';
 import { OfflineQueuedError } from '@/lib/offline/offline-queued-error';
 import { strings } from '@/constants/strings';
 import { invalidateLoadDocuments } from '@/lib/query/invalidate-loads';
-import type { DriverUploadDocumentType } from '@/lib/tms/assert-driver-document-type';
+import {
+  normalizeDriverUploadDocumentType,
+  type DriverUploadDocumentType,
+} from '@/lib/tms/assert-driver-document-type';
 import { TmsDocumentUploadError } from '@/lib/tms/document-errors';
 import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
 import type { LoadDetail } from '@/types';
 
 /**
  * Uploads a driver document for the current load.
- * POD → TMS only (WT.28 auto-stop); Driver/Photo → Supabase with TMS fallback.
+ * TIR Out/In + legacy POD → TMS; Driver/Photo → Supabase with TMS fallback.
+ * F.5: POD photo labels normalize to Driver before upload.
  */
 export function useLoadDocumentUpload(load: LoadDetail | null) {
   const queryClient = useQueryClient();
@@ -27,12 +31,20 @@ export function useLoadDocumentUpload(load: LoadDetail | null) {
   const userId = user?.id ?? '';
 
   return useCallback(
-    async (file: TmsUploadFileDescriptor, documentType: DriverUploadDocumentType = 'Driver') => {
+    async (
+      file: TmsUploadFileDescriptor,
+      documentType: DriverUploadDocumentType = 'Driver',
+    ) => {
       if (!load?.id) return;
+
+      const normalizedType = normalizeDriverUploadDocumentType(documentType);
 
       try {
         if (!userId) {
-          throw new TmsDocumentUploadError('Session expired. Sign in again.', 'UNAUTHORIZED');
+          throw new TmsDocumentUploadError(
+            'Session expired. Sign in again.',
+            'UNAUTHORIZED',
+          );
         }
 
         validateDriverUploadFile(file);
@@ -41,7 +53,7 @@ export function useLoadDocumentUpload(load: LoadDetail | null) {
           await enqueueDocumentUpload({
             loadId: load.id,
             userId,
-            documentType,
+            documentType: normalizedType,
             file,
           });
           await refreshPendingCount();
@@ -52,7 +64,7 @@ export function useLoadDocumentUpload(load: LoadDetail | null) {
           loadId: load.id,
           file,
           userId,
-          documentType,
+          documentType: normalizedType,
         });
 
         await invalidateLoadDocuments(queryClient, userId, load.id);

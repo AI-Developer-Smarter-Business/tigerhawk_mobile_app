@@ -65,6 +65,45 @@ export async function enqueueDocumentUpload(params: {
   return item;
 }
 
+export async function enqueuePodSignature(params: {
+  loadId: string;
+  userId: string;
+  clientSignatureId: string;
+  signerName: string;
+  signedAt: string;
+  signaturePng: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  moveId?: string | null;
+}): Promise<OfflineQueueItem> {
+  const item: OfflineQueueItem = {
+    id: createQueueItemId(),
+    type: 'pod_signature',
+    loadId: params.loadId,
+    userId: params.userId,
+    clientSignatureId: params.clientSignatureId.trim(),
+    signerName: params.signerName.trim(),
+    signedAt: params.signedAt.trim(),
+    signaturePng: params.signaturePng,
+    latitude:
+      typeof params.latitude === 'number' && Number.isFinite(params.latitude)
+        ? params.latitude
+        : null,
+    longitude:
+      typeof params.longitude === 'number' && Number.isFinite(params.longitude)
+        ? params.longitude
+        : null,
+    moveId: params.moveId?.trim() || null,
+    createdAt: new Date().toISOString(),
+    attempts: 0,
+  };
+
+  const queue = await readOfflineQueue();
+  queue.push(item);
+  await writeOfflineQueue(queue);
+  return item;
+}
+
 export async function getOfflineQueueLength(): Promise<number> {
   const queue = await readOfflineQueue();
   return queue.length;

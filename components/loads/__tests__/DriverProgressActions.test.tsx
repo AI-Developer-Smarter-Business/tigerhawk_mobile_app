@@ -27,7 +27,7 @@ describe('DriverProgressActions (D.1)', () => {
     ['not_started', 'start_move', 'Start Move'],
     ['enroute', 'arrived', 'Arrived'],
     ['arrived', 'enroute', 'Enroute'],
-    ['load_complete', 'complete', 'Complete'],
+    ['load_complete', 'complete', 'Complete Load'],
   ] as const)(
     'confirms %s through semantic action %s',
     (phase, expectedAction, buttonLabel) => {
@@ -89,7 +89,7 @@ describe('DriverProgressActions (D.1)', () => {
     expect(screen.queryByText(strings.driverProgress.complete)).toBeNull();
   });
 
-  it('renders the exact server requirements checklist', () => {
+  it('renders the exact server requirements checklist (H.2)', () => {
     render(
       <DriverProgressActions
         progress={progress('load_complete')}
@@ -108,9 +108,33 @@ describe('DriverProgressActions (D.1)', () => {
       />,
     );
 
-    expect(screen.getByText('Requirements missing')).toBeTruthy();
-    expect(screen.getByText('· seal_number')).toBeTruthy();
-    expect(screen.getByText('· tir_in_photo')).toBeTruthy();
+    expect(screen.getByText(strings.driverProgress.checklistTitle)).toBeTruthy();
+    expect(screen.getByText(strings.driverProgress.checklistExactHint)).toBeTruthy();
+    expect(
+      screen.getByText(`· ${strings.driverProgress.missingSeal} (seal_number)`),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(`· ${strings.driverProgress.missingTirIn} (tir_in_photo)`),
+    ).toBeTruthy();
+    expect(screen.queryByText('· chassis_number')).toBeNull();
+  });
+
+  it('offers Complete Load that posts action complete (H.1)', () => {
+    const onAction = jest.fn();
+    render(
+      <DriverProgressActions
+        progress={progress('load_complete')}
+        loadCompleted={false}
+        pendingAction={null}
+        error={null}
+        onAction={onAction}
+        onDismissError={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByTestId('driver-progress-complete-load'));
+    fireEvent.press(screen.getByTestId('confirm-driver-progress-action'));
+    expect(onAction).toHaveBeenCalledWith({ action: 'complete' });
   });
 
   it('requires and sends max-50 free-text chassis when arriving at pickup', () => {

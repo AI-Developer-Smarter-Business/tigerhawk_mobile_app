@@ -29,7 +29,27 @@ export type OfflineDocumentUploadItem = {
   attempts: number;
 };
 
-export type OfflineQueueItem = OfflineStatusChangeItem | OfflineDocumentUploadItem;
+/** Legal POD stamp queued offline (TASKS G.5) — same client_signature_id on retry. */
+export type OfflinePodSignatureItem = {
+  id: string;
+  type: 'pod_signature';
+  loadId: string;
+  userId: string;
+  clientSignatureId: string;
+  signerName: string;
+  signedAt: string;
+  signaturePng: string;
+  latitude: number | null;
+  longitude: number | null;
+  moveId: string | null;
+  createdAt: string;
+  attempts: number;
+};
+
+export type OfflineQueueItem =
+  | OfflineStatusChangeItem
+  | OfflineDocumentUploadItem
+  | OfflinePodSignatureItem;
 
 export const OFFLINE_QUEUE_MAX_ATTEMPTS = 5;
 

@@ -1,28 +1,31 @@
 import type { DriverUploadDocumentType } from './assert-driver-document-type';
 
-/** Driver-selectable types (TMS `DRIVER_UPLOAD_DOCUMENT_TYPES` + DocumentsTab labels). */
+/**
+ * Optional driver evidence chips only (F.5).
+ * Legal POD = Sign on device; TIR Out/In = PortPro document rows (F.1 / F.2).
+ * POD is not selectable — photos labeled POD are remapped to Driver.
+ */
 export type DriverDocumentTypeOption = {
-  value: DriverUploadDocumentType;
-  labelKey: 'documentTypeDriver' | 'documentTypePod' | 'documentTypePhoto';
-  hintKey: 'documentTypeDriverHint' | 'documentTypePodHint' | 'documentTypePhotoHint';
+  value: Extract<DriverUploadDocumentType, 'Driver' | 'Photo'>;
+  labelKey: 'documentTypeDriver' | 'documentTypePhoto';
+  hintKey: 'documentTypeDriverHint' | 'documentTypePhotoHint';
 };
 
-export const DRIVER_DOCUMENT_TYPE_OPTIONS: readonly DriverDocumentTypeOption[] = [
-  {
-    value: 'Driver',
-    labelKey: 'documentTypeDriver',
-    hintKey: 'documentTypeDriverHint',
-  },
-  {
-    value: 'POD',
-    labelKey: 'documentTypePod',
-    hintKey: 'documentTypePodHint',
-  },
-  {
-    value: 'Photo',
-    labelKey: 'documentTypePhoto',
-    hintKey: 'documentTypePhotoHint',
-  },
-] as const;
+export const DRIVER_DOCUMENT_TYPE_OPTIONS: readonly DriverDocumentTypeOption[] =
+  [
+    {
+      value: 'Driver',
+      labelKey: 'documentTypeDriver',
+      hintKey: 'documentTypeDriverHint',
+    },
+    {
+      value: 'Photo',
+      labelKey: 'documentTypePhoto',
+      hintKey: 'documentTypePhotoHint',
+    },
+  ] as const;
 
 export const DEFAULT_DRIVER_DOCUMENT_TYPE: DriverUploadDocumentType = 'Driver';
+
+export const TIR_OUT_DOCUMENT_TYPE = 'TIR Out' as const;
+export const TIR_IN_DOCUMENT_TYPE = 'TIR In' as const;

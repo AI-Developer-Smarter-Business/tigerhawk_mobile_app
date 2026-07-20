@@ -2,9 +2,9 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 /**
- * Guards task 6.4 upload E2E contract: routes, Driver type, validation, TMS mobile path.
+ * Guards driver upload E2E contract: routes, TIR types, validation, TMS mobile path.
  */
-describe('driver upload E2E contract (6.4)', () => {
+describe('driver upload E2E contract (F.1–F.5 / 6.4)', () => {
   const root = path.join(__dirname, '..', '..', '..');
 
   function readSource(...segments: string[]): string {
@@ -17,25 +17,20 @@ describe('driver upload E2E contract (6.4)', () => {
     expect(screen).toContain('useLoadDocumentsQuery');
     expect(screen).toContain('normalizeLoadIdParam');
     expect(screen).toContain('uploadDocument');
+    expect(screen).toContain('forceTirUpload');
   });
 
-  it('load detail refreshes wait timer after POD upload', () => {
-    const screen = readSource('app', 'load', '[id].tsx');
-    expect(screen).toContain("documentType === 'POD'");
-    expect(screen).toContain('waitTimer.refresh');
-  });
-
-  it('upload hook validates file, routes POD via TMS helper, and queues offline', () => {
+  it('upload hook validates file, normalizes POD→Driver, and queues offline', () => {
     const hook = readSource('hooks', 'useLoadDocumentUpload.ts');
     expect(hook).toContain('enqueueDocumentUpload');
     expect(hook).toContain('validateDriverUploadFile');
-    expect(hook).toContain('DriverUploadDocumentType');
+    expect(hook).toContain('normalizeDriverUploadDocumentType');
     expect(hook).toContain('uploadDriverLoadDocument');
     expect(hook).toContain('invalidateLoadDocuments');
 
     const routing = readSource('lib', 'loads', 'upload-driver-load-document.ts');
     expect(routing).toContain('shouldUploadDriverDocumentViaTms');
-    expect(routing).toContain("documentType === 'POD'");
+    expect(routing).toContain("documentType === 'TIR Out'");
     expect(routing).toContain('uploadLoadDocument');
   });
 
@@ -53,7 +48,18 @@ describe('driver upload E2E contract (6.4)', () => {
     expect(upload).toContain('assertDriverUploadDocumentType');
   });
 
-  it('PodUploadSection prepares, validates on pick, and handles permissions', () => {
+  it('PortPro Documents block mounts TIR rows and Sign on device', () => {
+    const portPro = readSource('components', 'loads', 'DocumentsPortProSection.tsx');
+    expect(portPro).toContain('DocumentPhotoUploader');
+    expect(portPro).toContain('PodLegalSection');
+    expect(portPro).toContain('TIR_OUT_DOCUMENT_TYPE');
+    expect(portPro).toContain('TIR_IN_DOCUMENT_TYPE');
+
+    const detail = readSource('components', 'loads', 'LoadDetailContent.tsx');
+    expect(detail).toContain('DocumentsPortProSection');
+  });
+
+  it('PodUploadSection is driver evidence only (no POD chip / no signature pad)', () => {
     const section = readSource('components', 'loads', 'PodUploadSection.tsx');
     expect(section).toContain('prepareDriverUploadImage');
     expect(section).toContain('validateDriverUploadFile');
@@ -61,11 +67,14 @@ describe('driver upload E2E contract (6.4)', () => {
     expect(section).toContain('DRIVER_DOCUMENT_TYPE_OPTIONS');
     expect(section).toContain('openAppSettings');
     expect(section).toContain('strings.loadDetail.podAddPhoto');
-    expect(section).toContain('strings.loadDetail.podUpload');
+    expect(section).not.toContain('SignatureCaptureModal');
     expect(section).not.toContain('driverUploadTmsRequired');
+
+    const options = readSource('lib', 'tms', 'driver-document-types.ts');
+    expect(options).not.toContain("value: 'POD'");
   });
 
-  it('LoadDocumentsSection always mounts PodUploadSection (no TMS patch gate)', () => {
+  it('LoadDocumentsSection mounts PodUploadSection for optional evidence', () => {
     const section = readSource('components', 'loads', 'LoadDocumentsSection.tsx');
     expect(section).toContain('<PodUploadSection');
     expect(section).not.toContain('driverUploadTmsRequired');

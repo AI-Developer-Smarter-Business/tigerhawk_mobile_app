@@ -3,6 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { runDriverStatusChange } from '@/lib/driver-status';
 import { invalidateLoadDocuments } from '@/lib/query/invalidate-loads';
 import { uploadDriverLoadDocument } from '@/lib/loads/upload-driver-load-document';
+import { mutateMobilePodSignature } from '@/lib/tms/mutate-pod-signature';
 import { resolveSupabaseAccessToken } from '@/lib/tms';
 
 import { deleteQueueFile, readOfflineQueue, writeOfflineQueue } from './queue-storage';
@@ -59,6 +60,33 @@ async function processDocumentItem(
   await deleteQueueFile(file.uri);
 }
 
+async function processPodSignatureItem(
+  item: Extract<OfflineQueueItem, { type: 'pod_signature' }>,
+): Promise<void> {
+  const accessToken = await resolveSupabaseAccessToken();
+  const result = await mutateMobilePodSignature({
+    loadId: item.loadId,
+    clientSignatureId: item.clientSignatureId,
+    signerName: item.signerName,
+    signedAt: item.signedAt,
+    signaturePng: item.signaturePng,
+    latitude: item.latitude,
+    longitude: item.longitude,
+    moveId: item.moveId,
+    accessToken,
+  });
+  if (!result.ok) {
+    throw result.mobileError ?? new Error(result.error);
+  }
+}
+
+function queueProcessOrder(item: OfflineQueueItem): number {
+  // G.5: drain legal POD stamps before other offline work.
+  if (item.type === 'pod_signature') return 0;
+  if (item.type === 'document_upload') return 1;
+  return 2;
+}
+
 export async function processOfflineQueue(
   params: ProcessOfflineQueueParams,
 ): Promise<ProcessOfflineQueueResult> {
@@ -67,11 +95,15 @@ export async function processOfflineQueue(
     return { processed: 0, failed: 0, remaining: 0 };
   }
 
+  const ordered = [...queue].sort(
+    (a, b) => queueProcessOrder(a) - queueProcessOrder(b),
+  );
+
   let processed = 0;
   let failed = 0;
   const remaining: OfflineQueueItem[] = [];
 
-  for (const item of queue) {
+  for (const item of ordered) {
     if (item.userId !== params.userId) {
       remaining.push(item);
       continue;
@@ -80,6 +112,8 @@ export async function processOfflineQueue(
     try {
       if (item.type === 'status_change') {
         await processStatusItem(item, params);
+      } else if (item.type === 'pod_signature') {
+        await processPodSignatureItem(item);
       } else {
         await processDocumentItem(item, params);
       }

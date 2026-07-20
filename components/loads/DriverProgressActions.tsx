@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { AppActionSheet } from '@/components/ui/AppActionSheet';
@@ -14,6 +14,10 @@ import {
   type DriverProgressActionInput,
 } from '@/lib/loads/driver-progress';
 import type { DriverProgressError } from '@/lib/loads/driver-progress-error';
+import {
+  formatMissingRequirements,
+  hasTirPhotoRequirement,
+} from '@/lib/loads/missing-requirement-labels';
 
 type DriverProgressActionsProps = {
   progress: DriverLoadProgress;
@@ -23,6 +27,10 @@ type DriverProgressActionsProps = {
   locked?: boolean;
   onAction: (input: DriverProgressActionInput) => void;
   onDismissError: () => void;
+  /** G.4 — open legal POD signature when TMS returns POD_SIGNATURE_REQUIRED. */
+  onOpenSignature?: () => void;
+  /** F.3 — jump to TIR photo capture when Complete missing includes tir_*_photo. */
+  onOpenTirDocuments?: (which: 'TIR Out' | 'TIR In') => void;
 };
 
 function actionLabel(action: DriverProgressAction): string {
@@ -56,6 +64,8 @@ export function DriverProgressActions({
   locked = false,
   onAction,
   onDismissError,
+  onOpenSignature,
+  onOpenTirDocuments,
 }: DriverProgressActionsProps) {
   const [confirmAction, setConfirmAction] =
     useState<DriverProgressAction | null>(null);
@@ -63,6 +73,8 @@ export function DriverProgressActions({
   const [containerNumber, setContainerNumber] = useState('');
   const [sealNumber, setSealNumber] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  /** Avoid re-opening the pad on every render while POD_SIGNATURE_REQUIRED stays set. */
+  const openedSignatureForErrorRef = useRef(false);
   const nextAction = useMemo(
     () => getNextDriverProgressAction(progress),
     [progress],
@@ -70,6 +82,10 @@ export function DriverProgressActions({
   const nextLabel = actionLabel(nextAction);
   const actionsDisabled = locked || pendingAction !== null;
   const missing = useMemo(() => new Set(error?.details ?? []), [error?.details]);
+  const checklistDetails = useMemo(
+    () => formatMissingRequirements(error?.details),
+    [error?.details],
+  );
   const arrivedAtPickup =
     confirmAction === 'arrived' &&
     PICKUP_EVENTS.has(progress.nextStop?.event_type ?? '');
@@ -84,22 +100,47 @@ export function DriverProgressActions({
   const hasEquipmentRequirements = [...missing].some((item) =>
     EQUIPMENT_REQUIREMENTS.has(item),
   );
+  const hasTirRequirements = hasTirPhotoRequirement(missing);
 
   useEffect(() => {
     if (pendingAction) return;
     if (error?.appAction === 'prompt_chassis') {
+      openedSignatureForErrorRef.current = false;
       setConfirmAction('arrived');
     } else if (
       error?.appAction === 'show_checklist' &&
       hasEquipmentRequirements
     ) {
+      openedSignatureForErrorRef.current = false;
       setConfirmAction('complete');
+    } else if (error?.appAction === 'open_signature') {
+      if (!openedSignatureForErrorRef.current) {
+        openedSignatureForErrorRef.current = true;
+        onOpenSignature?.();
+      }
+    } else {
+      openedSignatureForErrorRef.current = false;
     }
-  }, [error?.appAction, hasEquipmentRequirements, pendingAction]);
+  }, [
+    error?.appAction,
+    hasEquipmentRequirements,
+    onOpenSignature,
+    pendingAction,
+  ]);
 
   const openConfirmation = (action: DriverProgressAction) => {
     setFieldErrors({});
     setConfirmAction(action);
+  };
+
+  const openTirFromChecklist = () => {
+    if (missing.has('tir_out_photo')) {
+      onOpenTirDocuments?.('TIR Out');
+      return;
+    }
+    if (missing.has('tir_in_photo')) {
+      onOpenTirDocuments?.('TIR In');
+    }
   };
 
   const submitAction = () => {
@@ -138,10 +179,20 @@ export function DriverProgressActions({
             label: strings.driverProgress.provideMissingInfo,
             onPress: () => openConfirmation('complete'),
           }
-        : {
-            label: strings.moveOffer.dismissError,
-            onPress: onDismissError,
-          };
+        : error?.appAction === 'show_checklist' && hasTirRequirements
+          ? {
+              label: strings.driverProgress.addRequiredDocuments,
+              onPress: openTirFromChecklist,
+            }
+          : error?.appAction === 'open_signature'
+            ? {
+                label: strings.loadDetail.podSignOnDevice,
+                onPress: () => onOpenSignature?.(),
+              }
+            : {
+                label: strings.moveOffer.dismissError,
+                onPress: onDismissError,
+              };
 
   return (
     <View style={styles.wrap}>
@@ -156,9 +207,17 @@ export function DriverProgressActions({
 
       {error ? (
         <ErrorBanner
-          title={error.title}
-          message={error.message}
-          details={error.details}
+          title={
+            error.appAction === 'show_checklist'
+              ? strings.driverProgress.checklistTitle
+              : error.title
+          }
+          message={
+            error.appAction === 'show_checklist'
+              ? strings.driverProgress.checklistExactHint
+              : error.message
+          }
+          details={checklistDetails ?? error.details}
           actionLabel={errorAction.label}
           onAction={errorAction.onPress}
         />
@@ -173,7 +232,16 @@ export function DriverProgressActions({
           loading={pendingAction === nextAction}
           disabled={actionsDisabled}
           onPress={() => openConfirmation(nextAction)}
-          accessibilityLabel={strings.driverProgress.actionA11y(nextLabel)}
+          accessibilityLabel={
+            nextAction === 'complete'
+              ? strings.driverProgress.completeA11y
+              : strings.driverProgress.actionA11y(nextLabel)
+          }
+          testID={
+            nextAction === 'complete'
+              ? 'driver-progress-complete-load'
+              : undefined
+          }
         />
       )}
 
@@ -256,6 +324,21 @@ export function DriverProgressActions({
             testID="driver-progress-seal-input"
           />
         ) : null}
+        {confirmAction === 'complete' && hasTirRequirements ? (
+          <Text style={styles.tirHint}>
+            {strings.driverProgress.addRequiredDocuments}:{' '}
+            {[
+              missing.has('tir_out_photo')
+                ? strings.driverProgress.missingTirOut
+                : null,
+              missing.has('tir_in_photo')
+                ? strings.driverProgress.missingTirIn
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </Text>
+        ) : null}
       </AppActionSheet>
     </View>
   );
@@ -299,5 +382,11 @@ const styles = StyleSheet.create({
     color: PP2Theme.colors.success,
     fontSize: PP2Theme.typography.sizes.body,
     fontWeight: '600',
+  },
+  tirHint: {
+    marginTop: PP2Theme.spacing.sm,
+    fontSize: PP2Theme.typography.sizes.caption,
+    color: PP2Theme.colors.textMuted,
+    lineHeight: 18,
   },
 });

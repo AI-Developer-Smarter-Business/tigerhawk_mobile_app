@@ -129,6 +129,75 @@ describe('mutateMobileDriverProgress (C.3 · D.3)', () => {
     expect(result.mobileError?.appAction).toBe('refresh_list');
   });
 
+  it('posts Complete Load as action complete with equipment fields (H.1)', async () => {
+    const fetchImpl = jest.fn(async () =>
+      jsonResponse({
+        ok: true,
+        progress: {
+          ...validProgress,
+          phase: 'load_complete',
+          allMovesComplete: true,
+          label: 'Load Complete',
+          status: 'Load Complete',
+        },
+      }),
+    ) as unknown as typeof fetch;
+
+    const result = await mutateMobileDriverProgress({
+      action: 'complete',
+      loadId: 'load/1',
+      chassisNumber: ' CHS-1 ',
+      containerNumber: 'CONT-1',
+      sealNumber: 'SEAL-1',
+      accessToken: 'token-abc',
+      fetchImpl,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      `https://tms.test${mobileLoadProgressPath('load/1')}`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'complete',
+          chassis_number: 'CHS-1',
+          container_number: 'CONT-1',
+          seal_number: 'SEAL-1',
+        }),
+      }),
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('preserves REQUIREMENTS_NOT_MET missing[] checklist on Complete (H.2)', async () => {
+    const fetchImpl = jest.fn(async () =>
+      jsonResponse(
+        {
+          error: 'Load cannot be completed until the required items are supplied',
+          code: 'REQUIREMENTS_NOT_MET',
+          missing: ['seal_number', 'tir_out_photo', 'tir_in_photo'],
+        },
+        422,
+      ),
+    ) as unknown as typeof fetch;
+
+    const result = await mutateMobileDriverProgress({
+      action: 'complete',
+      loadId: 'load-1',
+      accessToken: 'token-abc',
+      fetchImpl,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.mobileError?.code).toBe('REQUIREMENTS_NOT_MET');
+    expect(result.mobileError?.appAction).toBe('show_checklist');
+    expect(result.mobileError?.missing).toEqual([
+      'seal_number',
+      'tir_out_photo',
+      'tir_in_photo',
+    ]);
+  });
+
   it('rejects an incomplete success response', async () => {
     const fetchImpl = jest.fn(async () =>
       jsonResponse({ ok: true }),

@@ -1,5 +1,5 @@
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { DeliveryWaitSection } from '@/components/loads/DeliveryWaitSection';
@@ -18,6 +18,8 @@ import { useDriverProgressQuery } from '@/hooks/useDriverProgressQuery';
 import { useLoadDetailQuery } from '@/hooks/useLoadDetailQuery';
 import { useLoadDocumentUpload } from '@/hooks/useLoadDocumentUpload';
 import { useLoadDocumentsQuery } from '@/hooks/useLoadDocumentsQuery';
+import { useLoadPodQuery } from '@/hooks/useLoadPodQuery';
+import { usePodSignatureSubmit } from '@/hooks/usePodSignatureSubmit';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { formatReference } from '@/lib/loads';
 import { normalizeLoadIdParam } from '@/lib/loads/document-load-association';
@@ -40,6 +42,12 @@ export default function LoadDetailScreen() {
   const progressQuery = useDriverProgressQuery(loadId);
   const progressAction = useDriverProgressAction({ loadId, moveId });
   const documentsQuery = useLoadDocumentsQuery(loadId);
+  const podQuery = useLoadPodQuery(loadId);
+  const podSignature = usePodSignatureSubmit({ loadId, moveId });
+  const [forcePodSign, setForcePodSign] = useState(false);
+  const [forceTirUpload, setForceTirUpload] = useState<
+    'TIR Out' | 'TIR In' | null
+  >(null);
   const {
     documents,
     loading: documentsLoading,
@@ -56,11 +64,8 @@ export default function LoadDetailScreen() {
       documentType?: Parameters<typeof uploadDocumentRaw>[1],
     ) => {
       await uploadDocumentRaw(file, documentType);
-      if (documentType === 'POD') {
-        await waitTimer.refresh();
-      }
     },
-    [uploadDocumentRaw, waitTimer.refresh],
+    [uploadDocumentRaw],
   );
   const refreshDocumentsList = useCallback(
     () => refetchDocuments(),
@@ -73,8 +78,9 @@ export default function LoadDetailScreen() {
         refetch(),
         refetchDocuments(),
         progressQuery.refetch(),
+        podQuery.refetch(),
       ]),
-    [progressQuery.refetch, refetch, refetchDocuments],
+    [podQuery.refetch, progressQuery.refetch, refetch, refetchDocuments],
   );
   const { refreshing: pullRefreshing, onRefresh: onPullRefresh } =
     usePullToRefresh(pullRefresh);
@@ -86,16 +92,25 @@ export default function LoadDetailScreen() {
       }
       void waitTimer.refresh();
       const loadThrottleKey = `load-focus:${loadId}`;
-      if (shouldRunThrottledRefetch(loadThrottleKey, FOCUS_DOCUMENTS_REFETCH_MIN_MS)) {
+      if (
+        shouldRunThrottledRefetch(loadThrottleKey, FOCUS_DOCUMENTS_REFETCH_MIN_MS)
+      ) {
         void refetch();
         void progressQuery.refetch();
+        void podQuery.refetch();
       }
       const documentsThrottleKey = `documents-focus:${loadId}`;
-      if (shouldRunThrottledRefetch(documentsThrottleKey, FOCUS_DOCUMENTS_REFETCH_MIN_MS)) {
+      if (
+        shouldRunThrottledRefetch(
+          documentsThrottleKey,
+          FOCUS_DOCUMENTS_REFETCH_MIN_MS,
+        )
+      ) {
         void refetchDocuments();
       }
     }, [
       loadId,
+      podQuery.refetch,
       progressQuery.refetch,
       refetch,
       refetchDocuments,
@@ -135,7 +150,8 @@ export default function LoadDetailScreen() {
   const progressLocked =
     waitTimer.loading ||
     waitTimer.stopping ||
-    progressAction.pendingAction != null;
+    progressAction.pendingAction != null ||
+    podSignature.submitting;
 
   return (
     <>
@@ -156,8 +172,7 @@ export default function LoadDetailScreen() {
             tintColor={PP2Theme.colors.tms.navActive}
             colors={[PP2Theme.colors.tms.navActive]}
           />
-        }
-      >
+        }>
         <LoadDetailContent
           load={load}
           locationTracking={locationTracking}
@@ -169,6 +184,25 @@ export default function LoadDetailScreen() {
           onDocumentsRetry={() => void retryDocuments()}
           onRefreshDocuments={refreshDocumentsList}
           onUploadDocument={uploadDocument}
+          podPreview={podQuery.preview}
+          podLoading={podQuery.loading}
+          podError={podQuery.error}
+          onPodRetry={() => void podQuery.refetch()}
+          podSubmitting={podSignature.submitting}
+          podSubmitError={podSignature.error}
+          podSuccessMessage={podSignature.successMessage}
+          onSubmitPodSignature={async (input) => {
+            const ok = await podSignature.submit(input);
+            if (ok) {
+              progressAction.clearError();
+              await Promise.all([podQuery.refetch(), progressQuery.refetch()]);
+            }
+            return ok;
+          }}
+          forcePodSign={forcePodSign}
+          onForcePodSignHandled={() => setForcePodSign(false)}
+          forceTirUpload={forceTirUpload}
+          onForceTirUploadHandled={() => setForceTirUpload(null)}
         />
         <View style={styles.actionsSection}>
           <AppToast
@@ -199,6 +233,8 @@ export default function LoadDetailScreen() {
               locked={progressLocked}
               onAction={progressAction.runAction}
               onDismissError={progressAction.clearError}
+              onOpenSignature={() => setForcePodSign(true)}
+              onOpenTirDocuments={(which) => setForceTirUpload(which)}
             />
           ) : null}
         </View>

@@ -82,14 +82,14 @@ describe('useLoadDocumentUpload', () => {
       type: 'document_upload',
       loadId: load.id,
       userId: DRIVER_USER_ID,
-      documentType: 'POD',
+      documentType: 'Driver',
       file: sampleFile,
       createdAt: '2026-06-26T12:00:00.000Z',
       attempts: 0,
     });
   });
 
-  it('uploads via shared driver upload helper', async () => {
+  it('normalizes POD photo label to Driver before upload (F.5)', async () => {
     const { result } = renderDriverHook(() => useLoadDocumentUpload(load));
 
     await act(async () => {
@@ -101,12 +101,27 @@ describe('useLoadDocumentUpload', () => {
       loadId: load.id,
       file: sampleFile,
       userId: DRIVER_USER_ID,
-      documentType: 'POD',
+      documentType: 'Driver',
     });
     expect(mockInvalidate).toHaveBeenCalled();
   });
 
-  it('queues upload when offline', async () => {
+  it('keeps TIR Out type for Complete requirements (F.2)', async () => {
+    const { result } = renderDriverHook(() => useLoadDocumentUpload(load));
+
+    await act(async () => {
+      await result.current(sampleFile, 'TIR Out');
+    });
+
+    expect(mockUpload).toHaveBeenCalledWith({
+      loadId: load.id,
+      file: sampleFile,
+      userId: DRIVER_USER_ID,
+      documentType: 'TIR Out',
+    });
+  });
+
+  it('queues upload when offline (normalized type)', async () => {
     mockUseNetwork.mockReturnValue({ isOffline: true, isReady: true });
     const refreshPendingCount = jest.fn(async () => undefined);
     mockUseOfflineQueue.mockReturnValue({ pendingCount: 0, refreshPendingCount });
@@ -122,7 +137,7 @@ describe('useLoadDocumentUpload', () => {
     expect(mockEnqueue).toHaveBeenCalledWith({
       loadId: load.id,
       userId: DRIVER_USER_ID,
-      documentType: 'POD',
+      documentType: 'Driver',
       file: sampleFile,
     });
     expect(refreshPendingCount).toHaveBeenCalled();

@@ -2,6 +2,9 @@
 export const queryKeys = {
   root: ['pp2'] as const,
   profile: (userId: string) => [...queryKeys.root, 'profile', userId] as const,
+  /** Duty clock from `GET/POST /api/mobile/driver/clock` (I.2). */
+  clock: (driverId: string) =>
+    [...queryKeys.root, 'driver', 'clock', driverId] as const,
   loads: {
     all: (userId: string) => [...queryKeys.root, 'loads', userId] as const,
     list: (userId: string) => [...queryKeys.loads.all(userId), 'list'] as const,
@@ -29,5 +32,8 @@ export const queryKeys = {
       [...queryKeys.loads.all(driverId), 'progress', loadId] as const,
     documents: (userId: string, loadId: string) =>
       [...queryKeys.loads.all(userId), 'documents', loadId] as const,
+    /** Legal POD preview from `GET /api/mobile/loads/{id}/pod` (G.1). */
+    pod: (driverId: string, loadId: string) =>
+      [...queryKeys.loads.all(driverId), 'pod', loadId] as const,
   },
 } as const;

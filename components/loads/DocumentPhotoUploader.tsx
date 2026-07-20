@@ -1,6 +1,6 @@
 import type { ImagePickerAsset } from 'expo-image-picker';
-import { useCallback, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { useNetwork } from '@/context/NetworkContext';
 import { AppActionSheet } from '@/components/ui/AppActionSheet';
@@ -19,30 +19,39 @@ import {
 import { validateDriverUploadFile } from '@/lib/media/validate-driver-upload-file';
 import { isOfflineQueuedError } from '@/lib/offline/offline-queued-error';
 import type { DriverUploadDocumentType } from '@/lib/tms/assert-driver-document-type';
-import {
-  DEFAULT_DRIVER_DOCUMENT_TYPE,
-  DRIVER_DOCUMENT_TYPE_OPTIONS,
-} from '@/lib/tms/driver-document-types';
 import type { TmsUploadFileDescriptor } from '@/lib/tms/document-upload-request';
 
-type PodUploadSectionProps = {
+type DocumentPhotoUploaderProps = {
+  documentType: DriverUploadDocumentType;
+  addButtonTitle: string;
+  addButtonA11y: string;
   onUpload: (
     file: TmsUploadFileDescriptor,
     documentType: DriverUploadDocumentType,
   ) => Promise<void>;
+  /** When true, open the camera/gallery sheet once (F.3 checklist CTA). */
+  forceOpenPicker?: boolean;
+  onForceOpenHandled?: () => void;
 };
 
 type PendingPhoto = TmsUploadFileDescriptor & {
   previewUri: string;
 };
 
-/** Driver evidence photos only — legal POD is PodLegalSection (G.6). */
-export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
+/**
+ * Shared camera/gallery capture for a fixed `document_type` (F.2 TIR rows).
+ */
+export function DocumentPhotoUploader({
+  documentType,
+  addButtonTitle,
+  addButtonA11y,
+  onUpload,
+  forceOpenPicker = false,
+  onForceOpenHandled,
+}: DocumentPhotoUploaderProps) {
   const { isOffline, isReady: networkReady } = useNetwork();
   const isOfflineReady = networkReady && isOffline;
 
-  const [documentType, setDocumentType] =
-    useState<DriverUploadDocumentType>(DEFAULT_DRIVER_DOCUMENT_TYPE);
   const [pending, setPending] = useState<PendingPhoto | null>(null);
   const [uploading, setUploading] = useState(false);
   const [picking, setPicking] = useState(false);
@@ -94,10 +103,6 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
   const handleConfirm = useCallback(async () => {
     if (!pending || uploading) return;
 
-    // F.5 safety: never send POD as legal document type from evidence picker.
-    const uploadDocumentType: DriverUploadDocumentType =
-      documentType === 'POD' ? 'Driver' : documentType;
-
     setUploading(true);
     setUploadError(null);
     setSuccessMessage(null);
@@ -109,7 +114,7 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
           type: pending.type,
           size: pending.size,
         },
-        uploadDocumentType,
+        documentType,
       );
       clearPending();
       setSuccessMessage(strings.loadDetail.podUploadSuccess);
@@ -125,8 +130,14 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
     }
   }, [clearPending, documentType, onUpload, pending, uploading]);
 
+  useEffect(() => {
+    if (!forceOpenPicker) return;
+    setPickerSheetOpen(true);
+    onForceOpenHandled?.();
+  }, [forceOpenPicker, onForceOpenHandled]);
+
   return (
-    <View accessibilityLabel={strings.loadDetail.podAddPhotoA11y}>
+    <View>
       {uploadError ? (
         <ErrorBanner
           title={uploadError.title}
@@ -153,42 +164,6 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
         </Text>
       ) : null}
 
-      <Text style={styles.typeLabel}>{strings.loadDetail.documentTypeLabel}</Text>
-      <View style={styles.typeRow}>
-        {DRIVER_DOCUMENT_TYPE_OPTIONS.map((option) => {
-          const selected = documentType === option.value;
-          return (
-            <Pressable
-              key={option.value}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              accessibilityLabel={strings.loadDetail[option.labelKey]}
-              onPress={() => setDocumentType(option.value)}
-              style={[
-                styles.typeChip,
-                selected ? styles.typeChipSelected : null,
-              ]}>
-              <Text
-                style={[
-                  styles.typeChipText,
-                  selected ? styles.typeChipTextSelected : null,
-                ]}>
-                {strings.loadDetail[option.labelKey]}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-      <Text style={styles.typeHint}>
-        {
-          strings.loadDetail[
-            DRIVER_DOCUMENT_TYPE_OPTIONS.find(
-              (option) => option.value === documentType,
-            )?.hintKey ?? 'documentTypeDriverHint'
-          ]
-        }
-      </Text>
-
       {pending ? (
         <View style={styles.previewBlock}>
           <Image
@@ -198,9 +173,6 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
           />
           <Text style={styles.fileName} numberOfLines={1}>
             {pending.name}
-          </Text>
-          <Text style={styles.confirmHint}>
-            {strings.loadDetail.podConfirmHint}
           </Text>
           <Button
             title={strings.loadDetail.podUpload}
@@ -222,19 +194,19 @@ export function PodUploadSection({ onUpload }: PodUploadSectionProps) {
         </View>
       ) : (
         <Button
-          title={strings.loadDetail.podAddPhoto}
-          variant="accent"
+          title={addButtonTitle}
+          variant="outlineAccent"
           loading={picking}
           disabled={picking || uploading}
           onPress={() => setPickerSheetOpen(true)}
-          accessibilityLabel={strings.loadDetail.podAddPhotoA11y}
+          accessibilityLabel={addButtonA11y}
         />
       )}
 
       <AppActionSheet
         visible={pickerSheetOpen}
         title={strings.loadDetail.podPickTitle}
-        message={strings.loadDetail.podPickMessage}
+        message={strings.loadDetail.tirPickMessage}
         onDismiss={() => setPickerSheetOpen(false)}
         actions={[
           {
@@ -285,7 +257,7 @@ const styles = StyleSheet.create({
   },
   previewImage: {
     width: '100%',
-    height: 160,
+    height: 140,
     borderRadius: PP2Theme.radius.md,
     backgroundColor: PP2Theme.colors.border,
     marginBottom: PP2Theme.spacing.sm,
@@ -294,11 +266,6 @@ const styles = StyleSheet.create({
     fontSize: PP2Theme.typography.sizes.caption,
     color: PP2Theme.colors.textMuted,
     marginBottom: PP2Theme.spacing.sm,
-  },
-  confirmHint: {
-    fontSize: PP2Theme.typography.sizes.body,
-    color: PP2Theme.colors.text,
-    marginBottom: PP2Theme.spacing.md,
   },
   actionBtn: {
     marginBottom: PP2Theme.spacing.sm,
@@ -313,43 +280,5 @@ const styles = StyleSheet.create({
     fontSize: PP2Theme.typography.sizes.caption,
     color: PP2Theme.colors.textMuted,
     marginBottom: PP2Theme.spacing.sm,
-  },
-  typeLabel: {
-    fontSize: PP2Theme.typography.sizes.caption,
-    fontWeight: '600',
-    color: PP2Theme.colors.text,
-    marginBottom: PP2Theme.spacing.xs,
-  },
-  typeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: PP2Theme.spacing.xs,
-    marginBottom: PP2Theme.spacing.xs,
-  },
-  typeChip: {
-    borderWidth: 1,
-    borderColor: PP2Theme.colors.border,
-    borderRadius: PP2Theme.radius.sm,
-    paddingHorizontal: PP2Theme.spacing.sm,
-    paddingVertical: PP2Theme.spacing.xs,
-    backgroundColor: PP2Theme.colors.surface,
-  },
-  typeChipSelected: {
-    borderColor: PP2Theme.colors.tms.navActive,
-    backgroundColor: 'rgba(232, 112, 10, 0.1)',
-  },
-  typeChipText: {
-    fontSize: PP2Theme.typography.sizes.caption,
-    color: PP2Theme.colors.textMuted,
-    fontWeight: '600',
-  },
-  typeChipTextSelected: {
-    color: PP2Theme.colors.tms.navActive,
-  },
-  typeHint: {
-    fontSize: PP2Theme.typography.sizes.caption,
-    color: PP2Theme.colors.textMuted,
-    marginBottom: PP2Theme.spacing.md,
-    lineHeight: 18,
   },
 });
