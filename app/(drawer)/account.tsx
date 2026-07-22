@@ -1,14 +1,24 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { AppActionSheet } from '@/components/ui/AppActionSheet';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { Screen } from '@/components/ui/Screen';
+import { DRIVER_HISTORY_ROUTE } from '@/constants/navigation';
 import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
-import { env } from '@/lib/config/env';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { env } from '@/lib/config/env';
+import { safeLog } from '@/lib/logging/safe-log';
+import {
+  hasDispatchPhone,
+  openDispatchEmail,
+  openDispatchPhone,
+} from '@/lib/support/dispatch-contact';
 
 const tms = PP2Theme.colors.tms;
 
@@ -17,6 +27,14 @@ function profileInitials(name: string): string {
   if (parts.length === 0) return 'DR';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
+}
+
+function contactOpenErrorMessage(error: unknown): string {
+  const code = error instanceof Error ? error.message : '';
+  if (code === 'DISPATCH_PHONE_MISSING') {
+    return strings.account.contactDispatchPhoneMissing;
+  }
+  return strings.account.contactDispatchOpenFailed;
 }
 
 export default function AccountScreen() {
@@ -37,6 +55,8 @@ export default function AccountScreen() {
     error: profileError,
     refetch,
   } = useProfile();
+  const [contactSheetVisible, setContactSheetVisible] = useState(false);
+  const [contactError, setContactError] = useState<string | null>(null);
 
   const supabaseHost = env.supabaseUrl.replace(/^https?:\/\//, '').split('.')[0];
   const driverIdentity = mobileDriver ?? linkedDriver;
@@ -51,6 +71,49 @@ export default function AccountScreen() {
     await signOut();
     router.replace('/(auth)/login');
   };
+
+  const handleCallDispatch = async () => {
+    setContactError(null);
+    try {
+      await openDispatchPhone();
+    } catch (error) {
+      safeLog.warn('account', contactOpenErrorMessage(error));
+      setContactError(contactOpenErrorMessage(error));
+    }
+  };
+
+  const handleEmailDispatch = async () => {
+    setContactError(null);
+    try {
+      await openDispatchEmail(
+        `${strings.app.name} — driver support`,
+        strings.account.contactDispatchMessage,
+      );
+    } catch (error) {
+      safeLog.warn('account', contactOpenErrorMessage(error));
+      setContactError(contactOpenErrorMessage(error));
+    }
+  };
+
+  const contactActions = [
+    {
+      label: strings.account.callDispatch,
+      onPress: () => {
+        void handleCallDispatch();
+      },
+    },
+    {
+      label: strings.account.emailDispatch,
+      onPress: () => {
+        void handleEmailDispatch();
+      },
+    },
+    {
+      label: strings.driverProgress.cancel,
+      onPress: () => undefined,
+      variant: 'cancel' as const,
+    },
+  ];
 
   return (
     <Screen scroll>
@@ -96,6 +159,38 @@ export default function AccountScreen() {
         ) : null}
       </Card>
 
+      <Card title={strings.account.supportTitle} elevated>
+        <Text style={styles.muted}>{strings.account.contactDispatchMessage}</Text>
+        <Text style={[styles.muted, styles.mt]}>{strings.auth.contactDispatchPassword}</Text>
+        {!hasDispatchPhone() ? (
+          <Text style={[styles.muted, styles.mt]}>
+            {strings.account.contactDispatchPhoneMissing}
+          </Text>
+        ) : null}
+        {contactError ? (
+          <View style={styles.mt}>
+            <ErrorBanner message={contactError} />
+          </View>
+        ) : null}
+        <Button
+          title={strings.account.contactDispatch}
+          variant="accent"
+          onPress={() => {
+            setContactError(null);
+            setContactSheetVisible(true);
+          }}
+          accessibilityLabel={strings.account.contactDispatchA11y}
+          style={styles.mt}
+        />
+        <Button
+          title={strings.account.loadHistory}
+          variant="outlineAccent"
+          onPress={() => router.push(DRIVER_HISTORY_ROUTE.href)}
+          accessibilityLabel={strings.account.loadHistoryA11y}
+          style={styles.mt}
+        />
+      </Card>
+
       <Card title={strings.auth.supabaseLabel} elevated>
         <Text style={styles.label}>{strings.account.sessionLabel}</Text>
         <Text style={styles.value}>
@@ -131,6 +226,14 @@ export default function AccountScreen() {
       </Card>
 
       <Button title={strings.auth.signOut} variant="accent" onPress={handleLogout} />
+
+      <AppActionSheet
+        visible={contactSheetVisible}
+        title={strings.account.contactDispatch}
+        message={strings.account.contactDispatchSheetHint}
+        actions={contactActions}
+        onDismiss={() => setContactSheetVisible(false)}
+      />
     </Screen>
   );
 }

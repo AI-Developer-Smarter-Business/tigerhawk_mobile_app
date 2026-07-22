@@ -59,9 +59,14 @@ for (const plugin of requiredPlugins) {
   }
 }
 
-const releaseNotesPath = path.join(root, 'docs', 'RELEASE_NOTES_0_1_0.md');
+const releaseNotesSlug = String(app.version).replace(/\./g, '_');
+const releaseNotesPath = path.join(
+  root,
+  'docs',
+  `RELEASE_NOTES_${releaseNotesSlug}.md`,
+);
 if (!fs.existsSync(releaseNotesPath)) {
-  errors.push('Missing docs/RELEASE_NOTES_0_1_0.md');
+  errors.push(`Missing docs/RELEASE_NOTES_${releaseNotesSlug}.md for version ${app.version}`);
 }
 
 const logoPath = path.join(root, 'assets/images/logo_new.png');
@@ -109,4 +114,6 @@ console.log(`  Android: ${app.android.package}`);
 console.log('\n  Next: npm run eas:push-env (from .env.local), then:');
 console.log('    npm run build:android:preview');
 console.log('    npm run build:android:production');
-console.log('\n  Notes: docs/RELEASE_NOTES_0_1_0.md · docs/MOBILE_BUILDS.md\n');
+console.log(
+  `\n  Notes: docs/RELEASE_NOTES_${releaseNotesSlug}.md · docs/MOBILE_BUILDS.md (K.3)\n`,
+);

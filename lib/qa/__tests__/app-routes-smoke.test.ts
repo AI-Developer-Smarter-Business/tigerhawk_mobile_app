@@ -22,16 +22,21 @@ describe('app routes smoke (5.7)', () => {
     expect(fs.existsSync(path.join(ROOT, routePath))).toBe(true);
   });
 
-  it('drawer layout wires auth redirect and screens', () => {
+  it('tabs layout wires auth redirect and Loads · Clock · Account (J.1)', () => {
     const source = fs.readFileSync(
       path.join(ROOT, 'app', '(drawer)', '_layout.tsx'),
       'utf8',
     );
     expect(source).toContain('Redirect');
+    expect(source).toContain('Tabs');
     expect(source).toContain('loads');
-    expect(source).toContain('history');
     expect(source).toContain('clock');
     expect(source).toContain('account');
+    expect(source).toContain('history');
+    expect(source).toContain('href: null');
+    expect(source).toContain('strings.tabs.loads');
+    expect(source).toContain('strings.tabs.clock');
+    expect(source).toContain('strings.tabs.account');
   });
 
   it('root layout wires driver loads realtime bridge after auth bootstrap', () => {
@@ -116,18 +121,69 @@ describe('app routes smoke (5.7)', () => {
     expect(source).toContain('move=');
   });
 
-  it('drawer navigation includes Load History route (B.4)', () => {
+  it('Load History remains reachable outside bottom tabs (B.4 / J.1)', () => {
     const navSource = fs.readFileSync(
       path.join(ROOT, 'constants', 'navigation.ts'),
       'utf8',
     );
     expect(navSource).toContain("'history'");
+    expect(navSource).toContain('DRIVER_HISTORY_ROUTE');
+    expect(navSource).toContain('DRIVER_TAB_ITEMS');
+    const accountSource = fs.readFileSync(
+      path.join(ROOT, 'app', '(drawer)', 'account.tsx'),
+      'utf8',
+    );
+    expect(accountSource).toContain('DRIVER_HISTORY_ROUTE.href');
     const routesSource = fs.readFileSync(
       path.join(ROOT, 'lib', 'tms', 'mobile-api-routes.ts'),
       'utf8',
     );
     expect(routesSource).toContain('MOBILE_DRIVER_LOAD_HISTORY_PATH');
     expect(routesSource).toContain('/api/mobile/driver/loads/history');
+  });
+
+  it('Account offers Contact dispatch and no forgot-password flow (J.5)', () => {
+    const accountSource = fs.readFileSync(
+      path.join(ROOT, 'app', '(drawer)', 'account.tsx'),
+      'utf8',
+    );
+    expect(accountSource).toContain('strings.account.contactDispatch');
+    expect(accountSource).toContain('strings.account.callDispatch');
+    expect(accountSource).toContain('strings.account.emailDispatch');
+    expect(accountSource).toContain('strings.auth.contactDispatchPassword');
+    expect(accountSource).not.toContain('resetPassword');
+    expect(accountSource).not.toContain('forgotPassword');
+    expect(accountSource).not.toContain('signInWithMagicLink');
+
+    const contactLib = fs.readFileSync(
+      path.join(ROOT, 'lib', 'support', 'dispatch-contact.ts'),
+      'utf8',
+    );
+    expect(contactLib).toContain('openDispatchPhone');
+    expect(contactLib).toContain('openDispatchEmail');
+    expect(contactLib).toContain('mailto:');
+    expect(contactLib).toContain('tel:');
+
+    const loginSource = fs.readFileSync(
+      path.join(ROOT, 'app', '(auth)', 'login.tsx'),
+      'utf8',
+    );
+    expect(loginSource).toContain('strings.auth.contactDispatchPassword');
+    expect(loginSource).not.toContain('forgotPassword');
+    expect(loginSource).not.toContain('resetPassword');
+  });
+
+  it('maps open pin only — no turn-by-turn (J.4)', () => {
+    const mapsSource = fs.readFileSync(
+      path.join(ROOT, 'lib', 'location', 'maps-url.ts'),
+      'utf8',
+    );
+    expect(mapsSource).toContain('buildGoogleMapsUrl');
+    expect(mapsSource).toContain('maps.google.com/?q=');
+    expect(mapsSource).not.toContain('/dir/');
+    expect(mapsSource).not.toContain('destination=');
+    expect(mapsSource).not.toContain('travelmode');
+    expect(mapsSource).toContain('does not request turn-by-turn');
   });
 
   it('wires Clock screen to /api/mobile/driver/clock (I.1–I.4)', () => {
@@ -522,5 +578,51 @@ describe('app routes smoke (5.7)', () => {
     );
     expect(legalUi).toContain('SignatureCaptureModal');
     expect(legalUi).toContain('podNoSkipHint');
+  });
+
+  it('oleada 1 QA matrix + MOBILE_API contract docs exist (K.1–K.2)', () => {
+    expect(
+      fs.existsSync(path.join(ROOT, 'docs', 'QA_OLEADA1_MATRIX_K1.md')),
+    ).toBe(true);
+    const matrix = fs.readFileSync(
+      path.join(ROOT, 'docs', 'QA_OLEADA1_MATRIX_K1.md'),
+      'utf8',
+    );
+    expect(matrix).toContain('TABLE.jpeg');
+    expect(matrix).toContain('POD_SIGNATURE_REQUIRED');
+    expect(matrix).toContain('missing[]');
+    expect(matrix).toContain('client_signature_id');
+    expect(matrix).toContain('/api/mobile/loads/');
+
+    const api = fs.readFileSync(path.join(ROOT, 'docs', 'MOBILE_API.md'), 'utf8');
+    expect(api).toContain('MOBILE_DRIVER_LOADS_PATH');
+    expect(api).toContain('/api/mobile/loads/{id}/progress');
+    expect(api).toContain('/api/mobile/loads/{id}/pod-signature');
+    expect(api).toContain('REQUIREMENTS_NOT_MET');
+    expect(api).not.toContain(
+      'Wire `PATCH {tmsApiUrl}/api/dispatcher/loads/[id]/status`',
+    );
+
+    const routes = fs.readFileSync(
+      path.join(ROOT, 'lib', 'tms', 'mobile-api-routes.ts'),
+      'utf8',
+    );
+    expect(api).toContain('/api/mobile/auth/login');
+    expect(routes).toContain('MOBILE_AUTH_LOGIN_PATH');
+    expect(routes).toContain('mobileLoadPodSignaturePath');
+  });
+
+  it('release notes match app version for K.3 preflight', () => {
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'),
+    ) as { version: string };
+    const app = JSON.parse(
+      fs.readFileSync(path.join(ROOT, 'app.json'), 'utf8'),
+    ) as { expo: { version: string } };
+    expect(app.expo.version).toBe(pkg.version);
+    const slug = pkg.version.replace(/\./g, '_');
+    expect(
+      fs.existsSync(path.join(ROOT, 'docs', `RELEASE_NOTES_${slug}.md`)),
+    ).toBe(true);
   });
 });

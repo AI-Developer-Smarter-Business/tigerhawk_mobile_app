@@ -1,6 +1,6 @@
 # Tigerhawk Mobile (PP2)
 
-**Version:** `0.1.1` · **Package:** `pp2-mobile` · **Android / iOS:** `com.tigerhawk.mobile`
+**Version:** `0.1.2` · **Package:** `pp2-mobile` · **Android / iOS:** `com.tigerhawk.mobile`
 
 **React Native + Expo** field driver app connected to the **same Supabase project** as the TigerHawk TMS. No separate backend: data and auth via Supabase; privileged operations via the TMS Next.js API when required. Current TMS source of truth for code parity: `TMS_fusion` (see `docs/TMS_DEV_REPOSITORY.md`).
 
