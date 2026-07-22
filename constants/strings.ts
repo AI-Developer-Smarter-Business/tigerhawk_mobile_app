@@ -1,4 +1,4 @@
-/** User-facing copy (English). */
+/** User-facing copy (English only — K.2 / oleada 1). */
 export const strings = {
   app: {
     /** Display name on login, drawer, and device home screen (via app.json). */
@@ -286,6 +286,22 @@ export const strings = {
     refreshSession: 'Refresh session',
     environment: 'Environment',
     projectLabel: 'Project',
+    /** J.5 — support CTA; no in-app forgot-password. */
+    supportTitle: 'Support',
+    contactDispatch: 'Contact dispatch',
+    contactDispatchA11y: 'Contact dispatch for help or password reset',
+    contactDispatchMessage:
+      'Reach your carrier dispatcher for load help or a password reset. Tigerhawk Mobile does not reset passwords in the app.',
+    callDispatch: 'Call dispatch',
+    emailDispatch: 'Email dispatch',
+    contactDispatchOpenFailed:
+      'Could not open the contact app. Try again or call dispatch from your phone.',
+    contactDispatchPhoneMissing:
+      'Call is not set up in this app build. Use Email, or ask your office to add the dispatch phone number.',
+    contactDispatchSheetHint:
+      'Choose Call or Email. Email opens your mail app; Call needs the dispatch number in the app build.',
+    loadHistory: 'Load History',
+    loadHistoryA11y: 'Open completed load history',
   },
   loadDetail: {
     notFound: 'Load not found',

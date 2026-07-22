@@ -19,6 +19,8 @@ Same **Supabase** and **TMS** as local dev → same `driver_test@test.com`, same
 | `EXPO_PUBLIC_SUPABASE_URL` | `https://xxxx.supabase.co` | Same project as TMS |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `eyJ…` | Anon key only |
 | `EXPO_PUBLIC_TMS_API_URL` | `https://tigerhawkv2.netlify.app` | **Base URL only** (no `/dashboard`). Must be reachable from the phone — **not** `localhost` or LAN IP in production builds. |
+| `EXPO_PUBLIC_DISPATCH_PHONE` | `+17135551212` | Account **Call dispatch** (J.5 / K.3) — real office number |
+| `EXPO_PUBLIC_DISPATCH_EMAIL` | `dispatch@company.com` | Account **Email dispatch** (J.5 / K.3) |
 
 Set on EAS with `npm run eas:push-env` (reads `.env.local`) or Expo Dashboard → project → **Environment variables** (preview + production). Do **not** duplicate them in `eas.json` `env` — that overrides EAS and can bundle empty values into the APK.
 
@@ -39,14 +41,37 @@ npx eas env:list --environment production
 
 ---
 
-## 3. Release QA before build (tasks 7.1 → 7.2)
+## 3. Release QA before build (K.1 → K.3 / 7.1 → 7.2)
 
 | Step | Command | Doc |
 |------|---------|-----|
-| **7.1** Automated + manual P0/P1 | `npm run qa:7.1` | `docs/QA_RELEASE_SIGNOFF_7_1.md` |
-| **7.2** EAS config check | `npm run build:preflight` | This file + `docs/RELEASE_NOTES_0_1_0.md` |
+| **K.1** Oleada 1 matrix automation | `npm run qa:k1` | `docs/QA_OLEADA1_MATRIX_K1.md` |
+| **7.1** Legacy Semana 5–6 (optional) | `npm run qa:7.1` | `docs/QA_RELEASE_SIGNOFF_7_1.md` |
+| **K.3 / 7.2** EAS config check | `npm run build:preflight` | This file + `docs/RELEASE_NOTES_0_1_2.md` |
 
-`qa:7.1` does **not** replace manual sign-off on device (smoke S1–S10, upload D1–D7, documents A–C).
+`qa:k1` / `qa:7.1` do **not** replace manual sign-off on device (TABLE rows, POD gate, Complete `missing[]`).
+
+### K.3 — Ship Android APK + iOS TestFlight (oleada 1)
+
+After TMS **main** hosts the mobile API (verify `npm run smoke:a0`) and EAS env is pushed:
+
+```bash
+npm run eas:push-env          # includes DISPATCH_* if set in .env.local
+npm run qa:k1
+npm run build:preflight
+# Version must be newer than last TestFlight (e.g. 0.1.2) — see app.json / package.json
+npm run build:android:preview
+npm run build:ios:production
+npm run submit:ios
+```
+
+| Check | Status / notes |
+|-------|----------------|
+| `EXPO_PUBLIC_TMS_API_URL` → preview or prod Netlify with `/api/mobile/*` | Confirm with smoke:a0 |
+| Version bump vs last TestFlight build | **0.1.2** (K.3) — previous 0.1.1 (1) blocks re-submit |
+| Android preview APK | `build:android:preview` |
+| iOS production → TestFlight | `build:ios:production` + `submit:ios` |
+| Device matrix signed | `docs/QA_OLEADA1_MATRIX_K1.md` |
 
 ---
 
@@ -113,8 +138,8 @@ Icon / splash / logo: use `assets/images/logo_new.png` (referenced from `app.jso
 | `driver_test@test.com` | Yes | Yes, same DB | Same |
 | Load list + pagination | Yes | Yes | Same |
 | Realtime from TMS | Yes, if SQL applied | Yes, same | Same |
-| Status PATCH via TMS | Yes, if TMS URL reachable | Yes, **public TMS URL** | Same |
-| Magic link | `exp://` + `pp2://` | `pp2://` on APK | Same scheme |
+| Status / progress via TMS | Yes, if TMS URL reachable | Yes, **public TMS URL** · `…/progress` | Same |
+| Magic link | N/A (username login) | Username login | Same |
 | App icon / splash | Expo Go cache | Baked at EAS build | Baked at EAS build |
 
 ---

@@ -20,6 +20,7 @@ describe('release handoff docs (7.3–7.5)', () => {
   itIfRootDoc('CHANGELOG.md')('CHANGELOG follows semver (local-only doc)', () => {
     const changelog = read('CHANGELOG.md');
     expect(changelog).toContain('[0.1.0]');
+    expect(changelog).toContain('[0.1.2]');
     expect(changelog).toMatch(/Semantic Versioning/i);
   });
 

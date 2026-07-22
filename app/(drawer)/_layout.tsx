@@ -1,19 +1,18 @@
-import { Redirect } from 'expo-router';
-import { Drawer } from 'expo-router/drawer';
-import { Dimensions } from 'react-native';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Redirect, Tabs } from 'expo-router';
 
-import { AppDrawerContent } from '@/components/navigation/AppDrawerContent';
 import { strings } from '@/constants/strings';
 import { PP2Theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 
 const tms = PP2Theme.colors.tms;
-const drawerWidth = Math.min(
-  Dimensions.get('window').width * PP2Theme.layout.drawerWidthPercent,
-  PP2Theme.layout.drawerMaxWidth,
-);
 
-export default function DrawerLayout() {
+/**
+ * Driver shell (J.1): bottom tabs Loads · Clock · Account.
+ * Load History stays as a stack-style route (hidden from the tab bar; opened from Account).
+ * Route group stays `(drawer)` so existing `/(drawer)/…` redirects keep working.
+ */
+export default function DriverTabsLayout() {
   const { isSupabaseAuthenticated } = useAuth();
 
   if (!isSupabaseAuthenticated) {
@@ -21,15 +20,8 @@ export default function DrawerLayout() {
   }
 
   return (
-    <Drawer
-      drawerContent={(props) => <AppDrawerContent {...props} />}
+    <Tabs
       screenOptions={{
-        drawerType: 'front',
-        drawerStyle: {
-          width: drawerWidth,
-          backgroundColor: tms.sidebarBackground,
-        },
-        overlayColor: PP2Theme.colors.overlay,
         headerStyle: {
           backgroundColor: tms.headerBackground,
           borderBottomWidth: 1,
@@ -37,32 +29,59 @@ export default function DrawerLayout() {
         },
         headerTintColor: tms.headerText,
         headerTitleStyle: { fontWeight: '600' },
+        tabBarActiveTintColor: tms.navActive,
+        tabBarInactiveTintColor: tms.navItem,
+        tabBarStyle: {
+          backgroundColor: tms.sidebarBackground,
+          borderTopColor: tms.sidebarBorder,
+          borderTopWidth: 1,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+        },
       }}>
-      <Drawer.Screen
+      <Tabs.Screen
         name="loads"
         options={{
-          title: strings.nav.loads,
+          title: strings.tabs.loads,
           headerTitle: strings.app.name,
+          tabBarLabel: strings.tabs.loads,
+          tabBarAccessibilityLabel: strings.tabs.loads,
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="truck" size={22} color={color} />
+          ),
         }}
       />
-      <Drawer.Screen
+      <Tabs.Screen
         name="clock"
         options={{
           title: strings.clock.title,
+          tabBarLabel: strings.tabs.clock,
+          tabBarAccessibilityLabel: strings.tabs.clock,
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="clock-o" size={22} color={color} />
+          ),
         }}
       />
-      <Drawer.Screen
-        name="history"
-        options={{
-          title: strings.loadHistory.title,
-        }}
-      />
-      <Drawer.Screen
+      <Tabs.Screen
         name="account"
         options={{
           title: strings.account.title,
+          tabBarLabel: strings.tabs.account,
+          tabBarAccessibilityLabel: strings.tabs.account,
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="user" size={22} color={color} />
+          ),
         }}
       />
-    </Drawer>
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: strings.loadHistory.title,
+          href: null,
+        }}
+      />
+    </Tabs>
   );
 }
